@@ -1,4 +1,3 @@
-require('dotenv').config();
 const { router } = require('microrouter');
 const routes = require('./routing');
 

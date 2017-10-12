@@ -1,14 +1,17 @@
-const getDatabaseConnection = require('../database');
+const getDatabaseConnection = require('@graphistry/db');
+const config = require('../../config');
 const { getUserByUsername, getUserById } = require('./user');
 const bcrypt = require('bcryptjs');
 const uuid = require('uuid');
+
+const NODE_ENV = config.get('env');
 
 const passwordIsValid = (userPassword, databasePassword) =>
   bcrypt.compareSync(userPassword, databasePassword);
 
 const getCurrentUser = session_id =>
   new Promise(async (resolve, reject) => {
-    const knex = getDatabaseConnection();
+    const knex = getDatabaseConnection(NODE_ENV);
     const session = await knex('sessions')
       .where('session_id', '=', session_id)
       .first()
@@ -51,7 +54,7 @@ const login = (username, password) =>
     }
 
     const token = uuid.v4();
-    const knex = getDatabaseConnection();
+    const knex = getDatabaseConnection(NODE_ENV);
     knex
       .insert({ user_id: user.id, session_id: token }, 'session_id')
       .into('sessions')
@@ -61,7 +64,7 @@ const login = (username, password) =>
 
 const logout = token =>
   new Promise((resolve, reject) => {
-    const knex = getDatabaseConnection();
+    const knex = getDatabaseConnection(NODE_ENV);
     knex('sessions')
       .where('session_id', '=', token)
       .del()

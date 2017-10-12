@@ -1,9 +1,11 @@
-const getDatabaseConnection = require('../database');
+const getDatabaseConnection = require('@graphistry/db');
 const bcrypt = require('bcryptjs');
+const config = require('../../config');
+const NODE_ENV = config.get('env');
 
 const createUser = (username, password) =>
   new Promise((resolve, reject) => {
-    const knex = getDatabaseConnection();
+    const knex = getDatabaseConnection(NODE_ENV);
 
     const salt = bcrypt.genSaltSync();
     const hash = bcrypt.hashSync(password, salt);
@@ -17,7 +19,7 @@ const createUser = (username, password) =>
 
 const getUserByUsername = username =>
   new Promise((resolve, reject) => {
-    const knex = getDatabaseConnection();
+    const knex = getDatabaseConnection(NODE_ENV);
 
     knex('users')
       .where({ username })
@@ -28,7 +30,7 @@ const getUserByUsername = username =>
 
 const getUserById = id =>
   new Promise((resolve, reject) => {
-    const knex = getDatabaseConnection();
+    const knex = getDatabaseConnection(NODE_ENV);
     // TODO: can we do prepared statements with knex?
     return knex('users')
       .where({ id: parseInt(id) })
@@ -46,7 +48,7 @@ const getUserById = id =>
 
 const updateUser = (id, user) =>
   new Promise((resolve, reject) => {
-    const knex = getDatabaseConnection();
+    const knex = getDatabaseConnection(NODE_ENV);
 
     knex('users')
       .where('id', '=', parseInt(id))

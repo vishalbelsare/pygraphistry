@@ -1,10 +1,8 @@
-require('dotenv').config();
-
 const chai = require('chai');
 const should = chai.should();
 const routes = require('../../src/routing');
 const { router } = require('microrouter');
-const getConnection = require('../../src/database');
+const getConnection = require('@graphistry/db');
 const micro = require('micro');
 const request = require('request');
 const rp = require('request-promise');
@@ -23,7 +21,7 @@ describe('Route integration test', () => {
 
   afterAll(async done => {
     await server.close();
-    const knex = getConnection();
+    const knex = getConnection('test');
     knex.migrate
       .rollback()
       .then(() => knex.destroy())
@@ -32,7 +30,7 @@ describe('Route integration test', () => {
 
   beforeEach(async done => {
     cookiejar = rp.jar();
-    const knex = getConnection();
+    const knex = getConnection('test');
     return knex.migrate
       .rollback()
       .then(() => knex.migrate.latest())
