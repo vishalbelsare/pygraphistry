@@ -347,31 +347,26 @@ function LabelTitle({
 }
 
 function LabelContents({ columns = [], importantColumns = [], title = '', ...props }) {
+
   return (
     <div onMouseDown={stopPropagation} className={styles['label-contents']}>
       <table>
         <tbody>
-          {importantColumns.map(({ key, ...column }, index) => (
-            <LabelRow
-              key={`${index}-${title}-important`}
-              field={key}
-              title={title}
-              important={true}
-              {...props}
-              {...column}
-            />
-          ))}
-          {importantColumns.length < 1 ? (
-            undefined
-          ) : (
-            <tr key={'label-important-separator'} className={styles['important-separator']}>
-              <td />
-              <td />
-            </tr>
-          )}
-          {columns.map(({ key, ...column }, index) => (
-            <LabelRow key={`${index}-${title}`} field={key} title={title} {...props} {...column} />
-          ))}
+          { importantColumns.length ?
+            importantColumns.map(({ key, ...column }, index) => (
+              <LabelRow
+                key={`${index}-${title}-important`}
+                field={key}
+                title={title}
+                important={true}
+                {...props}
+                {...column}
+              />
+            ))
+            : columns.map(({ key, ...column }, index) => (
+              <LabelRow key={`${index}-${title}`} field={key} title={title} {...props} {...column} />
+            ))
+          }          
         </tbody>
       </table>
     </div>
