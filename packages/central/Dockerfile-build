@@ -1,0 +1,19 @@
+FROM graphistry/baseapp:1.2
+
+# fetch secrets from our vault, do the npm installs, and delete the secrets.
+
+ARG BUILD_NUMBER
+ENV APPDIR /app
+WORKDIR $APPDIR
+
+COPY ./wholly-innocuous/files/npm/rc /root/.npmrc
+
+COPY ./central .
+
+RUN apt-get update && apt-get -y install jq
+RUN mv package.json package.json.old
+RUN jq . < package.json.old | sed -E -e 's/("version": "[0-9]+[.][0-9]+[.])[^"]+/\1'${BUILD_NUMBER}/ > package.json
+
+RUN npm install
+RUN npm run build
+RUN npm publish
