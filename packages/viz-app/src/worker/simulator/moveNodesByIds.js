@@ -80,7 +80,7 @@ MoveNodesByIds.prototype.run = function(simulator, ids, diff) {
 //     simulator.tickBuffers(['nextPoints', 'curPoints']);
 
 //     logger.trace('Running moveNodes');
-//     return this.moveNodes.exec([numPoints], resources)
+//     return this.moveNodes.exec([numPoints])
 //         .then(function () {
 //             var nextPoints = simulator.dataframe.getBuffer('nextPoints', 'simulator');
 //             var curPoints = simulator.dataframe.getBuffer('curPoints', 'simulator');

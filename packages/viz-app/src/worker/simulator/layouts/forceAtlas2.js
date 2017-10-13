@@ -92,8 +92,7 @@ var kernelSpecs = {
       'mass',
       'blocked',
       'maxDepth',
-      'pointDegrees',
-      'stepNumber'
+      'pointDegrees'
     ],
     fileName: 'layouts/forceAtlas2/barnesHut/toBarnesLayout.cl'
   },
@@ -503,10 +502,6 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
       'mem_read_write',
       'mem_host_no_access'
     ]),
-    simulator.cl.createBuffer(1 + Math.ceil(numEdges / 256), 'globalCarryIn', [
-      'mem_read_write',
-      'mem_host_no_access'
-    ]),
     simulator.cl.createBuffer(numPoints * Float32Array.BYTES_PER_ELEMENT, 'swings', [
       'mem_read_write'
     ]),
@@ -539,7 +534,6 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
       curForces,
       prevForces,
       outputEdgeForcesMap,
-      globalCarryOut,
       swings,
       tractions
     ) {
@@ -564,12 +558,11 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
       layoutBuffers.numNodes = numNodes;
       layoutBuffers.numBodies = numBodies;
       layoutBuffers.globalSpeed = globalSpeed;
-      (layoutBuffers.pointForces = pointForces),
-        (layoutBuffers.curForces = curForces),
-        (layoutBuffers.prevForces = prevForces),
-        (layoutBuffers.partialForces = partialForces),
-        (layoutBuffers.outputEdgeForcesMap = outputEdgeForcesMap);
-      layoutBuffers.globalCarryOut = globalCarryOut;
+      layoutBuffers.pointForces = pointForces;
+      layoutBuffers.curForces = curForces;
+      layoutBuffers.prevForces = prevForces;
+      layoutBuffers.partialForces = partialForces;
+      layoutBuffers.outputEdgeForcesMap = outputEdgeForcesMap;
       layoutBuffers.swings = swings;
       layoutBuffers.tractions = tractions;
 
@@ -599,24 +592,19 @@ ForceAtlas2Barnes.prototype.initializeLayoutBuffers = function(simulator) {
 };
 
 ForceAtlas2Barnes.prototype.calculateSwings = function(simulator, workItems) {
-  var resources = [];
-
   simulator.tickBuffers(['swings', 'tractions']);
   logger.trace('Running kernel faSwingsTractions');
   return this.faSwings
-    .exec([simulator.dataframe.getNumElements('point')], resources)
+    .exec([simulator.dataframe.getNumElements('point')])
     .fail(log.makeQErrorHandler(logger, 'Executing FaSwing failed'));
 };
 
 ForceAtlas2Barnes.prototype.integrate = function(simulator, workItems) {
-  var resources = [simulator.dataframe.getBuffer('curPoints', 'simulator')];
-
   simulator.tickBuffers(['nextPoints']);
-
   logger.trace('Running kernel faIntegrate');
   var numPoints = simulator.dataframe.getNumElements('point');
   return this.faIntegrate
-    .exec([numPoints], resources)
+    .exec([numPoints])
     .fail(log.makeQErrorHandler(logger, 'Executing Integrate failed'));
 };
 
@@ -645,57 +633,25 @@ ForceAtlas2Barnes.prototype.setEdges = function(simulator) {
 };
 
 ForceAtlas2Barnes.prototype.pointForces = function(simulator, workItems) {
-  var resources = [simulator.dataframe.getBuffer('curPoints', 'simulator')];
 
   logger.trace('Running Force Atlas2 with BarnesHut Kernels');
 
   // For all calls, we must have the # work items be a multiple of the workgroup size.
-  var that = this;
-  return this.toBarnesLayout
-    .exec([workItems.toBarnesLayout[0]], resources, [workItems.toBarnesLayout[1]])
-    .then(function() {
-      return that.boundBox.exec([workItems.boundBox[0]], resources, [workItems.boundBox[1]]);
-    })
-    .then(function() {
-      return that.buildTree.exec([workItems.buildTree[0]], resources, [workItems.buildTree[1]]);
-    })
-    .then(function() {
-      return that.computeSums.exec([workItems.computeSums[0]], resources, [
-        workItems.computeSums[1]
-      ]);
-    })
-    .then(function() {
-      return that.sort.exec([workItems.sort[0]], resources, [workItems.sort[1]]);
-    })
-    .then(function() {
-      return that.calculatePointForces.exec([workItems.calculateForces[0]], resources, [
-        workItems.calculateForces[1]
-      ]);
-    })
+  return              this.toBarnesLayout.exec([ workItems.toBarnesLayout[0]], [ workItems.toBarnesLayout[1]])
+    .then(() =>             this.boundBox.exec([       workItems.boundBox[0]], [       workItems.boundBox[1]]))
+    .then(() =>            this.buildTree.exec([      workItems.buildTree[0]], [      workItems.buildTree[1]]))
+    .then(() =>          this.computeSums.exec([    workItems.computeSums[0]], [    workItems.computeSums[1]]))
+    .then(() =>                 this.sort.exec([           workItems.sort[0]], [           workItems.sort[1]]))
+    .then(() => this.calculatePointForces.exec([workItems.calculateForces[0]], [workItems.calculateForces[1]]))
     .fail(log.makeQErrorHandler(logger, 'Executing BarnesKernelSeq failed'));
 };
 
 ForceAtlas2Barnes.prototype.edgeForces = function(simulator, workItemsSize) {
   logger.trace('Running kernel faEdgeForces');
-  var that = this;
-  var resources = [];
-  return that.forwardsEdgeForceMapper
-    .exec([workItemsSize.edgeForces[0]], resources, [workItemsSize.edgeForces[1]])
-    .then(function() {
-      return that.reduceForwardsEdgeForces.exec([workItemsSize.segReduce[0]], resources, [
-        workItemsSize.segReduce[1]
-      ]);
-    })
-    .then(function() {
-      return that.backwardsEdgeForceMapper.exec([workItemsSize.edgeForces[0]], resources, [
-        workItemsSize.edgeForces[1]
-      ]);
-    })
-    .then(function() {
-      return that.reduceBackwardsEdgeForces.exec([workItemsSize.segReduce[0]], resources, [
-        workItemsSize.segReduce[1]
-      ]);
-    });
+  return          this.forwardsEdgeForceMapper.exec([workItemsSize.edgeForces[0]], [workItemsSize.edgeForces[1]])
+    .then(() =>  this.reduceForwardsEdgeForces.exec([workItemsSize.segReduce [0]], [workItemsSize.segReduce [1]]))
+    .then(() =>  this.backwardsEdgeForceMapper.exec([workItemsSize.edgeForces[0]], [workItemsSize.edgeForces[1]]))
+    .then(() => this.reduceBackwardsEdgeForces.exec([workItemsSize.segReduce [0]], [workItemsSize.segReduce [1]]));
 };
 
 ForceAtlas2Barnes.prototype.updateBufferBindings = function(bufferBindings) {
@@ -722,22 +678,15 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
     }
   );
 
-  var that = this;
-  var tickTime = Date.now();
   var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
-  return that
-    .pointForces(simulator, workItems)
-    .then(function() {
-      return that.edgeForces(simulator, workItems);
-    })
-    .then(function() {
-      return that.calculateSwings(simulator, workItems);
-    })
-    .then(function() {
-      return that.integrate(simulator, workItems);
-    })
-    .then(function() {
-      var buffers = simulator.buffers;
+  const pointDegrees = simulator.dataframe.getBuffer('degrees', 'simulator');
+
+  return Q()
+    .then(() =>     this.pointForces(simulator, workItems))
+    .then(() =>      this.edgeForces(simulator, workItems))
+    .then(() => this.calculateSwings(simulator, workItems))
+    .then(() =>       this.integrate(simulator, workItems))
+    .then(() => {
       simulator.tickBuffers(['curPoints']);
       var nextPoints = simulator.dataframe.getBuffer('nextPoints', 'simulator');
       var curPoints = simulator.dataframe.getBuffer('curPoints', 'simulator');
@@ -746,9 +695,7 @@ ForceAtlas2Barnes.prototype.tick = function(simulator, stepNumber) {
 
       return Q.all([nextPoints.copyInto(curPoints), curForces.copyInto(prevForces)]);
     })
-    .then(function() {
-      return simulator;
-    });
+    .then(() => simulator);
 };
 
 function getNumWorkitemsByHardware(deviceProps) {
@@ -864,20 +811,17 @@ var computeSizes = function(simulator, warpsize, numPoints) {
   if (numPoints === undefined) {
     numPoints = simulator.dataframe.getNumElements('point');
   }
-  var num_nodes = numPoints * 5; // TODO (paden) GPU optimization. Need to allow for more users
-  if (num_nodes < 1024 * blocks) num_nodes = 1024 * blocks;
-  while ((num_nodes & (warpsize - 1)) != 0) num_nodes++;
-  num_nodes--;
-  var num_bodies = numPoints;
-  var numNodes = num_nodes;
-  var numBodies = num_bodies;
+  var numNodes = numPoints * 5; // TODO (paden) GPU optimization. Need to allow for more users
+  if (numNodes < 1024 * blocks) numNodes = 1024 * blocks;
+  while ((numNodes & (warpsize - 1)) != 0) numNodes++;
+  numNodes--;
   // Set this to the number of workgroups in boundBox kernel
   var numWorkGroups = 30;
 
   return {
     numWorkGroups: numWorkGroups,
     numNodes: numNodes,
-    numBodies: numBodies
+    numBodies: numPoints
   };
 };
 

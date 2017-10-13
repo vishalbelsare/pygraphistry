@@ -11,7 +11,7 @@ __kernel void build_tree(
         //graph params
         __global float *x_cords,
         __global float *y_cords,
-        __global volatile int* child,
+        __global volatile int* children,
         __global float* mass,
         __global int* start,
         __global volatile int* bottom,
@@ -60,7 +60,7 @@ __kernel void build_tree(
         }
 
         // Walk down the path to a leaf node
-        ch = child[n*4 + j];
+        ch = children[n*4 + j];
         // We compare against num_bodies because it enforces two requirements.
         // If it's a body, then we know we've gone past the legal space for
         // cells. If it's a 'null' child, then it'll be initialized to -1, which
@@ -73,7 +73,7 @@ __kernel void build_tree(
             // determine which child to follow
             if (x_cords[n] < px) j = 1;
             if (y_cords[n] < py) j += 2;
-            ch = child[n*4+j];
+            ch = children[n*4+j];
         }
 
         // Skip points below max depth
@@ -90,13 +90,13 @@ __kernel void build_tree(
             locked = n*4+j;
 
             // Attempt to lock the child
-            if (ch == atomic_cmpxchg(&child[locked], ch, TREELOCK)) {
+            if (ch == atomic_cmpxchg(&children[locked], ch, TREELOCK)) {
                 // TODO: Determine if we need this fence
                 mem_fence(CLK_GLOBAL_MEM_FENCE);
 
                 // If the child was null, just insert the body.
                 if (ch == NULLPOINTER) {
-                    child[locked] = i;
+                    children[locked] = i;
                 } else {
                     patch = NULLPOINTER;
                     // create new cell(s) and insert the old and new body
@@ -128,13 +128,13 @@ __kernel void build_tree(
 
                         // TODO: Unroll
                         // Initialize new children to null.
-                        for (int k = 0; k < 4; k++) child[cell*4+k] = NULLPOINTER;
+                        for (int k = 0; k < 4; k++) children[cell*4+k] = NULLPOINTER;
 
                         // Make it point to the cell if cell was greater than patch.
                         // This means that this is the first time this cell is accessed,
                         // and thus that it needs to be pointed to.
                         if (patch != cell) {
-                            child[n*4+j] = cell;
+                            children[n*4+j] = cell;
                         }
 
                         // Place already existing body from before into the correct
@@ -142,7 +142,7 @@ __kernel void build_tree(
                         j = 0;
                         if (x < x_cords[ch]) j = 1;
                         if (y < y_cords[ch]) j += 2;
-                        child[cell*4+j] = ch;
+                        children[cell*4+j] = ch;
 
 
                         n = cell;
@@ -152,28 +152,25 @@ __kernel void build_tree(
 
                         // Updated ch to the child when our px/py body will go.
                         // If it's -1 (null) we exit out of this loop.
-                        ch = child[n*4+j];
+                        ch = children[n*4+j];
 
                         // If child cannot position is perfectly equal to current node
                         // position. Just insert node arbitrarily. This should happen
                         // so rarely and at such a low depth, that the approximation
                         // should be tribial.
-                        if (depth >= MAXDEPTH || ((fabs(px - x_cords[ch]) <= FLT_EPSILON) && (fabs(py - y_cords[ch]) <= FLT_EPSILON) && (ch != -1))) {
+                        if (depth >= MAXDEPTH || ((ch != -1) && (fabs(px - x_cords[ch]) <= FLT_EPSILON) && (fabs(py - y_cords[ch]) <= FLT_EPSILON))) {
                           j = 0;
-                          while ((ch = child[n*4 + j]) > NULLPOINTER && j < 3) j++;
+                          while (children[n*4 + j] > NULLPOINTER && j < 3) j++;
                           // Even if child node has filled leaves, set ch to -1. This is a slightly
                           // larger approximation, but makes sure nothing breaks.
                           ch = -1;
                         }
-
-
-
                     } while (ch > NULLPOINTER);
 
                     // Place our body and expose to other threads.
-                    child[n*4+j] = i;
+                    children[n*4+j] = i;
                     threadfenceWrapper();
-                    child[locked] = patch;
+                    children[locked] = patch;
                 }
 
                 localmaxdepth = max(depth, localmaxdepth);

@@ -39,7 +39,6 @@ SelectNodesInRect.prototype.run = function(simulator, selection, delta) {
   return that.qMask
     .then(function(mask) {
       logger.trace('Computing selection mask');
-      var resources = [simulator.dataframe.getBuffer('curPoints', 'simulator')];
 
       that.kernel.set({
         top: selection.tl.y,
@@ -54,7 +53,7 @@ SelectNodesInRect.prototype.run = function(simulator, selection, delta) {
 
       logger.trace('Running selectNodesInRect');
       return that.kernel
-        .exec([numPoints], resources)
+        .exec([numPoints])
         .then(function() {
           var result = new Uint8Array(numPoints);
           return mask.read(result, 0, result.byteLength).then(function() {
