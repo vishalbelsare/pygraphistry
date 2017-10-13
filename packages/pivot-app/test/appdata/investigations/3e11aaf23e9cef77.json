@@ -1,0 +1,8 @@
+{
+  "name": "Graphviz Stacktrace",
+  "id": "3e11aaf23e9cef77",
+  "description": "Enrich errors for given dataset with stack traces",
+  "tags": ["Graphviz"],
+  "modifiedOn": 1482476524423,
+  "pivots": ["3e11aaf23d0602dc", "3e11b75b795a7aa9"]
+}

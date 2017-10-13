@@ -1,0 +1,20 @@
+{
+  "id": "3f7368a383d624e0",
+  "enabled": true,
+  "pivotParameters": {
+    "search-splunk-plain$$$query": "error",
+    "search-splunk-plain$$$fields": [
+      "module",
+      "level",
+      "err.message",
+      "time",
+      "metadata.dataset",
+      "err.stackArray{}.file",
+      "err.stackArray{}.function",
+      "msg",
+      "fileName"
+    ],
+    "manual-data$$$events": "{\"ip\": \"176.123.8.76\"}"
+  },
+  "pivotTemplate": "manual-data"
+}

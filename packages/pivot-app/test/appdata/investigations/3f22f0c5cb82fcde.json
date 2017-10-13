@@ -1,0 +1,9 @@
+{
+  "name": "HTTP pivots",
+  "id": "3f22f0c5cb82fcde",
+  "description": "",
+  "tags": [],
+  "modifiedOn": 1496100880413,
+  "layout": "stackedBushyGraph",
+  "pivots": ["3f22f0c5cbf227b9", "3f22f188ba9e8e11", "3f2fc63c1e995707"]
+}

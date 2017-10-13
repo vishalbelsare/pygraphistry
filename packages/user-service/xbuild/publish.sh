@@ -3,7 +3,8 @@
 # silently cd into this shell script's directory
 cd $(dirname "$0") > /dev/null
 
-VERSION=$(jq -r .version ../package.json)
+MAJORMINOR=$(jq -r .version ../package.json | cut -d '.' -f 1,2)
+VERSION=${MAJORMINOR}.${BUILD_NUMBER}
 ARTIFACTS="node_modules src migrations seeds knexfile.js package.json"
 
 ./build.sh

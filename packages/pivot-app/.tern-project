@@ -1,0 +1,18 @@
+{
+    "ecmaVersion": 7,
+    "libs": [
+        "browser",
+        "jquery",
+        "underscore"
+    ], "plugins": {
+        "node": {},
+        "es_modules": {},
+        "node_resolve": {},
+        "doc_comment": {},
+        "complete_strings": {}
+    }, "loadEagerly": [
+        "src/**/*.js"
+    ], "dontLoad": [
+        "build/**/*.js"
+    ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "3dbf566346f5ecd4",
+  "enabled": true,
+  "pivotParameters": {
+    "query": "Enter search query",
+    "pRef": ["3dbf563fa4ebcfd4"],
+    "fields": ["dest_ip"],
+    "expand-firewall-botnet-demo$$$pRef": ["3dbf563fa4ebcfd4"],
+    "expand-firewall-botnet-demo$$$fields": ["dest_ip"],
+    "expand-firewall-botnet-demo$$$ref": ["3dbf563fa4ebcfd4"]
+  },
+  "pivotTemplate": "expand-firewall-botnet-demo"
+}

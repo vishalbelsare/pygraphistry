@@ -1,0 +1,11 @@
+{
+  "id": "3e0eabc5a48bbbbc",
+  "enabled": true,
+  "pivotParameters": {
+    "query": "severity=\"critical\"",
+    "nodes": "threat_name, user",
+    "pan-search$$$query": "severity=\"critical\"",
+    "pan-search$$$nodes": ["user", "threat_name"]
+  },
+  "pivotTemplate": "pan-search"
+}

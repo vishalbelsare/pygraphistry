@@ -1,0 +1,21 @@
+{
+  "id": "3f3069a4e4fa81f2",
+  "enabled": true,
+  "pivotParameters": {
+    "search-splunk-plain$$$query": "error",
+    "search-splunk-plain$$$fields": [
+      "module",
+      "level",
+      "err.message",
+      "time",
+      "metadata.dataset",
+      "err.stackArray{}.file",
+      "err.stackArray{}.function",
+      "msg",
+      "fileName"
+    ],
+    "manual-data$$$events":
+      "{\"origin\": \"Blue Coat\",\n  \"hosts\": [\n    \"user186\",\"user12\",\"user13\",\"user14\",\"user15\"\n  ],\n  \"correlated\": [\n    \"bankmellat.ir\", \"axisbank.com\", \"royalbank.com\",  \"usbank.com\", \"usaa.com\",  \" capitalone.com\",\n\"americanexpress.com\",  \"citibank.com\", \"wellsfargo.com\",   \n\"bankofamerica.com\"\n   ]\n}\n"
+  },
+  "pivotTemplate": "manual-data"
+}

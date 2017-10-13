@@ -1,0 +1,531 @@
+@import '../../vars.less';
+
+@disabled-opacity: 0.5;
+
+.pivot-row {
+  margin: 0em;
+  position: relative;
+
+  &.pivot-disabled {
+    .pivot-number {
+      opacity: @disabled-opacity;
+    }
+    .pivot-row-header-item:nth-child(3) {
+      opacity: @disabled-opacity;
+    }
+  }
+
+  :global {
+    .Select-control {
+      height: @control-height;
+    }
+
+    .Select-multi-value-wrapper {
+      & > .Select-value {
+        margin-top: 4px;
+      }
+      & > .Select-input {
+        height: @control-height;
+        & > input {
+          padding-top: 6px;
+          padding-bottom: 6px;
+        }
+      }
+      & > .Select-placeholder {
+        line-height: @control-height;
+      }
+    }
+
+    //accordion weirdness
+    .panel-group {
+      margin: 0px;
+    }
+
+    .panel-heading {
+      padding-left: 7px;
+      padding-right: 7px;
+    }
+
+    .panel-body {
+      padding: 0;
+      & > div {
+        margin: 0em;
+      }
+    }
+  }
+}
+
+.pivot-row-header {
+  line-height: 32px;
+  padding: 0 0 0 5px;
+  margin-right: -15px;
+
+  .pivot-row-header-item {
+    padding: 0;
+    height: 30px;
+    margin-right: -10px;
+  }
+
+  .pivot-row-index-flag {
+    width: 16px;
+    height: 25px;
+    line-height: 20px;
+    position: relative;
+    background: #c2d4de;
+    display: inline-block;
+    vertical-align: top;
+    &.disabled {
+      background: #ccc;
+    }
+    &:before {
+      bottom: 0;
+      left: 50%;
+      border: solid transparent;
+      content: ' ';
+      height: 0;
+      width: 0;
+      position: absolute;
+      pointer-events: none;
+      border-color: rgba(255, 255, 255, 0);
+      border-bottom-color: #fff;
+      border-width: 8px;
+      margin-left: -8px;
+    }
+    &:after {
+      top: 0;
+      left: 0;
+      width: 100%;
+      position: absolute;
+      text-align: center;
+      content: attr(data-row-index);
+    }
+  }
+
+  :global {
+    .rc-switch-inner {
+      display: none !important;
+    }
+
+    .rc-switch {
+      margin-top: -4px;
+      transform: scale(0.7);
+      vertical-align: middle;
+    }
+
+    .Select-control,
+    .Select-control .Select-input,
+    .Select-control .Select-value {
+      height: 30px;
+    }
+
+    .Select-arrow-zone {
+      padding-right: 7px;
+    }
+
+    .Select-option {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
+    .Select-control {
+      font-size: 12px;
+      height: 30px !important;
+      border: none !important;
+      margin-top: 0px !important;
+      line-height: 29px !important;
+      border-radius: 0px !important;
+      background-color: #fff !important;
+      border-color: transparent !important;
+      border-top-right-radius: @control-border-radius !important;
+      &:hover {
+        border: none !important;
+        border-radius: 0px !important;
+        background-color: #fff !important;
+        border-color: transparent !important;
+      }
+    }
+
+    .Select-control .Select-value {
+      padding-top: 1px;
+      padding-left: 0px;
+      height: 30px !important;
+      border: none !important;
+      font-weight: 900 !important;
+      line-height: 29px !important;
+      border-radius: 0px !important;
+      background-color: #fff !important;
+      border-color: transparent !important;
+      border-top-right-radius: @control-border-radius !important;
+      &:hover {
+        border: none !important;
+        border-radius: 0px !important;
+        background-color: #fff !important;
+        border-color: transparent !important;
+      }
+    }
+  }
+}
+
+.pivot-disabled :global(.panel-footer) {
+  color: #999 !important;
+  background-color: #ccc !important;
+}
+
+.pivot-footer {
+  display: flex;
+  cursor: pointer;
+  font-size: 1.5em;
+  text-align: right;
+  padding: 0px !important;
+  transition: background-color 0.1s ease;
+  height: 15px;
+}
+
+.pivot-expander {
+  .pivot-row.pivot-disabled & {
+    opacity: @disabled-opacity;
+  }
+
+  display: block;
+  cursor: pointer;
+  color: black;
+  font-size: 1em;
+  line-height: 1.1em;
+
+  span {
+    display: block;
+    cursor: pointer;
+  }
+
+  .pivot-expander-open,
+  .pivot-expander-closed {
+    display: none;
+  }
+  :global(.react-sanfona-item.react-sanfona-item-expanded) & .pivot-expander-open,
+  :global(.react-sanfona-item:not(.react-sanfona-item-expanded)) & .pivot-expander-closed {
+    display: inline-block;
+    margin-left: 0.25em;
+  }
+}
+
+.pivot-expander-body {
+  padding-top: 0;
+  padding-left: 11px;
+  padding-right: 11px;
+  padding-bottom: 2px;
+  border-radius: 10px;
+  background-color: #fff;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+
+  .pivot-row.pivot-disabled & {
+    opacity: @disabled-opacity;
+  }
+
+  .pivot-description {
+    margin-top: 5px;
+    textarea {
+      padding: 3px 6px;
+      min-height: 40px;
+    }
+  }
+
+  .pivot-result-summaries {
+    width: 100%;
+    margin: 0 !important;
+    padding: 5px 5px 0 0 !important;
+
+    & > * {
+      vertical-align: middle;
+    }
+
+    &.result-count-on {
+      opacity: 1;
+    }
+    &.result-count-off {
+      opacity: 0.4;
+    }
+
+    label {
+      float: left;
+      margin-left: 1em;
+      margin-top: 10px;
+      text-transform: uppercase;
+      margin-right: 1em;
+    }
+
+    :global(.badge) {
+      float: right;
+      margin-left: 1em;
+      margin-right: 1.5em;
+    }
+  }
+}
+
+.pivot-icons {
+  white-space: nowrap;
+  padding-left: 0px !important;
+  border-top: 1px solid transparent;
+}
+
+.pivot-type-selector-container {
+  .pivot-row.pivot-disabled & {
+    opacity: @disabled-opacity;
+  }
+
+  display: inline-block;
+  width: 100%;
+  text-align: left;
+  font-weight: bold;
+  font-size: @control-font-size;
+  & > div > div:nth-child(2):not(:hover) {
+    border-width: 0;
+    background-color: transparent;
+    // border-bottom: 1px dotted #aaaaaa;
+  }
+}
+.pivot-textarea-param textarea {
+  resize: vertical;
+}
+
+.pivot-multi-param,
+.pivot-textarea-param {
+  margin-top: 0px !important;
+}
+
+.pivot-text-param,
+.pivot-bool-param,
+.pivot-label-param,
+.pivot-combo-param,
+.pivot-multi-param,
+.pivot-textarea-param,
+.pivot-timerange-param,
+.pivot-date-range-param {
+}
+
+.pivot-combo-param :global(.form-horizontal .form-group) {
+  margin-bottom: 0;
+}
+
+@switch-scale: 0.75;
+@switch-margin: 2px;
+@switch-height: @control-height * @switch-scale;
+@switch-inner-margin: @switch-margin * 4 * @switch-scale;
+@switch-circle-height: @switch-height - (@switch-margin * 2);
+.pivot-bool-param {
+  :global {
+    .rc-switch-inner {
+      left: 0;
+      position: relative;
+      font-size: @control-font-size;
+      line-height: @switch-height - 1;
+      transition: all 0.3s cubic-bezier(0.35, 0, 0.25, 1);
+    }
+    .rc-switch {
+      width: 100%;
+      text-align: center;
+      height: @switch-height;
+      line-height: @switch-height - 1;
+      &:after {
+        width: @switch-circle-height;
+        height: @switch-circle-height;
+        font-size: @control-font-size;
+        transition: margin-left 0.3s cubic-bezier(0.35, 0, 0.25, 1),
+          left 0.3s cubic-bezier(0.35, 0, 0.25, 1);
+      }
+      &:not(.rc-switch-checked):after {
+        color: #ccc;
+        content: '\00D7';
+        margin-left: 0px;
+        text-indent: -0.25px;
+        left: @switch-margin;
+        line-height: @switch-circle-height;
+      }
+    }
+    .rc-switch-checked {
+      border: 1px solid @pivot-card-accent-color;
+      background-color: @pivot-card-accent-color;
+      &:after {
+        left: 100%;
+        // color: #87d068; // default rc-switch green
+        content: '\2713';
+        color: @pivot-card-accent-color;
+        margin-left: -@switch-circle-height - @switch-margin;
+      }
+    }
+  }
+}
+
+.pivot-text-param,
+.pivot-bool-param,
+.pivot-textarea-param,
+.pivot-combo-param {
+  label {
+    order: 1;
+  }
+  input,
+  select,
+  textarea {
+    order: 2;
+  }
+  &.pivot-text-param,
+  &.pivot-textarea-param,
+  &.pivot-combo-param {
+    input,
+    select,
+    textarea {
+      border: 1px solid #ccc;
+      border-radius: @control-border-radius;
+    }
+  }
+}
+
+@summaryPillHeight: 7px;
+.pivot-entity-summaries {
+  clear: both;
+  display: block;
+  text-align: center;
+  margin: 5px 10px 0px 0px;
+
+  .pivot-entity-summary {
+    display: inline-block;
+    overflow: hidden;
+    margin: 0 0 0 5px;
+    padding: 0 0 0 0;
+    border: 1px solid #d3d3d3;
+    border-radius: @control-border-radius;
+  }
+
+  .pivot-entity-pill {
+    display: block;
+    height: @summaryPillHeight;
+    width: 100%;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .pivot-entity-count {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: @control-font-size;
+    vertical-align: top;
+    display: block;
+    margin-left: 0px;
+    color: #777;
+    padding: 2px 5px 0px 5px;
+    height: 19px;
+    max-width: 70px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .pivot-entity-name {
+    text-transform: uppercase;
+    font-size: 8px;
+    vertical-align: top;
+    display: block;
+    margin-left: 0px;
+    color: #777;
+    padding: 2px 5px 0px 5px;
+    height: 20px;
+    max-width: 70px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+}
+
+.run-insert-button-group {
+  float: right !important;
+}
+
+.status-button-group {
+  margin-left: 0.7em;
+}
+
+.pivot-info-tooltip {
+}
+.pivot-error-tooltip {
+  .message {
+    color: red;
+  }
+}
+
+.splunk-query {
+  margin: 1em !important;
+}
+
+.pivot-datetimepicker-container {
+  :global {
+    .SingleDatePicker {
+      display: block;
+      margin-left: 0;
+      margin-right: 0;
+    }
+    .SingleDatePickerInput {
+      display: flex;
+    }
+    .SingleDatePicker .DateInput {
+      flex-grow: 1;
+    }
+    .SingleDatePickerInput__calendar-icon {
+      padding-right: 0;
+    }
+    .SingleDatePickerInput__clear-date--hide {
+      display: none; //normally 'hidden' and thus takes space
+    }
+  }
+
+  &.is-default {
+    :global {
+      .SingleDatePickerInput .DateInput .DateInput__display-text {
+        color: #999 !important;
+      }
+      .SingleDatePickerInput .DateInput .DateInput__display-text--focused {
+        color: #2e2e2e !important;
+      }
+    }
+    &:hover {
+      :global {
+        .SingleDatePickerInput .DateInput .DateInput__display-text {
+          color: #2e2e2e !important;
+        }
+      }
+    }
+  }
+}
+
+.pivot-timepicker-container {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 18px;
+  margin-left: 0px;
+  margin-right: 0px;
+  & > :not(.pivot-timepicker) {
+    flex-grow: 1;
+  }
+}
+
+:global(.SingleDatePickerInput) {
+  & > * {
+    padding-top: 0;
+    margin-right: 0;
+  }
+  :global(.DateInput) {
+    width: inherit;
+  }
+}
+
+:global(.TimeInput) {
+  display: inline-block;
+  :global(.TimeInput-input) {
+    width: 90px;
+    height: 34px;
+    margin-right: 18px;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+}
