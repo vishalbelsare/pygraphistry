@@ -259,13 +259,17 @@ function ForceAtlas2Barnes(clContext, kernelCache) {
   LayoutAlgo.call(this, 'ForceAtlas2Barnes');
   logger.trace('Creating ForceAtlasBarnes kernels');
   var that = this;
+
+  const loadtimeConsts = computeClConstants(clContext);
+
   _.each(kernelSpecs, function(kernel, name) {
     var newKernel = kernelCache.fetchOrCreate(
       kernel.kernelName,
       kernel.args,
       argsType,
       kernel.fileName,
-      clContext
+      clContext,
+      loadtimeConsts
     );
     that[name] = newKernel;
     that.kernels.push(newKernel);
@@ -324,15 +328,31 @@ ForceAtlas2Barnes.prototype.setPhysics = function(cfg) {
   );
 };
 
+function computeClConstants(cl) {
+
+  var workItems = getNumWorkitemsByHardware(cl.deviceProps);
+
+  const WARPSIZE = getWarpsize(cl.deviceProps);
+  const THREADS_BOUND = workItems.boundBox[1];
+  const THREADS_SUMS = workItems.computeSums[1];
+  const MAXDEPTH = 32; //comments recommend warpsize
+  const THREADS_FORCES = workItems.calculateForces[1];
+
+  return {
+    THREADS_BOUND,
+    THREADS_FORCES,
+    THREADS_SUMS,
+    WARPSIZE
+  };
+}
+
 // Returns a map from the name of the buffer used in this layout to the actual buffer
 function getBufferBindings(simulator, stepNumber) {
-  var workItems = getNumWorkitemsByHardware(simulator.cl.deviceProps);
-  var warpsize = getWarpsize(simulator.cl.deviceProps);
+
   return {
-    THREADS_BOUND: workItems.boundBox[1],
-    THREADS_FORCES: workItems.calculateForces[1],
-    THREADS_SUMS: workItems.computeSums[1],
-    WARPSIZE: warpsize,
+
+    ...(computeClConstants(simulator.cl)),
+
     backwardsEdges: simulator.dataframe.getBuffer('backwardsEdges', 'simulator').buffer,
     backwardsEdgeWeights: simulator.dataframe
       .getClBuffer(simulator.cl, 'backwardsEdgeWeights', 'hostBuffer')

@@ -1,238 +1,252 @@
 'use strict';
 
-const _ = require('underscore');
-const Q = require('q');
-const sprintf = require('sprintf-js').sprintf;
-const util = require('../util');
+import Q from 'q';
+import * as ocl from 'node-opencl';
 
-const cljs = require('../cl.js');
-const ocl = require('node-opencl');
-const config = require('@graphistry/config')();
+import * as util from '../util';
+import * as cljs from '../cl';
 
-const log = require('@graphistry/common').logger;
-const logger = log.createLogger('graph-viz', 'simulator/kernel/kernel.js');
+import { logger as log } from '@graphistry/common';
+const logger = log.createLogger('graph-viz', __filename);
+
+////////////////////
+
 
 // Disable debug logging since this file is responsible for 90% of log output.
 // Comment me for local debugging.
 //debug = function () {}
 //Q.longStackSupport = true;
 
-// String * [String] * {String: Type} * String * clCtx
-export default function Kernel(name, argNames, argTypes, file, clContext) {
-  logger.trace(
-    {
-      kernelName: name,
-      file: file
-    },
-    'Creating Kernel: %s',
-    name
-  );
+//TODO: Alternative way of doing this, since we aren't using debug module anymore
+// Set synchronous based on debug value
+let synchronous = false;
+if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') !== -1) {
+  logger.trace('Kernel ' + name + ' is synchronous because DEBUG=perf');
+  synchronous = true;
+}
 
-  const that = this;
-  this.name = name;
-  this.argNames = argNames;
-  // Q promise
-  const source = util.getKernelSource(file);
 
-  //TODO: Alternative way of doing this, since we aren't using debug module anymore
-  // Set synchronous based on debug value
-  let synchronous = false;
-  if (process.env.DEBUG && process.env.DEBUG.indexOf('perf') !== -1) {
-    logger.trace('Kernel ' + name + ' is synchronous because DEBUG=perf');
-    synchronous = true;
-  }
+////////////////////
 
-  // For gathering performance data
-  this.timings = [];
-  this.totalRuns = 0;
-  const maxTimings = 100;
+
+//String * [ String ] * {[String] -> clType} -> ()
+function validate(name, argNames, argTypes) {
 
   // Sanity Checks
-  _.each(argNames, arg => {
+  argNames.forEach(arg => {
     if (!(arg in argTypes)) {
       logger.die('In Kernel %s, argument %s has no type', name, arg);
     }
   });
 
-  function isDefine(arg) {
-    return argTypes[arg] === cljs.types.define;
+}
+
+function compileHelper({ name, source, clContext, params: { loadtimeConstants, runtimeConstants } }) {
+
+
+  logger.trace('Compiling kernel', name);
+
+  const prefix = 
+    Object.entries({...loadtimeConstants, ...runtimeConstants})
+      .map(([key, { val }]) => 
+        
+        typeof val === 'string' || typeof val === 'number' || val === true 
+        ? '#define ' + key + ' ' + val
+        
+        : val === null 
+        ? '#define ' + key
+        
+        : null)
+      .filter(x => x)
+      .join('\n');
+  logger.trace('Prefix', prefix);  
+
+  const t0 = Date.now();
+  return source.then(source => {
+    const processedSource = prefix + '\n\n' + source;    
+    return clContext.compile(processedSource, [name]).then(kernels => kernels[name]);
+  }).then(x => {
+    logger.trace('===== COMPILE', name, (Date.now() - t0)/1000, 's');
+    return x;
+  })
+}
+
+function callHelper({name, clContext}, kernel, workItems, buffers, workGroupSize) {
+  // TODO: Consider acquires and releases of buffers.
+  const queue = clContext.queue;
+  logger.trace(
+    { kernelName: name, workItems, workGroupSize },
+    'Enqueuing kernel %s',
+    name
+  );
+  ocl.enqueueNDRangeKernel(queue, kernel, 1, null, workItems, workGroupSize || null);
+  if (synchronous) {
+    logger.trace('Waiting for kernel to finish');
+    ocl.finish(queue);
   }
-  const args = _.reject(argNames, isDefine);
-  const defines = _.filter(argNames, isDefine).concat(['NODECL']);
+}
 
-  const defVal = { dirty: true, val: null };
-  const argValues = _.object(_.map(args, argName => [argName, defVal]));
-  const defValues = _.object(_.map(defines, argName => [argName, null]));
-  Object.seal(argValues);
-  Object.seal(defValues);
 
-  // If kernel has no defines, compile right away
-  let qKernel = _.without(defines, 'NODECL').length === 0 ? compile() : Q(null);
+////////////////////
 
-  // {String -> Value} -> Kernel
-  this.set = function(args) {
-    logger.trace(
-      { kernelName: this.name, arguements: args },
-      'Setting args for kernel: %s',
-      this.name
-    );
+
+export default class Kernel {
+
+  compile () {
+    const { name, source, clContext, params } = this;
+    return compileHelper({ name, source, clContext, params });
+  }
+
+  constructor(name, argNames, argTypes, file, clContext, loadtimeConstants = {}) {
+
+    logger.trace({kernelName: name, file: file}, `Creating Kernel: ${name}`);
+
+    validate(name, argNames, argTypes);
+
+    this.name = name;    
+    this.argNames = argNames; //ordered
+    this.argTypes = argTypes;
+    this.source = util.getKernelSource(file);    
+    this.clContext = clContext;
+    
+    //{[class]: {[id]: {dirty: bool, val: *} } }
+    const params = {
+        args:
+          Object.assign({},
+            ...argNames
+              .filter(arg => argTypes[arg] !== cljs.types.define)
+              .map(arg => ({[arg]: { dirty: true, val: loadtimeConstants[arg] } }))),                              
+        loadtimeConstants: 
+          Object.assign({NODECL: { val: null }},
+            ...argNames
+              .filter(arg => (argTypes[arg] === cljs.types.define) &&  (arg in loadtimeConstants))
+              .map(arg => ({[arg]: { val: loadtimeConstants[arg] } }))),
+        runtimeConstants:
+          Object.assign({},
+            ...argNames
+              .filter(arg => (argTypes[arg] === cljs.types.define) && !(arg in loadtimeConstants))
+              .map(arg => ({[arg]: { val: null } })))
+    };
+    this.params = params;
+
+    // If kernel has no runtime defines, compile right away
+    this.qKernel = Object.keys(params.runtimeConstants).length ? Q(null) : this.compile();
+
+  }
+
+  // Just params; constants handled automatically by compile
+  setAllArgs(kernel) {
+
+    const { name, argNames, argTypes, params: { args } } = this;
+
+    logger.trace(`Setting arguments for kernel ${name}`);
+
+    argNames
+      .filter(arg => arg in args)
+      .forEach((arg, i) => {
+        try {
+          const { dirty, val } = args[arg];
+          const type = argTypes[arg] || 'cl_mem';
+          if (val === null) {
+            logger.trace(`In kernel ${name}, argument ${arg} is null`);
+          }
+
+          if (dirty) {
+            logger.trace('Setting arg %d type %s of kernel %s to value %s', i, type, name, val);
+            ocl.setKernelArg(kernel, i, type, val);
+            args[arg].dirty = false;
+          }
+
+        } catch (e) {
+          log.makeQErrorHandler(logger, `Error setting argument ${arg} of kernel ${name}`);
+        }
+      });
+
+    return this;
+
+  }
+
+  // {[id] -> 'a} -> KernelClass
+  // both params and constants
+  set(newArgs) {
+
+    const { name, args, params } = this;
+
+    logger.trace({ kernelName: name, arguements: args }, 'Setting args for kernel: %s', name);
 
     let mustRecompile = false;
-    _.each(args, (val, arg) => {
-      if (arg in argValues) {
+    Object.entries(newArgs).forEach(([arg, val]) => {
+      if (arg in params.args) {
         if (val === undefined || val === null) {
           logger.trace('Setting argument %s to %s', arg, val);
         }
-
-        argValues[arg] = { dirty: true, val: val };
-      } else if (arg in defValues) {
-        if (val !== defValues[arg]) {
-          mustRecompile = true;
+        params.args[arg] = { dirty: true, val };
+      } else if (arg in params.loadtimeConstants) {
+        if (val !== params.loadtimeConstants[arg].val) {        
+          const msg = {msg: `Kernel ${name} attempted a runtime override of loadtime argument ${arg}`, name, arg};
+          logger.error(msg);
+          throw new Error(msg);
         }
-        defValues[arg] = val;
+      } else if (arg in params.runtimeConstants) {
+        if (val !== params.runtimeConstants[arg].val) {
+          mustRecompile = true;
+          logger.trace('=== MUST RECOMPILE BECAUSE', name, {arg, val});
+        }
+        params.runtimeConstants[arg] = { val };
       } else {
-        logger.die('Kernel %s has no argument/define named %s', name, arg);
+        const msg = {msg: 'Kernel %s has no argument/define named %s', name, arg};
+        logger.error(msg);
+        throw new Error(msg);
       }
     });
 
     if (mustRecompile) {
-      qKernel = compile();
+      const t0 = Date.now();
+      this.qKernel = this.compile();
     }
 
     return this;
-  };
-
-  this.get = function(arg) {
-    if (_.contains(defines, arg)) {
-      return defValues[arg];
-    } else if (_.contains(args, arg)) {
-      return argValues[arg].val;
-    } else {
-      logger.warn('Kernel %s has no parameter %s', name, arg);
-      return undefined;
-    }
-  };
-
-  function compile() {
-    logger.trace('Compiling kernel', that.name);
-
-    _.each(defValues, (arg, val) => {
-      if (val === null) {
-        logger.die('Define %s of kernel %s was never set', arg, name);
-      }
-    });
-
-    const prefix = _.flatten(
-      _.map(defValues, (val, key) => {
-        if (typeof val === 'string' || typeof val === 'number' || val === true) {
-          return ['#define ' + key + ' ' + val];
-        } else if (val === null) {
-          return ['#define ' + key];
-        } else {
-          return [];
-        }
-      }),
-      true
-    ).join('\n');
-    logger.trace('Prefix', prefix);
-
-    return source.then(source => {
-      const processedSource = prefix + '\n\n' + source;
-      // TODO: Alternative way of doing this, since we aren't using debug module anymore
-      // if (config.ENVIRONMENT === 'local') {
-      //     const debugFile = path.resolve(__dirname, '..', 'kernels', file + '.debug');
-      //     fs.writeFileSync(debugFile, processedSource);
-      // }
-
-      return clContext.compile(processedSource, [name]).then(kernels => kernels[name]);
-    });
-  }
-  this.compile = compile;
-
-  function setAllArgs(kernel) {
-    logger.trace({ kernelName: name }, 'Setting arguments for kernel');
-    let i;
-    try {
-      for (i = 0; i < args.length; i++) {
-        const arg = args[i];
-        const val = argValues[arg].val;
-        const dirty = argValues[arg].dirty;
-        const type = argTypes[arg] || 'cl_mem';
-        if (val === null) {
-          logger.trace('In kernel %s, argument %s is null', name, arg);
-        }
-
-        if (dirty) {
-          logger.trace('Setting arg %d type %s of kernel %s to value %s', i, type, name, val);
-          ocl.setKernelArg(kernel, i, type, val);
-          argValues[arg].dirty = false;
-        }
-      }
-    } catch (e) {
-      log.makeQErrorHandler(logger, 'Error setting argument %s of kernel %s', args[i], name)(e);
-    }
   }
 
-  function call(kernel, workItems, workGroupSize) {
-    // TODO: Consider acquires and releases of buffers.
+ 
+  get (arg) {
+    
+    const { params } = this;
 
-    const queue = clContext.queue;
-    logger.trace(
-      { kernelName: that.name, workItems, workGroupSize },
-      'Enqueuing kernel %s',
-      that.name
-    );
-    const start = process.hrtime();
-    ocl.enqueueNDRangeKernel(queue, kernel, 1, null, workItems, workGroupSize || null);
-    if (synchronous) {
-      logger.trace('Waiting for kernel to finish');
-      ocl.finish(queue);
-      const diff = process.hrtime(start);
-      that.timings[that.totalRuns % maxTimings] = diff[0] * 1000 + diff[1] / 1000000;
+    const bucket = Object.values(params)
+      .filter(bucket => arg in bucket)
+      .concat([null])[0]; //null if no hits      
+    if (!bucket) {
+      return logger.warn('Kernel %s has no parameter %s', name, arg);
     }
-    that.totalRuns++;
-    return Q(that);
+
+    return bucket[arg].val;
+
   }
+
+  //kernel, workItems, buffers, workGroupSize -> 'a
+  call(...args) {
+    return callHelper({name: this.name, clContext: this.clContext}, ...args);
+  }
+
+
 
   // [Int] * [String] -> Promise[Kernel]
-  this.exec = function(numWorkItems, workGroupSize) {
+  exec(numWorkItems, resources, workGroupSize) {
+
+    const { qKernel } = this;
+
     return qKernel.then(kernel => {
       if (kernel === null) {
         logger.error('Kernel is not compiled, aborting');
         return Q();
       } else {
-        setAllArgs(kernel);
-        return call(kernel, numWorkItems, workGroupSize);
+        this.setAllArgs(kernel);
+        return this.call(kernel, numWorkItems, resources, workGroupSize);
       }
     });
+
   };
+  
 }
 
-// () -> Stats
-Kernel.prototype.runtimeStats = function() {
-  const runs = this.timings.length;
-  const mean = _.reduce(this.timings, (a, b) => a + b, 0) / runs;
-  const stdDev =
-    _.reduce(
-      this.timings,
-      (acc, t) => {
-        return acc + (t - mean) * (t - mean);
-      },
-      0
-    ) / (runs > 1 ? runs - 1 : runs);
-
-  const pretty = sprintf(
-    '%25s:%4s ±%4s        #runs:%4d',
-    this.name,
-    mean.toFixed(0),
-    stdDev.toFixed(0),
-    this.totalRuns
-  );
-  return {
-    name: this.name,
-    runs: this.totalRuns,
-    mean: mean,
-    stdDev: stdDev,
-    pretty: pretty
-  };
-};

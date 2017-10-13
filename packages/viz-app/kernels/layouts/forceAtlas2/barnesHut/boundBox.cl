@@ -42,7 +42,6 @@ __kernel void bound_box(
     debugonce("bound box\n");
 
 
-    // TODO: Make these kernel parameters, don't rely on macro
     __local float sminx[THREADS_BOUND], smaxx[THREADS_BOUND], sminy[THREADS_BOUND], smaxy[THREADS_BOUND];
     __local float local_swings[THREADS_BOUND], local_tractions[THREADS_BOUND];
     minx = maxx = x_cords[0];
