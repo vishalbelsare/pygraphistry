@@ -1,5 +1,5 @@
 {
-  "name": "pivot-app",
+  "name": "@graphistry/pivot-app",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
