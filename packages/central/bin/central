@@ -1,0 +1,16 @@
+#!/usr/bin/env node
+'use strict';
+
+var server = require('../dist/index.js');
+var logger = server.logger;
+
+server.start().subscribe(
+    function (serverInfo) {
+        logger.info('Central listening on %s:%d', serverInfo.address, serverInfo.port);
+    },
+    function (err) {
+        logger.error('Central failed to start server on %s:%s. Exiting...',
+            err.serverAddress, err.serverPort, err);
+        process.exit(1);
+    }
+);
