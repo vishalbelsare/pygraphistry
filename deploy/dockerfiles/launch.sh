@@ -84,8 +84,8 @@ docker exec $MONGO_BOX_NAME bash -c "mongo --eval '2+2' -u $MONGO_USERNAME -p $M
 
 ### 4. User service
 ## UNCOMMENT WHEN WE WANT TO DEPLOY
-# USER_SERVICE_BOX_NAME=${GRAPHISTRY_NETWORK}-user-service
-# docker rm -f -v $USER_SERVICE_BOX_NAME || true
+USER_SERVICE_BOX_NAME=${GRAPHISTRY_NETWORK}-user-service
+docker rm -f -v $USER_SERVICE_BOX_NAME || true
 # docker run \
 #     --net $GRAPHISTRY_NETWORK \
 #     --restart=unless-stopped \
