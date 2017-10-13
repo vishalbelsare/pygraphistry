@@ -1,6 +1,6 @@
 {
   "name": "@graphistry/vgraph",
-  "version": "1.0.0",
+  "version": "2.12.0",
   "description": "",
   "main": "lib/index.js",
   "module": "lib/index.js",
@@ -46,20 +46,19 @@
   "dependencies": {
     "@graphistry/common": "^3.1.0",
     "@std/esm": "~0.8.1",
+    "apache-arrow": "0.1.2",
     "aws-sdk": "~2.81.0",
     "colorbrewer": "^1.0.0",
     "csscolorparser": "^1.0.3",
-    "fast-csv": "^2.4.0",
+    "ix": "2.1.4",
     "linear-layout-vector": "^0.0.1",
     "mkdirp": "^0.5.1",
     "moment": "^2.18.1",
     "pbf": "~3.0.5",
     "protobufjs": "6.8.0",
     "rxjs": "^5.4.2",
-    "rxjs-mapd": "~1.1.0",
     "sanitize-html": "^1.14.1",
     "shm-typed-array": "^0.0.10",
-    "spawn-rx": "^2.0.11",
     "tslib": "^1.7.1"
   },
   "devDependencies": {
@@ -68,7 +67,6 @@
     "@types/node": "~8.0.7",
     "jest": "^20.0.4",
     "jest-environment-node-debug": "^2.0.0",
-    "json": "^9.0.6",
     "npm-run-all": "^4.0.2",
     "shx": "^0.2.2",
     "source-map-support": "^0.4.15",

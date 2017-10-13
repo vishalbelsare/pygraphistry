@@ -17,7 +17,7 @@ export interface ShmBuffer extends Buffer { key: number; }
 export interface RunnerOptions extends ForkOptions {
     csvDir: string;
     workers?: number;
-};
+}
 
 const workerPath = path.resolve(require.resolve('./worker'));
 
@@ -49,14 +49,14 @@ export function runner(opts: RunnerOptions) {
         // const rowsBatchCount = Math.min(20000, Math.ceil(table.length / numWorkers));
         return Observable
             .bindNodeCallback(<Function> mkdirp)(csvDir)
-            .map(() => fs.createWriteStream(csvFilePath, { defaultEncoding: 'utf8' }))
+            .map(() => fs.createWriteStream(csvFilePath, { encoding: 'utf8' }))
             .flatMap((csvFd) => Observable.fromEvent(csvFd, 'open', () => csvFd))
             .flatMap(writeCSVHeader(table))
             .flatMap(convertAndWriteCSVRows(table, numWorkers, rowsBatchCount))
             .do((csvFd) => csvFd.end())
             .mapTo({ table, csvFileName, csvFilePath })
             .take(1);
-    }
+    };
 }
 
 function writeCSVHeader(table) {
@@ -73,7 +73,7 @@ function writeCSVHeader(table) {
                 ...(table.uint32_vectors || []),
             ].map(({ name }) => name).join(',') + '\n'
         );
-    }
+    };
 }
 
 function convertAndWriteCSVRows(table, numWorkers, rowsBatchCount) {
@@ -90,7 +90,7 @@ function convertAndWriteCSVRows(table, numWorkers, rowsBatchCount) {
             )
             .takeLast(1)
             .mapTo(csvFd);
-        
+
         function convertSlice(start, total, worker, index) {
 
             let convertObs;
@@ -113,7 +113,7 @@ function convertAndWriteCSVRows(table, numWorkers, rowsBatchCount) {
                 }, ShmWriter.create()).finish() as ShmBuffer;
 
                 const key = vBuf.key || -1;
-                const messages = Observable.fromEvent(worker, 'message') 
+                const messages = Observable.fromEvent(worker, 'message');
                 const detach = messages
                     .filter(({ type }) => type === 'decoded')
                     .do(() => shm.detach(key, true))
@@ -137,5 +137,5 @@ function convertAndWriteCSVRows(table, numWorkers, rowsBatchCount) {
 
             return convertObs.delay(100).do(() => worker.kill());
         }
-    }
+    };
 }

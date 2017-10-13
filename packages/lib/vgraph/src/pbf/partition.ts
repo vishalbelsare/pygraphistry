@@ -1,5 +1,4 @@
 import * as Pbf from 'pbf';
-import { Observable } from 'rxjs';
 import { VectorGraph } from './vgraph';
 import {
     isColorColumn, colorVectorMapping,
@@ -9,7 +8,7 @@ import {
 const EDGE_PART_TAG = {};
 const EDGE_ID = 'id', NODE_ID = 'id';
 const EDGE_SRC = 'src', EDGE_DST = 'dst';
-const { EDGE, VERTEX } = VectorGraph.AttributeTarget;
+const { EDGE, VERTEX } = VectorGraph.AttributeTarget as { [k: string]: number };
 const attrNamesToDefaultTypes = {
     'BoolAttributeVector': 'bool',
     'FloatAttributeVector': 'float',
@@ -20,14 +19,13 @@ const attrNamesToDefaultTypes = {
     'UInt32AttributeVector': 'uint32',
 };
 
-export function partition({ buffer, edges, nodes }: PartitionOptions) {
+export function* partition({ buffer, edges, nodes }: PartitionOptions) {
     const { [EDGE]: edgeVecs, [VERTEX]: nodeVecs } = readVGraph(buffer);
     const mappedEdgeVectors = assignColumnMappings(edgeVecs, edges.attributes);
     const mappedNodeVectors = assignColumnMappings(nodeVecs, nodes.attributes);
-    return Observable.of<VectorMetadata[]>(
-        mappedEdgeVectors, mappedNodeVectors,
-        createColumnVectors(mappedNodeVectors, mappedEdgeVectors)
-    );
+    yield mappedNodeVectors;
+    yield mappedEdgeVectors;
+    yield createColumnVectors(mappedNodeVectors, mappedEdgeVectors);
 }
 
 function createColumnVectors(nodeVecs: VectorMetadata[], edgeVecs: VectorMetadata[]) {
@@ -95,7 +93,7 @@ function assignColumnMappings(vecs: VectorMetadata[], attrs: AttributesMetadata)
 
 function readVGraph(buffer: Buffer | Uint8Array) {
     let version, name, type, nodeCount, edgeCount;
-    const attributeVectors = new Pbf(buffer).readFields((tag, vectors, pbf) => {
+    return new Pbf(buffer).readFields((tag, vectors, pbf) => {
         let vecs;
              if (tag === 1) version = pbf.readVarint();
         else if (tag === 2) name = pbf.readString();
@@ -145,8 +143,8 @@ function readEdges(pbf: any, edgeCount: number) {
                 case 2: dsts[edgeIndex] = pbf.readVarint(); break;
                 default: pbf.skip(val);
             }
-        } while (pbf.pos < len)
-    } while (++edgeIndex < edgeCount && pbf.pos < length && (pbf.readVarint() >> 3) === 6)
+        } while (pbf.pos < len);
+    } while (++edgeIndex < edgeCount && pbf.pos < length && (pbf.readVarint() >> 3) === 6);
     return [
         { name: EDGE_SRC, values: srcs, target: EDGE, type: 'uint32', tag: EDGE_PART_TAG },
         { name: EDGE_DST, values: dsts, target: EDGE, type: 'uint32', tag: EDGE_PART_TAG }
