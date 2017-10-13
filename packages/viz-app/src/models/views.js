@@ -13,40 +13,40 @@ import { simpleflake } from 'simpleflakes';
 import { ref as $ref, atom as $atom, pathValue as $value } from '@graphistry/falcor-json-graph';
 
 export function views(workbookId, viewId = simpleflake().toJSON()) {
-  const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
-  return {
-    views: {
-      length: 1,
-      current: $ref(`${view}`, { $expires: 1 }),
-      0: $ref(`${view}`, { $expires: 1 })
-    },
-    viewsById: {}
-  };
+    const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
+    return {
+        views: {
+            length: 1,
+            current: $ref(`${view}`, { $expires: 1 }),
+            0: $ref(`${view}`, { $expires: 1 })
+        },
+        viewsById: {}
+    };
 }
 
 export function view(workbookId, sceneID = 'default', viewId = simpleflake().toJSON()) {
-  const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
-  return {
-    id: viewId,
-    title: '',
-    columns: [],
-    absolutePath: view,
-    pruneOrphans: false,
-    panels: {
-      // left: undefined,
-      // right: undefined,
-      // bottom: undefined
-    },
-    ...camera(view),
-    ...scene(view, sceneID),
-    ...labels(view),
-    ...axis(view),
-    ...layout(view),
-    ...legend(view),
-    ...encodings(view),
-    ...inspector(view),
-    ...selection(view),
-    ...expressions(view),
-    ...toolbar(workbookId, viewId)
-  };
+    const view = `workbooksById['${workbookId}'].viewsById['${viewId}']`;
+    return {
+        id: viewId,
+        title: '',
+        columns: [],
+        absolutePath: view,
+        pruneOrphans: false,
+        panels: {
+            // left: undefined,
+            // right: undefined,
+            // bottom: undefined
+        },
+        ...camera(view),
+        ...scene(view, sceneID),
+        ...labels(view),
+        ...axis(view),
+        ...layout(view),
+        ...legend(view),
+        ...encodings(view),
+        ...inspector(view),
+        ...selection(view),
+        ...expressions(view),
+        ...toolbar(workbookId, viewId)
+    };
 }

@@ -19,7 +19,7 @@ const {
     Int32AttributeVector,
     Int64AttributeVector,
     FloatAttributeVector,
-    BoolAttributeVector,
+    BoolAttributeVector
 } = VectorGraph;
 
 const workerId = process.argv[2];
@@ -30,7 +30,8 @@ const exit = msgs.filter(({ type }) => type === 'exit');
 const work = msgs.filter(({ type }) => type === 'data').takeUntil(exit);
 
 exit.take(1).subscribe(() => process.exit(0));
-work.map(({ key }) => {
+work
+    .map(({ key }) => {
         const buf = shm.get(+key, 'Uint8Array');
         const vgraph = VectorGraph.decode(buf);
         shm.detach(buf.key, false);
@@ -38,61 +39,74 @@ work.map(({ key }) => {
     })
     .take(1)
     .do(() => process.send({ type: 'decoded' }))
-    .map((vgraph) => [
+    .map(vgraph => [
         ...vgraph.bool_vectors.map(shapeVector(converterFor('bool'))),
         ...vgraph.float_vectors.map(shapeVector(converterFor('float'))),
         ...vgraph.int32_vectors.map(shapeVector(converterFor('int32'))),
         ...vgraph.int64_vectors.map(shapeVector(converterFor('int64'))),
         ...vgraph.double_vectors.map(shapeVector(converterFor('double'))),
         ...vgraph.string_vectors.map(shapeVector(converterFor('string'))),
-        ...vgraph.uint32_vectors.map(shapeVector(converterFor('uint32'))),
+        ...vgraph.uint32_vectors.map(shapeVector(converterFor('uint32')))
     ])
-    .map((columns) => ({
-        index: 0, columns,
-        total: Math.max(0, ...columns.map(({ values }) => values.length)) - 1,
+    .map(columns => ({
+        index: 0,
+        columns,
+        total: Math.max(0, ...columns.map(({ values }) => values.length)) - 1
     }))
     .expand(({ columns, index, total }) => {
         const row = () => csvRow(toArr()) + '\n';
-        const toArr = columns.reduce.bind(columns,
+        const toArr = columns.reduce.bind(
+            columns,
             function reduceRow(xs, { values, converter }, idx) {
                 xs[idx] = converter(values[index]);
                 return xs;
-            }, []
+            },
+            []
         );
         for (; index < total; ++index) {
             if (!rows.write(row())) {
                 return Observable.fromEvent(rows, 'drain', () => ({
-                    columns, index: index + 1, total
-                })).take(1)
+                    columns,
+                    index: index + 1,
+                    total
+                })).take(1);
             }
         }
         if (index === total) {
             return Observable.bindNodeCallback(rows.write, () => ({
-                columns, index: index + 1, total
+                columns,
+                index: index + 1,
+                total
             })).bind(rows)(row());
         }
         return Observable.empty();
     })
     .takeLast(1)
-    .flatMap(({ index }) => Observable
-        .bindNodeCallback(process.send)
-        .bind(process)({ type: 'done', rows: index }))
+    .flatMap(({ index }) =>
+        Observable.bindNodeCallback(process.send).bind(process)({ type: 'done', rows: index })
+    )
     .ignoreElements()
     .subscribe({
         error(err) {
-            console.error(`${workerId}: ${(err && err.stack || err) + '\n'}`);
+            console.error(`${workerId}: ${((err && err.stack) || err) + '\n'}`);
             process.exit(1);
         },
-        complete() { process.exit(0); }
+        complete() {
+            process.exit(0);
+        }
     });
 
-function identity(x) { return x; };
-function longToString(int64: Long) { return int64.toString(); };
+function identity(x) {
+    return x;
+}
+function longToString(int64: Long) {
+    return int64.toString();
+}
 
 function shapeVector(getConverter: (vector) => (value: any, format?: string) => any) {
-    return function (vector) {
+    return function(vector) {
         return { ...vector, converter: getConverter(vector) };
-    }
+    };
 }
 
 function converterFor(vectorType: string) {
@@ -107,5 +121,5 @@ function converterFor(vectorType: string) {
             converter = defaultConverters[vectorType];
         }
         return converter;
-    }
+    };
 }

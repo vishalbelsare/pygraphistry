@@ -1,11 +1,11 @@
 import {
-  Observable,
-  Subscriber,
-  Subscription,
-  Subject,
-  AsyncSubject,
-  BehaviorSubject,
-  ReplaySubject
+    Observable,
+    Subscriber,
+    Subscription,
+    Subject,
+    AsyncSubject,
+    BehaviorSubject,
+    ReplaySubject
 } from 'rxjs';
 
 import setObservableConfig from 'recompose/setObservableConfig';

@@ -9,37 +9,37 @@ const logger = createLogger('viz-app:server:express:texture');
 const imgPath = path.join(process.cwd(), './textures/test-colormap2.rgba');
 
 const colorTexture = Observable.bindNodeCallback(fs.readFile)(imgPath)
-  .do(raw => logger.trace('Loaded raw colorTexture', raw.length))
-  .mergeMap(
-    raw =>
-      Observable.bindNodeCallback(deflate)(raw, {
-        output: new Buffer(Math.max(1024, Math.round(raw.length * 1.5)))
-      }),
-    (raw, compressed) => ({ raw, compressed })
-  )
-  .do(() => logger.trace('Compressed color texture'))
-  .do(({ raw }) => logger.trace('colorMap bytes', raw.length))
-  .map(({ raw, compressed }) => ({
-    width: 512,
-    height: 512,
-    bytes: raw.length,
-    buffer: compressed[0]
-  }))
-  .take(1)
-  .multicast(new AsyncSubject())
-  .refCount();
+    .do(raw => logger.trace('Loaded raw colorTexture', raw.length))
+    .mergeMap(
+        raw =>
+            Observable.bindNodeCallback(deflate)(raw, {
+                output: new Buffer(Math.max(1024, Math.round(raw.length * 1.5)))
+            }),
+        (raw, compressed) => ({ raw, compressed })
+    )
+    .do(() => logger.trace('Compressed color texture'))
+    .do(({ raw }) => logger.trace('colorMap bytes', raw.length))
+    .map(({ raw, compressed }) => ({
+        width: 512,
+        height: 512,
+        bytes: raw.length,
+        buffer: compressed[0]
+    }))
+    .take(1)
+    .multicast(new AsyncSubject())
+    .refCount();
 
 function textureHandler(req, res) {
-  logger.info({ req, res }, 'HTTP GET %s', req.originalUrl);
-  colorTexture.subscribe({
-    next(data) {
-      res.set('Content-Encoding', 'gzip').send(data);
-    },
-    error(err) {
-      logger.error(err, 'Error loading texture');
-      res.status(502).send('Internal server error');
-    }
-  });
+    logger.info({ req, res }, 'HTTP GET %s', req.originalUrl);
+    colorTexture.subscribe({
+        next(data) {
+            res.set('Content-Encoding', 'gzip').send(data);
+        },
+        error(err) {
+            logger.error(err, 'Error loading texture');
+            res.status(502).send('Internal server error');
+        }
+    });
 }
 
 export { textureHandler, colorTexture };

@@ -1,12 +1,18 @@
 {
-  "id": "3dbf56157f9e4567",
-  "enabled": true,
-  "pivotParameters": {
-    "query": "Enter search query",
-    "ref": ["3dbf55904a77e964"],
-    "fields": ["Fire Eye MD5", "Message"],
-    "expand-fireeye-botnet-demo$$$ref": ["3dbf55904a77e964"],
-    "expand-fireeye-botnet-demo$$$fields": ["src_ip", "dest_ip", "fileHash", "msg", "dest_hostname"]
-  },
-  "pivotTemplate": "expand-fireeye-botnet-demo"
+    "id": "3dbf56157f9e4567",
+    "enabled": true,
+    "pivotParameters": {
+        "query": "Enter search query",
+        "ref": ["3dbf55904a77e964"],
+        "fields": ["Fire Eye MD5", "Message"],
+        "expand-fireeye-botnet-demo$$$ref": ["3dbf55904a77e964"],
+        "expand-fireeye-botnet-demo$$$fields": [
+            "src_ip",
+            "dest_ip",
+            "fileHash",
+            "msg",
+            "dest_hostname"
+        ]
+    },
+    "pivotTemplate": "expand-fireeye-botnet-demo"
 }

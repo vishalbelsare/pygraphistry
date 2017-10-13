@@ -1,8 +1,7 @@
-import * as $protobuf from "protobufjs";
+import * as $protobuf from 'protobufjs';
 
 /** Properties of a VectorGraph. */
 export interface IVectorGraph {
-
     /** VectorGraph version */
     version: number;
 
@@ -48,7 +47,6 @@ export interface IVectorGraph {
 
 /** Represents a VectorGraph. */
 export class VectorGraph {
-
     /**
      * Constructs a new VectorGraph.
      * @param [properties] Properties to set
@@ -95,7 +93,7 @@ export class VectorGraph {
     public bool_vectors: VectorGraph.IBoolAttributeVector[];
 
     /** VectorGraph bindings. */
-    public bindings?: (VectorGraph.IBindings|null);
+    public bindings?: VectorGraph.IBindings | null;
 
     /**
      * Encodes the specified VectorGraph message. Does not implicitly {@link VectorGraph.verify|verify} messages.
@@ -113,11 +111,10 @@ export class VectorGraph {
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): VectorGraph;
+    public static decode(reader: $protobuf.Reader | Uint8Array, length?: number): VectorGraph;
 }
 
 export namespace VectorGraph {
-
     enum GraphType {
         UNDIRECTED,
         DIRECTED
@@ -130,7 +127,6 @@ export namespace VectorGraph {
 
     /** Properties of an Edge. */
     interface IEdge {
-
         /** Edge src */
         src: number;
 
@@ -140,7 +136,6 @@ export namespace VectorGraph {
 
     /** Represents an Edge. */
     class Edge {
-
         /**
          * Constructs a new Edge.
          * @param [properties] Properties to set
@@ -159,7 +154,10 @@ export namespace VectorGraph {
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: VectorGraph.IEdge, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(
+            message: VectorGraph.IEdge,
+            writer?: $protobuf.Writer
+        ): $protobuf.Writer;
 
         /**
          * Decodes an Edge message from the specified reader or buffer.
@@ -169,12 +167,14 @@ export namespace VectorGraph {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): VectorGraph.Edge;
+        public static decode(
+            reader: $protobuf.Reader | Uint8Array,
+            length?: number
+        ): VectorGraph.Edge;
     }
 
     /** Properties of a UInt32AttributeVector. */
     interface IUInt32AttributeVector {
-
         /** UInt32AttributeVector name */
         name?: string;
 
@@ -193,7 +193,6 @@ export namespace VectorGraph {
 
     /** Represents a UInt32AttributeVector. */
     class UInt32AttributeVector {
-
         /**
          * Constructs a new UInt32AttributeVector.
          * @param [properties] Properties to set
@@ -221,7 +220,10 @@ export namespace VectorGraph {
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: VectorGraph.IUInt32AttributeVector, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(
+            message: VectorGraph.IUInt32AttributeVector,
+            writer?: $protobuf.Writer
+        ): $protobuf.Writer;
 
         /**
          * Decodes a UInt32AttributeVector message from the specified reader or buffer.
@@ -231,12 +233,14 @@ export namespace VectorGraph {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): VectorGraph.UInt32AttributeVector;
+        public static decode(
+            reader: $protobuf.Reader | Uint8Array,
+            length?: number
+        ): VectorGraph.UInt32AttributeVector;
     }
 
     /** Properties of an Int32AttributeVector. */
     interface IInt32AttributeVector {
-
         /** Int32AttributeVector name */
         name?: string;
 
@@ -255,7 +259,6 @@ export namespace VectorGraph {
 
     /** Represents an Int32AttributeVector. */
     class Int32AttributeVector {
-
         /**
          * Constructs a new Int32AttributeVector.
          * @param [properties] Properties to set
@@ -283,7 +286,10 @@ export namespace VectorGraph {
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: VectorGraph.IInt32AttributeVector, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(
+            message: VectorGraph.IInt32AttributeVector,
+            writer?: $protobuf.Writer
+        ): $protobuf.Writer;
 
         /**
          * Decodes an Int32AttributeVector message from the specified reader or buffer.
@@ -293,12 +299,14 @@ export namespace VectorGraph {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): VectorGraph.Int32AttributeVector;
+        public static decode(
+            reader: $protobuf.Reader | Uint8Array,
+            length?: number
+        ): VectorGraph.Int32AttributeVector;
     }
 
     /** Properties of an Int64AttributeVector. */
     interface IInt64AttributeVector {
-
         /** Int64AttributeVector name */
         name?: string;
 
@@ -317,7 +325,6 @@ export namespace VectorGraph {
 
     /** Represents an Int64AttributeVector. */
     class Int64AttributeVector {
-
         /**
          * Constructs a new Int64AttributeVector.
          * @param [properties] Properties to set
@@ -345,7 +352,10 @@ export namespace VectorGraph {
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: VectorGraph.IInt64AttributeVector, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(
+            message: VectorGraph.IInt64AttributeVector,
+            writer?: $protobuf.Writer
+        ): $protobuf.Writer;
 
         /**
          * Decodes an Int64AttributeVector message from the specified reader or buffer.
@@ -355,12 +365,14 @@ export namespace VectorGraph {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): VectorGraph.Int64AttributeVector;
+        public static decode(
+            reader: $protobuf.Reader | Uint8Array,
+            length?: number
+        ): VectorGraph.Int64AttributeVector;
     }
 
     /** Properties of a FloatAttributeVector. */
     interface IFloatAttributeVector {
-
         /** FloatAttributeVector name */
         name?: string;
 
@@ -379,7 +391,6 @@ export namespace VectorGraph {
 
     /** Represents a FloatAttributeVector. */
     class FloatAttributeVector {
-
         /**
          * Constructs a new FloatAttributeVector.
          * @param [properties] Properties to set
@@ -407,7 +418,10 @@ export namespace VectorGraph {
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: VectorGraph.IFloatAttributeVector, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(
+            message: VectorGraph.IFloatAttributeVector,
+            writer?: $protobuf.Writer
+        ): $protobuf.Writer;
 
         /**
          * Decodes a FloatAttributeVector message from the specified reader or buffer.
@@ -417,12 +431,14 @@ export namespace VectorGraph {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): VectorGraph.FloatAttributeVector;
+        public static decode(
+            reader: $protobuf.Reader | Uint8Array,
+            length?: number
+        ): VectorGraph.FloatAttributeVector;
     }
 
     /** Properties of a DoubleAttributeVector. */
     interface IDoubleAttributeVector {
-
         /** DoubleAttributeVector name */
         name?: string;
 
@@ -441,7 +457,6 @@ export namespace VectorGraph {
 
     /** Represents a DoubleAttributeVector. */
     class DoubleAttributeVector {
-
         /**
          * Constructs a new DoubleAttributeVector.
          * @param [properties] Properties to set
@@ -469,7 +484,10 @@ export namespace VectorGraph {
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: VectorGraph.IDoubleAttributeVector, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(
+            message: VectorGraph.IDoubleAttributeVector,
+            writer?: $protobuf.Writer
+        ): $protobuf.Writer;
 
         /**
          * Decodes a DoubleAttributeVector message from the specified reader or buffer.
@@ -479,12 +497,14 @@ export namespace VectorGraph {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): VectorGraph.DoubleAttributeVector;
+        public static decode(
+            reader: $protobuf.Reader | Uint8Array,
+            length?: number
+        ): VectorGraph.DoubleAttributeVector;
     }
 
     /** Properties of a StringAttributeVector. */
     interface IStringAttributeVector {
-
         /** StringAttributeVector name */
         name?: string;
 
@@ -503,7 +523,6 @@ export namespace VectorGraph {
 
     /** Represents a StringAttributeVector. */
     class StringAttributeVector {
-
         /**
          * Constructs a new StringAttributeVector.
          * @param [properties] Properties to set
@@ -531,7 +550,10 @@ export namespace VectorGraph {
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: VectorGraph.IStringAttributeVector, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(
+            message: VectorGraph.IStringAttributeVector,
+            writer?: $protobuf.Writer
+        ): $protobuf.Writer;
 
         /**
          * Decodes a StringAttributeVector message from the specified reader or buffer.
@@ -541,12 +563,14 @@ export namespace VectorGraph {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): VectorGraph.StringAttributeVector;
+        public static decode(
+            reader: $protobuf.Reader | Uint8Array,
+            length?: number
+        ): VectorGraph.StringAttributeVector;
     }
 
     /** Properties of a BoolAttributeVector. */
     interface IBoolAttributeVector {
-
         /** BoolAttributeVector name */
         name?: string;
 
@@ -565,7 +589,6 @@ export namespace VectorGraph {
 
     /** Represents a BoolAttributeVector. */
     class BoolAttributeVector {
-
         /**
          * Constructs a new BoolAttributeVector.
          * @param [properties] Properties to set
@@ -593,7 +616,10 @@ export namespace VectorGraph {
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: VectorGraph.IBoolAttributeVector, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(
+            message: VectorGraph.IBoolAttributeVector,
+            writer?: $protobuf.Writer
+        ): $protobuf.Writer;
 
         /**
          * Decodes a BoolAttributeVector message from the specified reader or buffer.
@@ -603,12 +629,14 @@ export namespace VectorGraph {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): VectorGraph.BoolAttributeVector;
+        public static decode(
+            reader: $protobuf.Reader | Uint8Array,
+            length?: number
+        ): VectorGraph.BoolAttributeVector;
     }
 
     /** Properties of a Mapping. */
     interface IMapping {
-
         /** Mapping name */
         name: string;
 
@@ -624,7 +652,6 @@ export namespace VectorGraph {
 
     /** Represents a Mapping. */
     class Mapping {
-
         /**
          * Constructs a new Mapping.
          * @param [properties] Properties to set
@@ -649,7 +676,10 @@ export namespace VectorGraph {
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: VectorGraph.IMapping, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(
+            message: VectorGraph.IMapping,
+            writer?: $protobuf.Writer
+        ): $protobuf.Writer;
 
         /**
          * Decodes a Mapping message from the specified reader or buffer.
@@ -659,12 +689,14 @@ export namespace VectorGraph {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): VectorGraph.Mapping;
+        public static decode(
+            reader: $protobuf.Reader | Uint8Array,
+            length?: number
+        ): VectorGraph.Mapping;
     }
 
     /** Properties of a Bindings. */
     interface IBindings {
-
         /** Bindings idField */
         idField?: string;
 
@@ -680,7 +712,6 @@ export namespace VectorGraph {
 
     /** Represents a Bindings. */
     class Bindings {
-
         /**
          * Constructs a new Bindings.
          * @param [properties] Properties to set
@@ -705,7 +736,10 @@ export namespace VectorGraph {
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: VectorGraph.IBindings, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(
+            message: VectorGraph.IBindings,
+            writer?: $protobuf.Writer
+        ): $protobuf.Writer;
 
         /**
          * Decodes a Bindings message from the specified reader or buffer.
@@ -715,6 +749,9 @@ export namespace VectorGraph {
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): VectorGraph.Bindings;
+        public static decode(
+            reader: $protobuf.Reader | Uint8Array,
+            length?: number
+        ): VectorGraph.Bindings;
     }
 }

@@ -6,41 +6,41 @@ const migrationDirectory = Path.join(__dirname, 'migrations');
 const seedDirectory = Path.join(__dirname, 'seeds');
 
 const configurations = {
-  test: {
-    client: 'postgresql',
-    connection: `postgresql://${username}:${password}@${host}:${port}/${dbname}`,
-    migrations: {
-      tableName: 'knex_migrations',
-      directory: migrationDirectory
+    test: {
+        client: 'postgresql',
+        connection: `postgresql://${username}:${password}@${host}:${port}/${dbname}`,
+        migrations: {
+            tableName: 'knex_migrations',
+            directory: migrationDirectory
+        },
+        seeds: {
+            directory: seedDirectory
+        }
     },
-    seeds: {
-      directory: seedDirectory
-    }
-  },
 
-  development: {
-    client: 'postgresql',
-    connection: `postgresql://${username}:${password}@${host}:${port}/${dbname}`,
-    migrations: {
-      tableName: 'knex_migrations',
-      directory: migrationDirectory
+    development: {
+        client: 'postgresql',
+        connection: `postgresql://${username}:${password}@${host}:${port}/${dbname}`,
+        migrations: {
+            tableName: 'knex_migrations',
+            directory: migrationDirectory
+        },
+        seeds: {
+            directory: seedDirectory
+        }
     },
-    seeds: {
-      directory: seedDirectory
-    }
-  },
 
-  production: {
-    client: 'postgresql',
-    connection: `postgresql://${username}:${password}@${host}:${port}/${dbname}`,
-    pool: {
-      min: 2,
-      max: 10
-    },
-    migrations: {
-      tableName: 'knex_migrations'
+    production: {
+        client: 'postgresql',
+        connection: `postgresql://${username}:${password}@${host}:${port}/${dbname}`,
+        pool: {
+            min: 2,
+            max: 10
+        },
+        migrations: {
+            tableName: 'knex_migrations'
+        }
     }
-  }
 };
 
 module.exports = configurations;

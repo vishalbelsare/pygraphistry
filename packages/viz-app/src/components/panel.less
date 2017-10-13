@@ -1,40 +1,40 @@
 @import '~viz-app/vars.less';
 
 .panel-left {
-  z-index: @menus-z;
-  &:global(.popover.right > .arrow) {
-    border-right-color: #fff;
-  }
-  &:global(.popover.bottom > .arrow) {
-    top: -10px;
-    border-bottom-color: #fff;
-    &:after {
-      border-bottom-color: #f7f7f7;
+    z-index: @menus-z;
+    &:global(.popover.right > .arrow) {
+        border-right-color: #fff;
     }
-  }
-  :global(.popover-content) {
-    padding-left: 0;
-    padding-right: 0;
-  }
+    &:global(.popover.bottom > .arrow) {
+        top: -10px;
+        border-bottom-color: #fff;
+        &:after {
+            border-bottom-color: #f7f7f7;
+        }
+    }
+    :global(.popover-content) {
+        padding-left: 0;
+        padding-right: 0;
+    }
 }
 
 .panel-right {
-  border-top-left-radius: 0px;
-  border-top-right-radius: 0px;
-  border-bottom-left-radius: 0px;
-  border-bottom-right-radius: 0px;
-  :global(.panel-body) {
-    padding: 0;
-  }
-  :global(.panel-heading) {
+    border-top-left-radius: 0px;
     border-top-right-radius: 0px;
+    border-bottom-left-radius: 0px;
     border-bottom-right-radius: 0px;
-  }
+    :global(.panel-body) {
+        padding: 0;
+    }
+    :global(.panel-heading) {
+        border-top-right-radius: 0px;
+        border-bottom-right-radius: 0px;
+    }
 }
 
 .panel-left,
 .panel-right,
 .panel-bottom {
-  margin: 0;
-  border: none;
+    margin: 0;
+    border: none;
 }

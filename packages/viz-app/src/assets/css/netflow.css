@@ -1,105 +1,105 @@
 html {
-  height: 100%;
+    height: 100%;
 }
 .graphistry-body {
-  background: linear-gradient(
-    to bottom,
-    rgba(242, 246, 248, 1) 0%,
-    rgba(216, 225, 231, 1) 6%,
-    rgba(181, 198, 208, 1) 6%,
-    rgba(214, 229, 239, 1) 79%,
-    rgba(244, 250, 255, 1) 88%
-  );
+    background: linear-gradient(
+        to bottom,
+        rgba(242, 246, 248, 1) 0%,
+        rgba(216, 225, 231, 1) 6%,
+        rgba(181, 198, 208, 1) 6%,
+        rgba(214, 229, 239, 1) 79%,
+        rgba(244, 250, 255, 1) 88%
+    );
 }
 
 .heading {
-  padding-top: 0.5em;
-  text-align: center;
-  background: rgba(242, 246, 248, 0.7);
-  font-family: 'Nunito', sans-serif;
-  letter-spacing: -0.03em;
-  color: rgb(51, 51, 102);
+    padding-top: 0.5em;
+    text-align: center;
+    background: rgba(242, 246, 248, 0.7);
+    font-family: 'Nunito', sans-serif;
+    letter-spacing: -0.03em;
+    color: rgb(51, 51, 102);
 }
 
 .heading span {
-  font-size: 0.75em;
-  font-variant: small-caps;
+    font-size: 0.75em;
+    font-variant: small-caps;
 }
 
 .legend-container {
-  display: none;
-  position: absolute;
-  bottom: 1em;
-  right: 1em;
-  padding: 1em;
-  width: 40%;
-  z-index: 20000;
+    display: none;
+    position: absolute;
+    bottom: 1em;
+    right: 1em;
+    padding: 1em;
+    width: 40%;
+    z-index: 20000;
 
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 244, 0.9);
-  background-color: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 0 10px rgba(235, 235, 245, 0.75);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 244, 0.9);
+    background-color: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 10px rgba(235, 235, 245, 0.75);
 }
 
 .legend-container h3 {
-  margin-top: 0;
-  color: rgb(51, 51, 102);
-  font-weight: bold;
-  font-size: 2em;
+    margin-top: 0;
+    color: rgb(51, 51, 102);
+    font-weight: bold;
+    font-size: 2em;
 }
 .legend .label {
-  color: rgb(51, 51, 102);
-  font-weight: bold;
-  font-size: 1em;
+    color: rgb(51, 51, 102);
+    font-weight: bold;
+    font-size: 1em;
 }
 .legend > * {
-  margin-left: 0.2em;
+    margin-left: 0.2em;
 }
 .tick {
-  display: inline-block;
-  width: 50px;
-  height: 10px;
-  border: 1px solid rgb(51, 51, 102);
+    display: inline-block;
+    width: 50px;
+    height: 10px;
+    border: 1px solid rgb(51, 51, 102);
 }
 
 .tick5 {
-  background-color: rgb(165, 0, 38);
+    background-color: rgb(165, 0, 38);
 }
 .tick4 {
-  background-color: rgb(244, 109, 67);
+    background-color: rgb(244, 109, 67);
 }
 .tick3 {
-  background-color: rgb(255, 255, 191);
+    background-color: rgb(255, 255, 191);
 }
 .tick2 {
-  background-color: rgb(166, 217, 106);
+    background-color: rgb(166, 217, 106);
 }
 .tick1 {
-  background-color: rgb(26, 152, 80);
+    background-color: rgb(26, 152, 80);
 }
 
 .ui-rangeSlider .ui-rangeSlider-innerBar {
-  background-color: rgba(196, 212, 222, 0.3);
-  border: 1px solid rgba(51, 51, 102, 0.5);
+    background-color: rgba(196, 212, 222, 0.3);
+    border: 1px solid rgba(51, 51, 102, 0.5);
 }
 
 .ui-rangeSlider .ui-rangeSlider-bar {
-  background-color: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 0 10px rgba(235, 235, 245, 0.75);
-  border: 1px solid rgba(51, 51, 102, 0.5);
+    background-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 10px rgba(235, 235, 245, 0.75);
+    border: 1px solid rgba(51, 51, 102, 0.5);
 }
 
 .ui-rangeSlider-bar {
-  text-align: left;
+    text-align: left;
 }
 .ui-rangeSlider-bar:hover {
-  cursor: default;
+    cursor: default;
 }
 .ui-rangeSlider-bar:before {
-  margin-left: 1em;
-  content: 'TIME';
-  font-size: 0.8em;
-  color: rgba(51, 51, 102, 0.5);
+    margin-left: 1em;
+    content: 'TIME';
+    font-size: 0.8em;
+    color: rgba(51, 51, 102, 0.5);
 }
 
 .ui-rangeSlider .ui-rangeSlider-bar:hover {
@@ -107,217 +107,217 @@ html {
 
 .ui-rangeSlider .ui-rangeSlider-handle.ui-rangeSlider-leftHandle,
 .ui-rangeSlider .ui-rangeSlider-handle.ui-rangeSlider-rightHandle {
-  width: 10px;
-  background-color: rgba(51, 51, 102, 1);
-  border-radius: 3px;
+    width: 10px;
+    background-color: rgba(51, 51, 102, 1);
+    border-radius: 3px;
 }
 
 .ui-rangeSlider-handle.ui-rangeSlider-leftHandle:hover,
 .ui-rangeSlider-handle.ui-rangeSlider-rightHandle:hover {
-  background-color: rgba(71, 71, 122, 1);
-  box-shadow: 0 0 10px rgba(71, 71, 122, 0.75);
+    background-color: rgba(71, 71, 122, 1);
+    box-shadow: 0 0 10px rgba(71, 71, 122, 0.75);
 }
 
 .ui-rangeSlider .ui-rangeSlider-ba {
-  background-color: white;
+    background-color: white;
 }
 
 .accordion {
-  background-color: rgba(196, 212, 222, 0.72);
+    background-color: rgba(196, 212, 222, 0.72);
 }
 
 .control-label {
-  color: rgb(51, 51, 102);
+    color: rgb(51, 51, 102);
 }
 .slider-handle {
-  background-image: linear-gradient(to bottom, #149bdf 0%, rgb(51, 51, 102) 100%);
+    background-image: linear-gradient(to bottom, #149bdf 0%, rgb(51, 51, 102) 100%);
 }
 .form-group button.btn {
-  border-color: rgba(255, 255, 255, 0.5);
+    border-color: rgba(255, 255, 255, 0.5);
 }
 .form-group button.btn:hover {
-  color: white;
-  background-color: transparent;
-  box-shadow: 0 0 20px rgba(235, 235, 245, 0.75);
+    color: white;
+    background-color: transparent;
+    box-shadow: 0 0 20px rgba(235, 235, 245, 0.75);
 }
 
 .stat-top {
-  margin: 0;
+    margin: 0;
 }
 .stat-top h2,
 .stat-flows thead {
-  background-color: rgba(255, 255, 255, 0.3);
-  padding: 0.2em;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  margin: 0;
-  margin-bottom: 0.2em;
-  font-weight: bold;
+    background-color: rgba(255, 255, 255, 0.3);
+    padding: 0.2em;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    margin: 0;
+    margin-bottom: 0.2em;
+    font-weight: bold;
 }
 
 .graph-label.on .stat-port .stat-source:after {
-  content: ' (PORT)';
+    content: ' (PORT)';
 }
 
 .stat-port .stat-ip {
-  margin-left: 0.2em;
+    margin-left: 0.2em;
 }
 .stat-port .stat-ip:before {
-  content: 'IP: ';
+    content: 'IP: ';
 }
 .stat-flows thead tr td:first-child {
-  text-align: left;
+    text-align: left;
 }
 
 .stat-flows tbody tr td:first-child {
-  padding-left: 0.5em;
+    padding-left: 0.5em;
 }
 
 .stat-flows td {
-  white-space: nowrap;
-  padding-right: 0.5em;
+    white-space: nowrap;
+    padding-right: 0.5em;
 }
 
 .stat-flows {
-  max-height: 10em;
-  overflow: auto;
+    max-height: 10em;
+    overflow: auto;
 }
 
 .stat-flows table {
-  counter-reset: rowNumber;
+    counter-reset: rowNumber;
 }
 
 .stat-flows table tbody tr {
-  counter-increment: rowNumber;
+    counter-increment: rowNumber;
 }
 
 .stat-flows table tbody tr td:first-child::before {
-  content: counter(rowNumber);
-  min-width: 1em;
-  margin-right: 0.5em;
+    content: counter(rowNumber);
+    min-width: 1em;
+    margin-right: 0.5em;
 }
 
 .stat-flows tbody td {
-  text-align: left;
+    text-align: left;
 }
 
 .stat-extra {
-  margin-left: 2.7em;
+    margin-left: 2.7em;
 }
 
 .graph-label:not(.on) {
-  height: 3em;
+    height: 3em;
 }
 .graph-label .stat-host-ip,
 .graph-label .stat-source {
-  font-size: 1.3em;
+    font-size: 1.3em;
 }
 .graph-label:not(.on) .stat-host-ip,
 .graph-label:not(.on) .stat-source {
-  border-color: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 10px rgba(235, 235, 245, 0.75);
-  border-radius: 10px;
+    border-color: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 10px rgba(235, 235, 245, 0.75);
+    border-radius: 10px;
 }
 
 .graph-label:not(.on) .stat-source {
-  background-color: rgba(25, 25, 75, 0.85);
-  color: white;
-  font-weight: normal;
+    background-color: rgba(25, 25, 75, 0.85);
+    color: white;
+    font-weight: normal;
 }
 .graph-label:not(.on) .stat-host-ip {
-  background-color: rgba(255, 255, 255, 0.85);
+    background-color: rgba(255, 255, 255, 0.85);
 }
 
 .graph-label.on .stat-host-ip:after {
-  content: ' (HOST)';
+    content: ' (HOST)';
 }
 
 .stat-host-ports {
-  content: 'ports';
+    content: 'ports';
 }
 .stat-host-ports {
-  display: inline-block;
-  min-width: 12em;
-  margin-left: 0.5em;
+    display: inline-block;
+    min-width: 12em;
+    margin-left: 0.5em;
 }
 .stat-host-more {
-  display: block;
+    display: block;
 }
 
 .graph-label h2 {
-  text-align: left;
-  font-size: 1em;
+    text-align: left;
+    font-size: 1em;
 }
 
 .graph-label {
-  text-align: left;
-  padding-left: 0;
-  padding-right: 0;
+    text-align: left;
+    padding-left: 0;
+    padding-right: 0;
 }
 .graph-label td {
-  text-align: center;
+    text-align: center;
 }
 
 .graph-label-container {
-  position: absolute;
-  top: 0;
-  left: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 .graph-label {
-  margin-top: 1.5em;
+    margin-top: 1.5em;
 
-  position: absolute;
-  color: rgb(51, 51, 102);
-  font-weight: bold;
-  font-size: 0.75em;
-  text-shadow: 0 0 5px rgba(235, 235, 245, 1);
-  padding: 0.5em;
+    position: absolute;
+    color: rgb(51, 51, 102);
+    font-weight: bold;
+    font-size: 0.75em;
+    text-shadow: 0 0 5px rgba(235, 235, 245, 1);
+    padding: 0.5em;
 
-  border-radius: 10px;
+    border-radius: 10px;
 
-  border: 1px solid transparent;
+    border: 1px solid transparent;
 
-  opacity: 0.8;
+    opacity: 0.8;
 
-  overflow: hidden;
-  height: 2em;
+    overflow: hidden;
+    height: 2em;
 
-  z-index: 10000;
+    z-index: 10000;
 
-  color: rgb(31, 31, 51);
+    color: rgb(31, 31, 51);
 }
 
 .graph-label.on {
-  opacity: 1;
+    opacity: 1;
 
-  background-color: rgba(255, 255, 255, 0.95);
-  border-color: rgba(51, 51, 102, 1);
+    background-color: rgba(255, 255, 255, 0.95);
+    border-color: rgba(51, 51, 102, 1);
 
-  width: auto;
-  height: auto;
-  overflow: auto;
+    width: auto;
+    height: auto;
+    overflow: auto;
 
-  box-shadow: 0 0 10px rgba(235, 235, 245, 0.75);
+    box-shadow: 0 0 10px rgba(235, 235, 245, 0.75);
 
-  z-index: 100000;
+    z-index: 100000;
 }
 
 .graph-label.on hr {
-  margin: 0;
-  margin-bottom: 0.3em;
+    margin: 0;
+    margin-bottom: 0.3em;
 }
 .graph-label.on > div:first-child {
-  margin-bottom: 0.5em;
+    margin-bottom: 0.5em;
 }
 
 .highlighted-point {
-  box-shadow: 0 0 10px rgba(235, 235, 245, 0.75);
+    box-shadow: 0 0 10px rgba(235, 235, 245, 0.75);
 }
 
 .meter .flavor,
 .meter div {
-  color: rgb(51, 51, 102) !important;
-  text-transform: uppercase !important;
-  text-shadow: rgba(235, 235, 245, 0.498039) 1px 1px 0px !important;
-  font-weight: bold !important;
+    color: rgb(51, 51, 102) !important;
+    text-transform: uppercase !important;
+    text-shadow: rgba(235, 235, 245, 0.498039) 1px 1px 0px !important;
+    font-weight: bold !important;
 }

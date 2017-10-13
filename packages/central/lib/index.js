@@ -1,6 +1,5 @@
 require('source-map-support').install();
 
-
 import { logger as log } from '@graphistry/common';
 export const logger = log.createLogger('central', 'central/lib/server.js');
 
@@ -30,7 +29,6 @@ import { docsUpdateAssetPath } from '@graphistry/docs-update';
 // Path to static assets served by central
 const assets = resolve(__dirname, '../assets');
 
-
 export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LISTEN_ADDRESS) {
     const app = express();
     const server = httpServer(app);
@@ -41,8 +39,9 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
 
     // viz-app should be sending client error messages directly to the viz-app server, not central,
     // but in case that fails (for some reason), we have this.
-    app.post('/error', parseJsonEncoded({extended: true, limit: '512kb'}),
-        (req, res) => logClientError(req, res, logger, (config.ENVIRONMENT === 'local')));
+    app.post('/error', parseJsonEncoded({ extended: true, limit: '512kb' }), (req, res) =>
+        logClientError(req, res, logger, config.ENVIRONMENT === 'local')
+    );
 
     apiKey.init(app);
 
@@ -50,14 +49,12 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
     app.all(/.*\/package.json$/, (req, res, next) => res.sendStatus(404));
     app.all('/index.js', (req, res, next) => res.sendStatus(404));
 
-
     //TODO worker info
     app.get('/central/healthcheck', function(req, res) {
         const health = healthcheck();
-        logger.info({...health, req, res, workerLastAssigned}, 'healthcheck');
-        res.status(health.clear.success ? 200 : 500).json({...health.clear});
+        logger.info({ ...health, req, res, workerLastAssigned }, 'healthcheck');
+        res.status(health.clear.success ? 200 : 500).json({ ...health.clear });
     });
-
 
     initWorkbookApi(app, config);
 
@@ -76,7 +73,7 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
     const serverListen = Observable.bindNodeCallback(server.listen.bind(server));
     return serverListen(port, address)
         .map(() => ({ address, port }))
-        .catch((err) => {
+        .catch(err => {
             err.serverPort = port;
             err.serverAddress = address;
             return Observable.throw(err);
@@ -84,7 +81,6 @@ export function start(port = config.HTTP_LISTEN_PORT, address = config.HTTP_LIST
 }
 
 function handleVizAppRequest(req, res) {
-
     let { query = {} } = req,
         { splashAfter } = query,
         showSplashScreen = false;
@@ -95,8 +91,7 @@ function handleVizAppRequest(req, res) {
         } else if (splashAfter === false || splashAfter === 'false') {
             showSplashScreen = false;
         } else if (typeof (splashAfter = parseInt(splashAfter, 10)) === 'number') {
-            showSplashScreen = (splashAfter === splashAfter) &&
-                               (Date.now() / 1000) - 20 >= splashAfter;
+            showSplashScreen = splashAfter === splashAfter && Date.now() / 1000 - 20 >= splashAfter;
         }
     }
 
@@ -127,29 +122,33 @@ function handleVizAppRequest(req, res) {
 function handleWorkerRequest(req, res) {
     // const metadataFields = ['dataset', 'debugId'];
     // log.addMetadataField(_.pick(req.query, metadataFields));
-    logger.debug({req, res}, 'Received request to be handled by a worker. ' +
-        'Assigning client to a worker and redirecting request to it.');
+    logger.debug(
+        { req, res },
+        'Received request to be handled by a worker. ' +
+            'Assigning client to a worker and redirecting request to it.'
+    );
 
     pickWorker()
-        .map((worker) => {
-            if(!config.PINGER_ENABLED) {
+        .map(worker => {
+            if (!config.PINGER_ENABLED) {
                 return redirectUnproxiedRequest(req.url, res, worker);
             } else {
                 return redirectNginxReqest(req.url, res, worker);
             }
         })
         .subscribe(
-            ({redirectUrl, redirectedRes, worker}) => {
-                logger.debug({req: req, res: redirectedRes, worker: worker, redirect: redirectUrl},
-                    `Assigned client to worker and redirected request to ${redirectUrl}`);
+            ({ redirectUrl, redirectedRes, worker }) => {
+                logger.debug(
+                    { req: req, res: redirectedRes, worker: worker, redirect: redirectUrl },
+                    `Assigned client to worker and redirected request to ${redirectUrl}`
+                );
             },
-            (err) => {
-                logger.error({err, req, res}, 'Error while assigning visualization worker');
+            err => {
+                logger.error({ err, req, res }, 'Error while assigning visualization worker');
             },
             () => {}
         );
 }
-
 
 // Redirects a request to a worker when we're behind an nginx reverse proxies. Uses a
 // `X-Accel-Redirect` header, which tells nginx to retry the request using the path in that header.
@@ -164,9 +163,8 @@ function redirectNginxReqest(requestUrl, res, worker) {
 
     res.set(`X-Accel-Redirect`, redirectUrl);
     res.send('');
-    return {redirectUrl, res, worker};
+    return { redirectUrl, res, worker };
 }
-
 
 // Redirects a request to a worker when the client is connected directly, without nginx reverse
 // proxying the connection. In this case, we respond with a simple HTTP 307 redirect to the worker's
@@ -178,5 +176,5 @@ function redirectUnproxiedRequest(requestUrl, res, worker) {
     const redirectUrl = urlFormat(requestUrlParsed);
 
     res.redirect(307, redirectUrl);
-    return {redirectUrl, res, worker};
+    return { redirectUrl, res, worker };
 }

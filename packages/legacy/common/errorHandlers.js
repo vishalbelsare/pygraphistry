@@ -1,18 +1,17 @@
 'use strict';
 
-
 var nodeutil = require('util'),
-    chalk    = require('chalk');
+    chalk = require('chalk');
 
-module.exports = function (log) {
+module.exports = function(log) {
     return {
-        makeErrorHandler: function () {
+        makeErrorHandler: function() {
             var msg = nodeutil.format.apply(this, arguments);
             return log.makeHandler('ERROR', msg, 'error', true, chalk.bold.red);
         },
-        makeRxErrorHandler: function () {
+        makeRxErrorHandler: function() {
             var msg = nodeutil.format.apply(this, arguments);
             return log.makeHandler('ERROR', msg, 'error', false, chalk.bold.red);
         }
     };
-}
+};

@@ -4,5 +4,5 @@ module.exports = {
     cache: require('./cache'),
     slack: require('./slack'),
     logger: require('./logger'),
-    perfStats: require('./perfStats'),
-}
+    perfStats: require('./perfStats')
+};

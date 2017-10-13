@@ -12,7 +12,7 @@ const epoch = Date.UTC(2015, 0, 1);
  * @constructor
  */
 function TransactionalIdentifier(struct = { timestamp: 0, randomBits: 0 }) {
-  this.id = simpleflake(struct.timestamp, struct.randomBits, epoch);
+    this.id = simpleflake(struct.timestamp, struct.randomBits, epoch);
 }
 
 /**
@@ -20,7 +20,7 @@ function TransactionalIdentifier(struct = { timestamp: 0, randomBits: 0 }) {
  * @returns {String}
  */
 TransactionalIdentifier.prototype.toString = function() {
-  return this.id.toJSON();
+    return this.id.toJSON();
 };
 
 /**
@@ -29,7 +29,7 @@ TransactionalIdentifier.prototype.toString = function() {
  * @returns {TransactionalIdentifier}
  */
 TransactionalIdentifier.fromString = function(inputString) {
-  return new TransactionalIdentifier(parseSimpleflake(inputString));
+    return new TransactionalIdentifier(parseSimpleflake(inputString));
 };
 
 export default TransactionalIdentifier;

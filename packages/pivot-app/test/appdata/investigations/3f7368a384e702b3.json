@@ -1,9 +1,9 @@
 {
-  "name": "Custom HTTP pivot: VirusTotal",
-  "id": "3f7368a384e702b3",
-  "description": "",
-  "tags": [],
-  "modifiedOn": 1491742812278,
-  "layout": "stackedBushyGraph",
-  "pivots": ["3f7368a383d624e0", "3f73b8de629db4eb", "3f73fe8af32a25ab"]
+    "name": "Custom HTTP pivot: VirusTotal",
+    "id": "3f7368a384e702b3",
+    "description": "",
+    "tags": [],
+    "modifiedOn": 1491742812278,
+    "layout": "stackedBushyGraph",
+    "pivots": ["3f7368a383d624e0", "3f73b8de629db4eb", "3f73fe8af32a25ab"]
 }

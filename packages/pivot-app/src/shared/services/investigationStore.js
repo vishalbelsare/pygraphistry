@@ -11,28 +11,28 @@ const globAsObservable = Observable.bindNodeCallback(glob);
 const readFileAsObservable = Observable.bindNodeCallback(fs.readFile);
 
 export function investigationStore(loadApp, pathPrefix, investigationsByIdCache = {}) {
-  const store = new SimpleFileSystemStore({
-    loadApp,
-    pathPrefix,
-    entityName: 'investigation',
-    createModel: createInvestigationModel,
-    serializeModel: serializeInvestigationModel,
-    cache: investigationsByIdCache
-  });
+    const store = new SimpleFileSystemStore({
+        loadApp,
+        pathPrefix,
+        entityName: 'investigation',
+        createModel: createInvestigationModel,
+        serializeModel: serializeInvestigationModel,
+        cache: investigationsByIdCache
+    });
 
-  return {
-    loadInvestigationsById: ({ investigationIds }) => store.loadById(investigationIds),
-    unloadInvestigationsById: ({ investigationIds }) => store.unloadById(investigationIds),
-    persistInvestigationsById: ({ investigationIds }) => store.persistById(investigationIds),
-    unlinkInvestigationsById: ({ investigationIds }) => store.unlinkById(investigationIds)
-  };
+    return {
+        loadInvestigationsById: ({ investigationIds }) => store.loadById(investigationIds),
+        unloadInvestigationsById: ({ investigationIds }) => store.unloadById(investigationIds),
+        persistInvestigationsById: ({ investigationIds }) => store.persistById(investigationIds),
+        unlinkInvestigationsById: ({ investigationIds }) => store.unlinkById(investigationIds)
+    };
 }
 
 export function listInvestigations(pathPrefix) {
-  return globAsObservable(path.resolve(pathPrefix, '*.json'))
-    .mergeAll()
-    .mergeMap(file => readFileAsObservable(file))
-    .map(fileContents => JSON.parse(fileContents))
-    .toArray()
-    .do(() => log.info(`Read investigations from disk`));
+    return globAsObservable(path.resolve(pathPrefix, '*.json'))
+        .mergeAll()
+        .mergeMap(file => readFileAsObservable(file))
+        .map(fileContents => JSON.parse(fileContents))
+        .toArray()
+        .do(() => log.info(`Read investigations from disk`));
 }

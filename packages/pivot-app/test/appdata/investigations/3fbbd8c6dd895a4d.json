@@ -1,9 +1,9 @@
 {
-  "name": "blazegraph netflow demo",
-  "id": "3fbbd8c6dd895a4d",
-  "description": "",
-  "tags": [],
-  "modifiedOn": 1494204022441,
-  "layout": "atlasbarnes",
-  "pivots": ["3fbbd8c6ddf951ca", "3fbd57a9500725be"]
+    "name": "blazegraph netflow demo",
+    "id": "3fbbd8c6dd895a4d",
+    "description": "",
+    "tags": [],
+    "modifiedOn": 1494204022441,
+    "layout": "atlasbarnes",
+    "pivots": ["3fbbd8c6ddf951ca", "3fbd57a9500725be"]
 }

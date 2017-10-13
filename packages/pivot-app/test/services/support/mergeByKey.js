@@ -10,43 +10,43 @@ const b = { a: 'b', e: 'f' };
 const c = { g: 'h' };
 
 describe('mergeByKey', function() {
-  it('empty', done => {
-    const out = mergeByKey([], 'zz');
-    const expected = [];
+    it('empty', done => {
+        const out = mergeByKey([], 'zz');
+        const expected = [];
 
-    assert.deepEqual(out, expected);
-    done();
-  });
+        assert.deepEqual(out, expected);
+        done();
+    });
 
-  it('drop empty', done => {
-    const out = mergeByKey([a, c], 'a');
-    const expected = [a];
+    it('drop empty', done => {
+        const out = mergeByKey([a, c], 'a');
+        const expected = [a];
 
-    assert.deepEqual(out, expected);
-    done();
-  });
+        assert.deepEqual(out, expected);
+        done();
+    });
 
-  it('unique', done => {
-    const out = mergeByKey([a, a2], 'a');
-    const expected = [a, a2];
+    it('unique', done => {
+        const out = mergeByKey([a, a2], 'a');
+        const expected = [a, a2];
 
-    assert.deepEqual(out, expected);
-    done();
-  });
+        assert.deepEqual(out, expected);
+        done();
+    });
 
-  it('merge', done => {
-    const out = mergeByKey([a, b], 'a');
-    const expected = [{ ...a, ...b }];
+    it('merge', done => {
+        const out = mergeByKey([a, b], 'a');
+        const expected = [{ ...a, ...b }];
 
-    assert.deepEqual(out, expected);
-    done();
-  });
+        assert.deepEqual(out, expected);
+        done();
+    });
 
-  it('mixed', done => {
-    const out = mergeByKey([a, a2, b, c], 'a');
-    const expected = [{ ...a, ...b }, a2];
+    it('mixed', done => {
+        const out = mergeByKey([a, a2, b, c], 'a');
+        const expected = [{ ...a, ...b }, a2];
 
-    assert.deepEqual(out, expected);
-    done();
-  });
+        assert.deepEqual(out, expected);
+        done();
+    });
 });

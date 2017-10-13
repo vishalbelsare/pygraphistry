@@ -2,12 +2,7 @@ import { Observable } from 'rxjs';
 import { Client } from 'rxjs-mapd';
 import { VGraphTable } from '../csv';
 import { metaTypesToMapd } from '../types';
-import {
-    TTypeInfo,
-    TTableType,
-    TColumnType,
-    TCopyParams,
-} from 'rxjs-mapd';
+import { TTypeInfo, TTableType, TColumnType, TCopyParams } from 'rxjs-mapd';
 
 export interface CreateTableOptions {
     table: VGraphTable;
@@ -16,7 +11,6 @@ export interface CreateTableOptions {
 }
 
 export function createTable({ client, table, csvFileName }: CreateTableOptions) {
-
     const tColumnTypes = [
         ...table.bool_vectors,
         ...table.float_vectors,
@@ -24,27 +18,25 @@ export function createTable({ client, table, csvFileName }: CreateTableOptions) 
         ...table.int64_vectors,
         ...table.double_vectors,
         ...table.string_vectors,
-        ...table.uint32_vectors,
+        ...table.uint32_vectors
     ].map(vecToTColumnType);
 
-    return client
-            .mapd_createTable(table.name, tColumnTypes, TTableType.DELIMITED)
-        .flatMapTo(client
-            .mapd_importTable(table.name, csvFileName, new TCopyParams(<any> {
-    /* string */ delimiter: ',',
-    /* string */ null_str: '\0',
-   /* boolean */ has_header: true,
-   /* boolean */ quoted: true,
-    /* string */ quote: '"',
-    /* string */ // escape: '',
-    /* string */ line_delim: '\n',
-    /* string */ // array_delim: '',
-    /* string */ // array_begin: '',
-    /* string */ // array_end: '',
-    /* number */ threads: 1,
-/* TTableType */ table_type: TTableType.DELIMITED,
-            }))
-        );
+    return client.mapd_createTable(table.name, tColumnTypes, TTableType.DELIMITED).flatMapTo(
+        client.mapd_importTable(
+            table.name,
+            csvFileName,
+            new TCopyParams(<any>{
+                /* string */ delimiter: ',',
+                /* string */ null_str: '\0',
+                /* boolean */ has_header: true,
+                /* boolean */ quoted: true,
+                /* string */ quote: '"', // escape: '',
+                /* string */ /* string */ line_delim: '\n', // array_delim: '', // array_begin: '', // array_end: '',
+                /* string */ /* string */ /* string */ /* number */ threads: 1,
+                /* TTableType */ table_type: TTableType.DELIMITED
+            })
+        )
+    );
 }
 
 function vecToTColumnType(vec) {
@@ -58,11 +50,13 @@ function vecToTColumnType(vec) {
         col_name: vec.name,
         is_reserved_keyword: false,
         col_type: new TTypeInfo({
-            type, encoding,
+            type,
+            encoding,
             nullable: true,
             is_array: false,
-            scale: 0, precision: 0,
-            comp_param: compression,
-        }),
+            scale: 0,
+            precision: 0,
+            comp_param: compression
+        })
     });
 }

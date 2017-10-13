@@ -1,26 +1,26 @@
 {
-  "id": "3f2fc63c1e995707",
-  "enabled": true,
-  "pivotParameters": {
-    "search-splunk-plain$$$query": "error",
-    "search-splunk-plain$$$fields": [
-      "module",
-      "level",
-      "err.message",
-      "time",
-      "metadata.dataset",
-      "err.stackArray{}.file",
-      "err.stackArray{}.function",
-      "msg",
-      "fileName"
-    ],
-    "manual-data$$$events": "{\"x\": 1,\n \"arr\": [0, {\"y\": 2}]}",
-    "http-search$$$endpoint": "http://localhost:3000/pivot/echo?x=1",
-    "http-search$$$method": "GET",
-    "http-search$$$timeout": 10,
-    "http-search$$$jq":
-      ". | {edges: [{source: 2, destination: \"b\", type:\"z\"}], nodes: [{node: 2, type: \"b\"}]}",
-    "http-search$$$outputType": "graph"
-  },
-  "pivotTemplate": "http-search"
+    "id": "3f2fc63c1e995707",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [
+            "module",
+            "level",
+            "err.message",
+            "time",
+            "metadata.dataset",
+            "err.stackArray{}.file",
+            "err.stackArray{}.function",
+            "msg",
+            "fileName"
+        ],
+        "manual-data$$$events": "{\"x\": 1,\n \"arr\": [0, {\"y\": 2}]}",
+        "http-search$$$endpoint": "http://localhost:3000/pivot/echo?x=1",
+        "http-search$$$method": "GET",
+        "http-search$$$timeout": 10,
+        "http-search$$$jq":
+            ". | {edges: [{source: 2, destination: \"b\", type:\"z\"}], nodes: [{node: 2, type: \"b\"}]}",
+        "http-search$$$outputType": "graph"
+    },
+    "pivotTemplate": "http-search"
 }

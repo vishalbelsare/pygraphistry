@@ -2,75 +2,75 @@ import { assert } from 'chai';
 import { Observable } from 'rxjs';
 
 import {
-  loadAppFactory,
-  userStore,
-  listTemplates,
-  templateStore,
-  listInvestigations,
-  investigationStore,
-  listConnectors,
-  pivotStore
+    loadAppFactory,
+    userStore,
+    listTemplates,
+    templateStore,
+    listInvestigations,
+    investigationStore,
+    listConnectors,
+    pivotStore
 } from '../../src/shared/services';
 
 import { createAppModel, makeTestUser } from '../../src/shared/models';
 
 describe('PivotStore basic', function() {
-  let loadApp;
-  let loadTemplatesById;
-  const loadPivotStore = function() {
-    return pivotStore(loadApp, '.', loadTemplatesById);
-  };
-  beforeEach(function createStore() {
-    ////////////////////////
-    const investigations = [];
-    const templates = [];
-    const connectors = [];
-    ////////////////////////
+    let loadApp;
+    let loadTemplatesById;
+    const loadPivotStore = function() {
+        return pivotStore(loadApp, '.', loadTemplatesById);
+    };
+    beforeEach(function createStore() {
+        ////////////////////////
+        const investigations = [];
+        const templates = [];
+        const connectors = [];
+        ////////////////////////
 
-    const convict = global.__graphistry_convict_conf__;
+        const convict = global.__graphistry_convict_conf__;
 
-    const testUser = makeTestUser(investigations, templates, connectors, '.', '.');
-    const app = createAppModel(testUser);
-    loadApp = loadAppFactory(app);
+        const testUser = makeTestUser(investigations, templates, connectors, '.', '.');
+        const app = createAppModel(testUser);
+        loadApp = loadAppFactory(app);
 
-    const { loadUsersById } = userStore({
-      convict,
-      loadApp,
-      listTemplates,
-      listConnectors,
-      listInvestigations: () => Observable.of([])
+        const { loadUsersById } = userStore({
+            convict,
+            loadApp,
+            listTemplates,
+            listConnectors,
+            listInvestigations: () => Observable.of([])
+        });
+        const tCache = templateStore(loadApp);
+        loadTemplatesById = tCache.loadTemplatesById;
+
+        const {
+            loadInvestigationsById,
+            unloadInvestigationsById,
+            persistInvestigationsById,
+            unlinkInvestigationsById
+        } = investigationStore(loadApp, '.');
     });
-    const tCache = templateStore(loadApp);
-    loadTemplatesById = tCache.loadTemplatesById;
 
-    const {
-      loadInvestigationsById,
-      unloadInvestigationsById,
-      persistInvestigationsById,
-      unlinkInvestigationsById
-    } = investigationStore(loadApp, '.');
-  });
+    it('construct empty', function(done) {
+        loadPivotStore();
+        done();
+    });
 
-  it('construct empty', function(done) {
-    loadPivotStore();
-    done();
-  });
+    it('load nothing', function(done) {
+        const { loadPivotsById } = loadPivotStore();
 
-  it('load nothing', function(done) {
-    const { loadPivotsById } = loadPivotStore();
+        loadPivotsById({ pivotIds: [] })
+            .toArray()
+            .subscribe(
+                arr => {
+                    assert.deepEqual(arr.length, 0);
+                },
+                done,
+                () => done()
+            );
+    });
 
-    loadPivotsById({ pivotIds: [] })
-      .toArray()
-      .subscribe(
-        arr => {
-          assert.deepEqual(arr.length, 0);
-        },
-        done,
-        () => done()
-      );
-  });
-
-  /*
+    /*
     it('load simple pivot', function (done) {
         const { loadPivotsById } = loadPivotStore();
         console.log('===== START ==== ');
@@ -87,7 +87,7 @@ describe('PivotStore basic', function() {
     });
     */
 
-  /*
+    /*
         TODO test loading pivot will fill in parameters based on template
 
     */

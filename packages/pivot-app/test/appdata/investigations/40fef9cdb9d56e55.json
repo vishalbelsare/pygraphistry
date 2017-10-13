@@ -1,24 +1,24 @@
 {
-  "name": "Jerry's Bad Day",
-  "id": "40fef9cdb9d56e55",
-  "description":
-    "FireEye flagged malware activity by user Jerry. The T1/T2 teams missed that others have it too.",
-  "tags": [],
-  "modifiedOn": 1505196132846,
-  "layout": "stackedBushyGraph",
-  "pivots": [
-    "40ff607091cb3846",
-    "410043db88e7034c",
-    "4104e122bad06f8a",
-    "40ff60bb6e2e603e",
-    "40ff8bcddff38b40"
-  ],
-  "time": {
-    "from": {
-      "date": "2017-09-03T19:00:00.000Z"
-    },
-    "to": {
-      "date": "2017-09-09T19:00:00.000Z"
+    "name": "Jerry's Bad Day",
+    "id": "40fef9cdb9d56e55",
+    "description":
+        "FireEye flagged malware activity by user Jerry. The T1/T2 teams missed that others have it too.",
+    "tags": [],
+    "modifiedOn": 1505196132846,
+    "layout": "stackedBushyGraph",
+    "pivots": [
+        "40ff607091cb3846",
+        "410043db88e7034c",
+        "4104e122bad06f8a",
+        "40ff60bb6e2e603e",
+        "40ff8bcddff38b40"
+    ],
+    "time": {
+        "from": {
+            "date": "2017-09-03T19:00:00.000Z"
+        },
+        "to": {
+            "date": "2017-09-09T19:00:00.000Z"
+        }
     }
-  }
 }

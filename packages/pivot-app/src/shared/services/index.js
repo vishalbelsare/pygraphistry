@@ -27,78 +27,78 @@ import { listTemplates, templateStore } from './loadTemplates';
 import { listConnectors, connectorStore } from './loadConnectors';
 import { listInvestigations, investigationStore } from './investigationStore';
 import {
-  createInvestigation,
-  saveInvestigationsById,
-  cloneInvestigationsById,
-  removeInvestigationsById,
-  switchActiveInvestigation
+    createInvestigation,
+    saveInvestigationsById,
+    cloneInvestigationsById,
+    removeInvestigationsById,
+    switchActiveInvestigation
 } from './manageInvestigation';
 
 export function configureServices(convict, context) {
-  const { app, pivotPath, investigationPath, investigationsByIdCache } = context;
+    const { app, pivotPath, investigationPath, investigationsByIdCache } = context;
 
-  const loadApp = loadAppFactory(app);
-  const { loadUsersById } = userStore({
-    convict,
-    loadApp,
-    listTemplates,
-    listConnectors,
-    listInvestigations: listInvestigations.bind(null, investigationPath)
-  });
-  const { loadTemplatesById } = templateStore(loadApp);
-  const { loadConnectorsById } = connectorStore(loadApp);
-  const {
-    loadInvestigationsById,
-    unloadInvestigationsById,
-    persistInvestigationsById,
-    unlinkInvestigationsById
-  } = investigationStore(loadApp, investigationPath, investigationsByIdCache);
+    const loadApp = loadAppFactory(app);
+    const { loadUsersById } = userStore({
+        convict,
+        loadApp,
+        listTemplates,
+        listConnectors,
+        listInvestigations: listInvestigations.bind(null, investigationPath)
+    });
+    const { loadTemplatesById } = templateStore(loadApp);
+    const { loadConnectorsById } = connectorStore(loadApp);
+    const {
+        loadInvestigationsById,
+        unloadInvestigationsById,
+        persistInvestigationsById,
+        unlinkInvestigationsById
+    } = investigationStore(loadApp, investigationPath, investigationsByIdCache);
 
-  const { loadPivotsById, unloadPivotsById, persistPivotsById, unlinkPivotsById } = pivotStore(
-    loadApp,
-    pivotPath,
-    loadTemplatesById
-  );
+    const { loadPivotsById, unloadPivotsById, persistPivotsById, unlinkPivotsById } = pivotStore(
+        loadApp,
+        pivotPath,
+        loadTemplatesById
+    );
 
-  return wrapServices({
-    loadApp,
-    loadUsersById,
-    loadTemplatesById,
-    loadConnectorsById,
-    loadInvestigationsById,
-    unloadInvestigationsById,
-    persistInvestigationsById,
-    unlinkInvestigationsById,
-    createInvestigation,
-    switchActiveInvestigation,
-    cloneInvestigationsById,
-    saveInvestigationsById,
-    removeInvestigationsById,
-    loadPivotsById,
-    unloadPivotsById,
-    persistPivotsById,
-    unlinkPivotsById,
-    insertPivot,
-    splicePivot,
-    searchPivot,
-    checkConnector,
-    uploadGraph
-  });
+    return wrapServices({
+        loadApp,
+        loadUsersById,
+        loadTemplatesById,
+        loadConnectorsById,
+        loadInvestigationsById,
+        unloadInvestigationsById,
+        persistInvestigationsById,
+        unlinkInvestigationsById,
+        createInvestigation,
+        switchActiveInvestigation,
+        cloneInvestigationsById,
+        saveInvestigationsById,
+        removeInvestigationsById,
+        loadPivotsById,
+        unloadPivotsById,
+        persistPivotsById,
+        unlinkPivotsById,
+        insertPivot,
+        splicePivot,
+        searchPivot,
+        checkConnector,
+        uploadGraph
+    });
 }
 
 export default configureServices;
 
 export function wrapServices(services) {
-  return _.mapObject(
-    services,
-    service => (typeof service === 'function' ? wrapService(service) : service)
-  );
+    return _.mapObject(
+        services,
+        service => (typeof service === 'function' ? wrapService(service) : service)
+    );
 }
 
 function wrapService(service) {
-  return function(...args) {
-    const serviceArgs = _.omit(_.omit(args[0], 'options'), v => typeof v === 'function');
-    log.info(`Calling ${service.name} ${JSON.stringify(serviceArgs)}`);
-    return service.apply(this, args);
-  };
+    return function(...args) {
+        const serviceArgs = _.omit(_.omit(args[0], 'options'), v => typeof v === 'function');
+        log.info(`Calling ${service.name} ${JSON.stringify(serviceArgs)}`);
+        return service.apply(this, args);
+    };
 }

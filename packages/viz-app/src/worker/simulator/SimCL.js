@@ -39,75 +39,75 @@ const logger = log.createLogger('graph-viz', 'graph-viz/js/SimCL.js');
  * @param cl
  */
 function createSimCL(simObj, algos, cl, renderer, controls, dataframe, kernelCache) {
-  logger.trace('Creating SimCL...');
+    logger.trace('Creating SimCL...');
 
-  simObj.layoutAlgorithms = algos;
-  simObj.otherKernels = {
-    moveNodes: new MoveNodes(cl, kernelCache),
-    moveNodesByIds: new MoveNodesByIds(cl, kernelCache),
-    selectNodesInRect: new SelectNodesInRect(cl, kernelCache),
-    selectNodesInCircle: new SelectNodesInCircle(cl, kernelCache)
-    // histogramKernel: new HistogramKernel(cl),
-  };
-  simObj.tilesPerIteration = 1;
-  simObj.buffersLocal = {};
+    simObj.layoutAlgorithms = algos;
+    simObj.otherKernels = {
+        moveNodes: new MoveNodes(cl, kernelCache),
+        moveNodesByIds: new MoveNodesByIds(cl, kernelCache),
+        selectNodesInRect: new SelectNodesInRect(cl, kernelCache),
+        selectNodesInCircle: new SelectNodesInCircle(cl, kernelCache)
+        // histogramKernel: new HistogramKernel(cl),
+    };
+    simObj.tilesPerIteration = 1;
+    simObj.buffersLocal = {};
 
-  simObj.tick = tick.bind(this, simObj);
-  simObj.setPoints = setPoints.bind(this, simObj);
-  simObj.setEdges = setEdges.bind(this, renderer, simObj);
-  simObj.setSelectedPointIndexes = setSelectedPointIndexes.bind(this, simObj);
-  simObj.setSelectedEdgeIndexes = setSelectedEdgeIndexes.bind(this, simObj);
-  simObj.setLocks = setLocks.bind(this, simObj);
-  simObj.setPhysics = setPhysics.bind(this, simObj);
-  simObj.moveNodes = moveNodes.bind(this, simObj);
-  simObj.moveNodesByIds = moveNodesByIds.bind(this, simObj);
-  simObj.selectNodesInRect = selectNodesInRect.bind(this, simObj);
-  simObj.selectNodesInCircle = selectNodesInCircle.bind(this, simObj);
-  simObj.connectedEdges = connectedEdges.bind(this, simObj);
-  simObj.resetBuffers = resetBuffers.bind(this, simObj);
-  simObj.tickBuffers = tickBuffers.bind(this, simObj);
-  simObj.setColor = setColor.bind(this, renderer, simObj);
-  simObj.tickInitialBufferVersions = tickInitialBufferVersions.bind(this, simObj);
+    simObj.tick = tick.bind(this, simObj);
+    simObj.setPoints = setPoints.bind(this, simObj);
+    simObj.setEdges = setEdges.bind(this, renderer, simObj);
+    simObj.setSelectedPointIndexes = setSelectedPointIndexes.bind(this, simObj);
+    simObj.setSelectedEdgeIndexes = setSelectedEdgeIndexes.bind(this, simObj);
+    simObj.setLocks = setLocks.bind(this, simObj);
+    simObj.setPhysics = setPhysics.bind(this, simObj);
+    simObj.moveNodes = moveNodes.bind(this, simObj);
+    simObj.moveNodesByIds = moveNodesByIds.bind(this, simObj);
+    simObj.selectNodesInRect = selectNodesInRect.bind(this, simObj);
+    simObj.selectNodesInCircle = selectNodesInCircle.bind(this, simObj);
+    simObj.connectedEdges = connectedEdges.bind(this, simObj);
+    simObj.resetBuffers = resetBuffers.bind(this, simObj);
+    simObj.tickBuffers = tickBuffers.bind(this, simObj);
+    simObj.setColor = setColor.bind(this, renderer, simObj);
+    simObj.tickInitialBufferVersions = tickInitialBufferVersions.bind(this, simObj);
 
-  simObj.numPoints = 0;
-  simObj.numEdges = 0;
-  simObj.numForwardsWorkItems = 0;
-  simObj.numBackwardsWorkItems = 0;
-  simObj.numSplits = controls.global.numSplits;
-  simObj.numRenderedSplits = controls.global.numRenderedSplits;
-  simObj.pointLabels = [];
-  simObj.edgeLabels = [];
+    simObj.numPoints = 0;
+    simObj.numEdges = 0;
+    simObj.numForwardsWorkItems = 0;
+    simObj.numBackwardsWorkItems = 0;
+    simObj.numSplits = controls.global.numSplits;
+    simObj.numRenderedSplits = controls.global.numRenderedSplits;
+    simObj.pointLabels = [];
+    simObj.edgeLabels = [];
 
-  simObj.bufferHostCopies = {
-    unsortedEdges: null,
-    forwardsEdges: null,
-    backwardsEdges: null
-  };
+    simObj.bufferHostCopies = {
+        unsortedEdges: null,
+        forwardsEdges: null,
+        backwardsEdges: null
+    };
 
-  simObj.vgraph = null;
+    simObj.vgraph = null;
 
-  simObj.buffers = {
-    nextPoints: null,
-    curPoints: null,
-    degrees: null,
-    forwardsEdges: null,
-    backwardsEdges: null,
-    outputEdgeForcesMap: null,
-    forwardsEdgeStartEndIdxs: null,
-    backwardsEdgeStartEndIdxs: null
-  };
+    simObj.buffers = {
+        nextPoints: null,
+        curPoints: null,
+        degrees: null,
+        forwardsEdges: null,
+        backwardsEdges: null,
+        outputEdgeForcesMap: null,
+        forwardsEdgeStartEndIdxs: null,
+        backwardsEdgeStartEndIdxs: null
+    };
 
-  dataframe.setNumElements('point', renderer.numPoints);
-  dataframe.setNumElements('edge', renderer.numEdges);
-  dataframe.setNumElements('splits', controls.global.numSplits);
-  dataframe.setNumElements('renderedSplits', controls.global.numRenderedSplits || 0);
+    dataframe.setNumElements('point', renderer.numPoints);
+    dataframe.setNumElements('edge', renderer.numEdges);
+    dataframe.setNumElements('splits', controls.global.numSplits);
+    dataframe.setNumElements('renderedSplits', controls.global.numRenderedSplits || 0);
 
-  simObj.tickInitialBufferVersions();
+    simObj.tickInitialBufferVersions();
 
-  Object.seal(simObj.buffers);
-  Object.seal(simObj);
+    Object.seal(simObj.buffers);
+    Object.seal(simObj);
 
-  logger.trace('Simulator created');
+    logger.trace('Simulator created');
 }
 
 /**
@@ -120,74 +120,74 @@ function createSimCL(simObj, algos, cl, renderer, controls, dataframe, kernelCac
  * @returns {Simulator}
  */
 export function createSync(dataframe, renderer, cl, device, vendor, cfg, kernelCache) {
-  // Pick the first layout algorithm that matches our device type
+    // Pick the first layout algorithm that matches our device type
 
-  // GPU device type
-  const type = cl.deviceProps.TYPE.trim();
+    // GPU device type
+    const type = cl.deviceProps.TYPE.trim();
 
-  // TODO Remove. Algorithms run on all devices
-  var availableControls = _.filter(cfg, algo => true || _.contains(algo.devices, type));
+    // TODO Remove. Algorithms run on all devices
+    var availableControls = _.filter(cfg, algo => true || _.contains(algo.devices, type));
 
-  if (availableControls.length === 0) {
-    logger.die('No layout controls satisfying device/vendor requirements', device, vendor);
-  }
+    if (availableControls.length === 0) {
+        logger.die('No layout controls satisfying device/vendor requirements', device, vendor);
+    }
 
-  const controls = availableControls[0];
-  const layoutAlgorithms = controls.layoutAlgorithms;
+    const controls = availableControls[0];
+    const layoutAlgorithms = controls.layoutAlgorithms;
 
-  /** @type Simulator */
-  const simObj = {
-    renderer: renderer,
-    cl: cl,
-    elementsPerPoint: 2,
-    versions: {
-      tick: 0,
-      buffers: {}
-    },
-    controls: controls,
-    dataframe: dataframe
-  };
+    /** @type Simulator */
+    const simObj = {
+        renderer: renderer,
+        cl: cl,
+        elementsPerPoint: 2,
+        versions: {
+            tick: 0,
+            buffers: {}
+        },
+        controls: controls,
+        dataframe: dataframe
+    };
 
-  // Give dataframe pointer to simObj
-  dataframe.simulator = simObj;
+    // Give dataframe pointer to simObj
+    dataframe.simulator = simObj;
 
-  logger.debug({ layoutAlgorithms: layoutAlgorithms }, 'Instantiating layout algorithms');
+    logger.debug({ layoutAlgorithms: layoutAlgorithms }, 'Instantiating layout algorithms');
 
-  const algos = _.map(layoutAlgorithms, la => {
-    const algo = new la.algo(cl, kernelCache);
-    algo.setPhysics(_.object(_.map(la.params, (p, name) => [name, p.value])));
-    return algo;
-  });
+    const algos = _.map(layoutAlgorithms, la => {
+        const algo = new la.algo(cl, kernelCache);
+        algo.setPhysics(_.object(_.map(la.params, (p, name) => [name, p.value])));
+        return algo;
+    });
 
-  createSimCL.call(this, simObj, algos, cl, renderer, controls, dataframe, kernelCache);
+    createSimCL.call(this, simObj, algos, cl, renderer, controls, dataframe, kernelCache);
 
-  return simObj;
+    return simObj;
 }
 
 // TODO: Deprecate this in favor of encodings.
 function setColor(renderer, simulator, colorObj) {
-  // TODO why are these reversed?
-  const rgb = (colorObj.rgb.r << 0) + (colorObj.rgb.g << 8) + (colorObj.rgb.b << 16);
+    // TODO why are these reversed?
+    const rgb = (colorObj.rgb.r << 0) + (colorObj.rgb.g << 8) + (colorObj.rgb.b << 16);
 
-  const dataframe = simulator.dataframe;
-  const ccManager = dataframe.computedColumnManager;
+    const dataframe = simulator.dataframe;
+    const ccManager = dataframe.computedColumnManager;
 
-  // Set point colors
-  const oldPointColorDesc = ccManager.getComputedColumnSpec('localBuffer', 'pointColors');
-  const newPointColorDesc = oldPointColorDesc.clone();
-  newPointColorDesc.setDependencies([]);
-  newPointColorDesc.setComputeSingleValue(() => rgb);
+    // Set point colors
+    const oldPointColorDesc = ccManager.getComputedColumnSpec('localBuffer', 'pointColors');
+    const newPointColorDesc = oldPointColorDesc.clone();
+    newPointColorDesc.setDependencies([]);
+    newPointColorDesc.setComputeSingleValue(() => rgb);
 
-  // Set edge colors
-  const oldEdgeColorDesc = ccManager.getComputedColumnSpec('localBuffer', 'edgeColors');
-  const newEdgeColorDesc = oldEdgeColorDesc.clone();
-  newEdgeColorDesc.setDependencies([]);
-  newEdgeColorDesc.setComputeSingleValue(() => [rgb, rgb]);
+    // Set edge colors
+    const oldEdgeColorDesc = ccManager.getComputedColumnSpec('localBuffer', 'edgeColors');
+    const newEdgeColorDesc = oldEdgeColorDesc.clone();
+    newEdgeColorDesc.setDependencies([]);
+    newEdgeColorDesc.setComputeSingleValue(() => [rgb, rgb]);
 
-  ccManager.addComputedColumn(dataframe, 'localBuffer', 'pointColors', newPointColorDesc);
-  ccManager.addComputedColumn(dataframe, 'localBuffer', 'edgeColors', newEdgeColorDesc);
+    ccManager.addComputedColumn(dataframe, 'localBuffer', 'pointColors', newPointColorDesc);
+    ccManager.addComputedColumn(dataframe, 'localBuffer', 'edgeColors', newEdgeColorDesc);
 
-  return Q();
+    return Q();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -330,21 +330,21 @@ function setColor(renderer, simulator, colorObj) {
  * @param {Number} tick
  **/
 function tickBuffers(simulator, bufferNames, tick = undefined) {
-  if (tick === undefined) {
-    simulator.versions.tick++;
-    tick = simulator.versions.tick;
-  }
+    if (tick === undefined) {
+        simulator.versions.tick++;
+        tick = simulator.versions.tick;
+    }
 
-  if (bufferNames) {
-    bufferNames.forEach(name => {
-      simulator.versions.buffers[name] = tick;
-    });
-  } else {
-    _.keys(simulator.versions.buffers).forEach(name => {
-      simulator.versions.buffers[name] = tick;
-      logger.trace('tick', name, tick);
-    });
-  }
+    if (bufferNames) {
+        bufferNames.forEach(name => {
+            simulator.versions.buffers[name] = tick;
+        });
+    } else {
+        _.keys(simulator.versions.buffers).forEach(name => {
+            simulator.versions.buffers[name] = tick;
+            logger.trace('tick', name, tick);
+        });
+    }
 }
 
 /**
@@ -356,27 +356,27 @@ function tickBuffers(simulator, bufferNames, tick = undefined) {
  */
 // TODO: Rewrite this to be cleaner (e.g., take name list)
 function resetBuffers(simulator, buffers) {
-  if (!buffers.length) {
-    return;
-  }
-
-  const simulatorBuffers = simulator.dataframe.getAllBuffers('simulator');
-
-  const buffNames = buffers.filter(_.identity).map(buffer => {
-    for (const buff in simulatorBuffers) {
-      if (simulatorBuffers.hasOwnProperty(buff) && simulatorBuffers[buff] === buffer) {
-        return buff;
-      }
+    if (!buffers.length) {
+        return;
     }
-    throw new Error('Could not find buffer', buffer);
-  });
 
-  tickBuffers(simulator, buffNames);
+    const simulatorBuffers = simulator.dataframe.getAllBuffers('simulator');
 
-  // delete old
-  buffNames.forEach(buffName => {
-    simulator.dataframe.deleteBuffer(buffName);
-  });
+    const buffNames = buffers.filter(_.identity).map(buffer => {
+        for (const buff in simulatorBuffers) {
+            if (simulatorBuffers.hasOwnProperty(buff) && simulatorBuffers[buff] === buffer) {
+                return buff;
+            }
+        }
+        throw new Error('Could not find buffer', buffer);
+    });
+
+    tickBuffers(simulator, buffNames);
+
+    // delete old
+    buffNames.forEach(buffName => {
+        simulator.dataframe.deleteBuffer(buffName);
+    });
 }
 
 /**
@@ -388,51 +388,51 @@ function resetBuffers(simulator, buffers) {
  * @returns a promise fulfilled by with the given simulator object
  */
 function setPoints(simulator, points) {
-  if (points.length < 1) {
-    throw new Error('The points buffer is empty');
-  }
-  const elementsPerPoint = simulator.elementsPerPoint;
-  if (points.length % elementsPerPoint !== 0) {
-    throw new Error(
-      'The points buffer is an invalid size (must be a multiple of ' + elementsPerPoint + ')'
-    );
-  }
+    if (points.length < 1) {
+        throw new Error('The points buffer is empty');
+    }
+    const elementsPerPoint = simulator.elementsPerPoint;
+    if (points.length % elementsPerPoint !== 0) {
+        throw new Error(
+            'The points buffer is an invalid size (must be a multiple of ' + elementsPerPoint + ')'
+        );
+    }
 
-  simulator.resetBuffers([
-    simulator.dataframe.getBuffer('nextPoints', 'simulator'),
-    simulator.dataframe.getBuffer('curPoints', 'simulator')
-  ]);
+    simulator.resetBuffers([
+        simulator.dataframe.getBuffer('nextPoints', 'simulator'),
+        simulator.dataframe.getBuffer('curPoints', 'simulator')
+    ]);
 
-  const numPoints = points.length / elementsPerPoint;
-  simulator.dataframe.setNumElements('point', numPoints);
+    const numPoints = points.length / elementsPerPoint;
+    simulator.dataframe.setNumElements('point', numPoints);
 
-  simulator.renderer.numPoints = numPoints;
+    simulator.renderer.numPoints = numPoints;
 
-  logger.debug('Number of points in simulation: %d', numPoints);
+    logger.debug('Number of points in simulation: %d', numPoints);
 
-  return Q.all([
-    simulator.renderer.createBuffer(points, 'curPoints'),
-    simulator.cl.createBuffer(points.byteLength, 'nextPoints')
-  ])
-    .spread((pointsVBO, nextPointsBuf) => {
-      logger.trace('Created most of the points');
+    return Q.all([
+        simulator.renderer.createBuffer(points, 'curPoints'),
+        simulator.cl.createBuffer(points.byteLength, 'nextPoints')
+    ])
+        .spread((pointsVBO, nextPointsBuf) => {
+            logger.trace('Created most of the points');
 
-      simulator.dataframe.loadBuffer('nextPoints', 'simulator', nextPointsBuf);
+            simulator.dataframe.loadBuffer('nextPoints', 'simulator', nextPointsBuf);
 
-      simulator.dataframe.loadRendererBuffer('curPoints', pointsVBO);
+            simulator.dataframe.loadRendererBuffer('curPoints', pointsVBO);
 
-      return Q.all([simulator.cl.createBufferGL(pointsVBO, 'curPoints')]);
-    })
-    .spread(pointsBuf => {
-      simulator.dataframe.loadBuffer('curPoints', 'simulator', pointsBuf);
-    })
-    .then(() => {
-      _.each(simulator.layoutAlgorithms, la => {
-        la.setPoints(simulator);
-      });
-      return simulator;
-    })
-    .fail(log.makeQErrorHandler(logger, 'Failure in SimCl.setPoints'));
+            return Q.all([simulator.cl.createBufferGL(pointsVBO, 'curPoints')]);
+        })
+        .spread(pointsBuf => {
+            simulator.dataframe.loadBuffer('curPoints', 'simulator', pointsBuf);
+        })
+        .then(() => {
+            _.each(simulator.layoutAlgorithms, la => {
+                la.setPoints(simulator);
+            });
+            return simulator;
+        })
+        .fail(log.makeQErrorHandler(logger, 'Failure in SimCl.setPoints'));
 }
 
 //function setMidEdges ( simulator ) {
@@ -508,165 +508,174 @@ function setPoints(simulator, points) {
  * @returns {Promise<Simulator>} a promise for the simulator object
  */
 function setEdges(
-  renderer,
-  simulator,
-  unsortedEdges,
-  forwardsEdges,
-  backwardsEdges,
-  degrees,
-  endPoints,
-  points
+    renderer,
+    simulator,
+    unsortedEdges,
+    forwardsEdges,
+    backwardsEdges,
+    degrees,
+    endPoints,
+    points
 ) {
-  // edges, workItems
+    // edges, workItems
 
-  const nDim = simulator.controls.global.dimensions.length;
-  const elementsPerEdge = 2; // The number of elements in the edges buffer per spring
-  const elementsPerWorkItem = 4;
-  const numSplits = simulator.dataframe.getNumElements('splits');
-  const numEdges = forwardsEdges.edgesTyped.length / elementsPerEdge;
-  const midPoints = new Float32Array(unsortedEdges.length / 2 * numSplits * nDim || 1);
-  const numMidEdges = (numSplits + 1) * numEdges;
-  const numPoints = simulator.dataframe.getNumElements('point');
+    const nDim = simulator.controls.global.dimensions.length;
+    const elementsPerEdge = 2; // The number of elements in the edges buffer per spring
+    const elementsPerWorkItem = 4;
+    const numSplits = simulator.dataframe.getNumElements('splits');
+    const numEdges = forwardsEdges.edgesTyped.length / elementsPerEdge;
+    const midPoints = new Float32Array(unsortedEdges.length / 2 * numSplits * nDim || 1);
+    const numMidEdges = (numSplits + 1) * numEdges;
+    const numPoints = simulator.dataframe.getNumElements('point');
 
-  logger.debug('Number of midpoints: ', numSplits);
+    logger.debug('Number of midpoints: ', numSplits);
 
-  if (forwardsEdges.edgesTyped.length < 1) {
-    throw new Error('The edge buffer is empty');
-  }
-  if (forwardsEdges.edgesTyped.length % elementsPerEdge !== 0) {
-    throw new Error(
-      'The edge buffer size is invalid (must be a multiple of ' + elementsPerEdge + ')'
-    );
-  }
-  if (forwardsEdges.workItemsTyped.length < 1) {
-    throw new Error('The work items buffer is empty');
-  }
-  if (forwardsEdges.workItemsTyped.length % elementsPerWorkItem !== 0) {
-    throw new Error(
-      'The work item buffer size is invalid (must be a multiple of ' + elementsPerWorkItem + ')'
-    );
-  }
-
-  simulator.dataframe.loadHostBuffer('unsortedEdges', unsortedEdges);
-  simulator.dataframe.loadHostBuffer('forwardsEdges', forwardsEdges);
-  simulator.dataframe.loadHostBuffer('backwardsEdges', backwardsEdges);
-
-  simulator.tickBuffers(['forwardsEdgeStartEndIdxs', 'backwardsEdgeStartEndIdxs']);
-
-  simulator.resetBuffers([
-    simulator.dataframe.getBuffer('degrees', 'simulator'),
-    simulator.dataframe.getBuffer('forwardsEdges', 'simulator'),
-    simulator.dataframe.getBuffer('backwardsEdges', 'simulator'),
-    simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator'),
-    simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator'),
-    simulator.dataframe.getBuffer('backwardsStartEndIdxs', 'simulator')
-  ]);
-
-  return Q()
-    .then(function() {
-      // Init constant
-      simulator.dataframe.setNumElements('edge', numEdges);
-      logger.debug('Number of edges in simulation: %d', numEdges);
-
-      simulator.dataframe.setNumElements(
-        'midPoints',
-        midPoints.length / simulator.elementsPerPoint
-      );
-      simulator.dataframe.setNumElements('midEdges', numMidEdges);
-
-      // Create buffers
-      return Q.all([
-        simulator.cl.createBuffer(degrees.byteLength, 'degrees'),
-        simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'forwardsEdges'),
-        simulator.cl.createBuffer(backwardsEdges.edgesTyped.byteLength, 'backwardsEdges'),
-        simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'outputEdgeForcesMap'),
-        simulator.cl.createBuffer(
-          forwardsEdges.edgeStartEndIdxsTyped.byteLength,
-          'forwardsEdgeStartEndIdxs'
-        ),
-        simulator.cl.createBuffer(
-          backwardsEdges.edgeStartEndIdxsTyped.byteLength,
-          'backwardsEdgeStartEndIdxs'
-        )
-      ]);
-    })
-    .spread(
-      (
-        degreesBuffer,
-        forwardsEdgesBuffer,
-        backwardsEdgesBuffer,
-        outputEdgeForcesMap,
-        forwardsEdgeStartEndIdxs,
-        backwardsEdgeStartEndIdxs
-      ) => {
-        // Bind buffers
-        simulator.dataframe.loadBuffer('degrees', 'simulator', degreesBuffer);
-        simulator.dataframe.loadBuffer('forwardsEdges', 'simulator', forwardsEdgesBuffer);
-        simulator.dataframe.loadBuffer('backwardsEdges', 'simulator', backwardsEdgesBuffer);
-        simulator.dataframe.loadBuffer('outputEdgeForcesMap', 'simulator', outputEdgeForcesMap);
-        simulator.dataframe.loadBuffer(
-          'forwardsEdgeStartEndIdxs',
-          'simulator',
-          forwardsEdgeStartEndIdxs
+    if (forwardsEdges.edgesTyped.length < 1) {
+        throw new Error('The edge buffer is empty');
+    }
+    if (forwardsEdges.edgesTyped.length % elementsPerEdge !== 0) {
+        throw new Error(
+            'The edge buffer size is invalid (must be a multiple of ' + elementsPerEdge + ')'
         );
-        simulator.dataframe.loadBuffer(
-          'backwardsEdgeStartEndIdxs',
-          'simulator',
-          backwardsEdgeStartEndIdxs
+    }
+    if (forwardsEdges.workItemsTyped.length < 1) {
+        throw new Error('The work items buffer is empty');
+    }
+    if (forwardsEdges.workItemsTyped.length % elementsPerWorkItem !== 0) {
+        throw new Error(
+            'The work item buffer size is invalid (must be a multiple of ' +
+                elementsPerWorkItem +
+                ')'
         );
+    }
 
-        return Q.all([
-          simulator.dataframe.writeBuffer('degrees', 'simulator', degrees, simulator),
-          simulator.dataframe.writeBuffer(
-            'forwardsEdges',
-            'simulator',
-            forwardsEdges.edgesTyped,
-            simulator
-          ),
-          simulator.dataframe.writeBuffer(
-            'backwardsEdges',
-            'simulator',
-            backwardsEdges.edgesTyped,
-            simulator
-          ),
-          simulator.dataframe.writeBuffer(
-            'forwardsEdgeStartEndIdxs',
-            'simulator',
-            forwardsEdges.edgeStartEndIdxsTyped,
-            simulator
-          ),
-          simulator.dataframe.writeBuffer(
-            'backwardsEdgeStartEndIdxs',
-            'simulator',
-            backwardsEdges.edgeStartEndIdxsTyped,
-            simulator
-          )
-        ]);
-      }
-    )
-    .then(() => {
-      return Q.all(
-        simulator.layoutAlgorithms.map(alg => {
-          return alg.setEdges(simulator);
+    simulator.dataframe.loadHostBuffer('unsortedEdges', unsortedEdges);
+    simulator.dataframe.loadHostBuffer('forwardsEdges', forwardsEdges);
+    simulator.dataframe.loadHostBuffer('backwardsEdges', backwardsEdges);
+
+    simulator.tickBuffers(['forwardsEdgeStartEndIdxs', 'backwardsEdgeStartEndIdxs']);
+
+    simulator.resetBuffers([
+        simulator.dataframe.getBuffer('degrees', 'simulator'),
+        simulator.dataframe.getBuffer('forwardsEdges', 'simulator'),
+        simulator.dataframe.getBuffer('backwardsEdges', 'simulator'),
+        simulator.dataframe.getBuffer('outputEdgeForcesMap', 'simulator'),
+        simulator.dataframe.getBuffer('forwardsEdgeStartEndIdxs', 'simulator'),
+        simulator.dataframe.getBuffer('backwardsStartEndIdxs', 'simulator')
+    ]);
+
+    return Q()
+        .then(function() {
+            // Init constant
+            simulator.dataframe.setNumElements('edge', numEdges);
+            logger.debug('Number of edges in simulation: %d', numEdges);
+
+            simulator.dataframe.setNumElements(
+                'midPoints',
+                midPoints.length / simulator.elementsPerPoint
+            );
+            simulator.dataframe.setNumElements('midEdges', numMidEdges);
+
+            // Create buffers
+            return Q.all([
+                simulator.cl.createBuffer(degrees.byteLength, 'degrees'),
+                simulator.cl.createBuffer(forwardsEdges.edgesTyped.byteLength, 'forwardsEdges'),
+                simulator.cl.createBuffer(backwardsEdges.edgesTyped.byteLength, 'backwardsEdges'),
+                simulator.cl.createBuffer(
+                    forwardsEdges.edgesTyped.byteLength,
+                    'outputEdgeForcesMap'
+                ),
+                simulator.cl.createBuffer(
+                    forwardsEdges.edgeStartEndIdxsTyped.byteLength,
+                    'forwardsEdgeStartEndIdxs'
+                ),
+                simulator.cl.createBuffer(
+                    backwardsEdges.edgeStartEndIdxsTyped.byteLength,
+                    'backwardsEdgeStartEndIdxs'
+                )
+            ]);
         })
-      );
-    })
-    .then(() => {
-      return simulator;
-    })
-    .fail(log.makeQErrorHandler(logger, 'Failure in SimCL.setEdges'));
+        .spread(
+            (
+                degreesBuffer,
+                forwardsEdgesBuffer,
+                backwardsEdgesBuffer,
+                outputEdgeForcesMap,
+                forwardsEdgeStartEndIdxs,
+                backwardsEdgeStartEndIdxs
+            ) => {
+                // Bind buffers
+                simulator.dataframe.loadBuffer('degrees', 'simulator', degreesBuffer);
+                simulator.dataframe.loadBuffer('forwardsEdges', 'simulator', forwardsEdgesBuffer);
+                simulator.dataframe.loadBuffer('backwardsEdges', 'simulator', backwardsEdgesBuffer);
+                simulator.dataframe.loadBuffer(
+                    'outputEdgeForcesMap',
+                    'simulator',
+                    outputEdgeForcesMap
+                );
+                simulator.dataframe.loadBuffer(
+                    'forwardsEdgeStartEndIdxs',
+                    'simulator',
+                    forwardsEdgeStartEndIdxs
+                );
+                simulator.dataframe.loadBuffer(
+                    'backwardsEdgeStartEndIdxs',
+                    'simulator',
+                    backwardsEdgeStartEndIdxs
+                );
+
+                return Q.all([
+                    simulator.dataframe.writeBuffer('degrees', 'simulator', degrees, simulator),
+                    simulator.dataframe.writeBuffer(
+                        'forwardsEdges',
+                        'simulator',
+                        forwardsEdges.edgesTyped,
+                        simulator
+                    ),
+                    simulator.dataframe.writeBuffer(
+                        'backwardsEdges',
+                        'simulator',
+                        backwardsEdges.edgesTyped,
+                        simulator
+                    ),
+                    simulator.dataframe.writeBuffer(
+                        'forwardsEdgeStartEndIdxs',
+                        'simulator',
+                        forwardsEdges.edgeStartEndIdxsTyped,
+                        simulator
+                    ),
+                    simulator.dataframe.writeBuffer(
+                        'backwardsEdgeStartEndIdxs',
+                        'simulator',
+                        backwardsEdges.edgeStartEndIdxsTyped,
+                        simulator
+                    )
+                ]);
+            }
+        )
+        .then(() => {
+            return Q.all(
+                simulator.layoutAlgorithms.map(alg => {
+                    return alg.setEdges(simulator);
+                })
+            );
+        })
+        .then(() => {
+            return simulator;
+        })
+        .fail(log.makeQErrorHandler(logger, 'Failure in SimCL.setEdges'));
 }
 
 function setSelectedEdgeIndexes(simulator, selectedEdgeIndexes) {
-  // TODO call in same promise chain as other set calls.
-  simulator.dataframe.loadLocalBuffer('selectedEdgeIndexes', selectedEdgeIndexes);
-  simulator.tickBuffers(['selectedEdgeIndexes']);
+    // TODO call in same promise chain as other set calls.
+    simulator.dataframe.loadLocalBuffer('selectedEdgeIndexes', selectedEdgeIndexes);
+    simulator.tickBuffers(['selectedEdgeIndexes']);
 }
 
 function setSelectedPointIndexes(simulator, selectedPointIndexes) {
-  // TODO call in same promise chain as other set calls.
-  simulator.dataframe.loadLocalBuffer('selectedPointIndexes', selectedPointIndexes);
-  simulator.tickBuffers(['selectedPointIndexes']);
+    // TODO call in same promise chain as other set calls.
+    simulator.dataframe.loadLocalBuffer('selectedPointIndexes', selectedPointIndexes);
+    simulator.tickBuffers(['selectedPointIndexes']);
 }
 
 // TODO Write kernel for this.
@@ -765,90 +774,90 @@ function setSelectedPointIndexes(simulator, selectedPointIndexes) {
 //}
 
 function setLocks(simulator, cfg) {
-  _.extend(simulator.controls.locks, cfg || {});
-  return Q();
+    _.extend(simulator.controls.locks, cfg || {});
+    return Q();
 }
 
 function setPhysics(simulator, cfg) {
-  logger.debug('SimCL set physics', cfg);
-  _.each(simulator.layoutAlgorithms, algo => {
-    if (algo.name in cfg) {
-      algo.setPhysics(cfg[algo.name]);
-    }
-  });
-  return Q();
+    logger.debug('SimCL set physics', cfg);
+    _.each(simulator.layoutAlgorithms, algo => {
+        if (algo.name in cfg) {
+            algo.setPhysics(cfg[algo.name]);
+        }
+    });
+    return Q();
 }
 
 function moveNodesByIds(simulator, ids, diff) {
-  logger.debug('move nodes by ids: ', diff);
+    logger.debug('move nodes by ids: ', diff);
 
-  const moveNodesByIdsKernel = simulator.otherKernels.moveNodesByIds;
+    const moveNodesByIdsKernel = simulator.otherKernels.moveNodesByIds;
 
-  return moveNodesByIdsKernel
-    .run(simulator, ids, diff)
-    .fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes by ids'));
+    return moveNodesByIdsKernel
+        .run(simulator, ids, diff)
+        .fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes by ids'));
 }
 
 function moveNodes(simulator, marqueeEvent) {
-  logger.debug('marqueeEvent', marqueeEvent);
+    logger.debug('marqueeEvent', marqueeEvent);
 
-  const drag = marqueeEvent.drag;
-  const delta = {
-    x: drag.end.x - drag.start.x,
-    y: drag.end.y - drag.start.y
-  };
+    const drag = marqueeEvent.drag;
+    const delta = {
+        x: drag.end.x - drag.start.x,
+        y: drag.end.y - drag.start.y
+    };
 
-  const moveNodesKernel = simulator.otherKernels.moveNodes;
+    const moveNodesKernel = simulator.otherKernels.moveNodes;
 
-  return moveNodesKernel
-    .run(simulator, marqueeEvent.selection, delta)
-    .fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes'));
+    return moveNodesKernel
+        .run(simulator, marqueeEvent.selection, delta)
+        .fail(log.makeQErrorHandler(logger, 'Failure trying to move nodes'));
 }
 
 function selectionKernelResultToMask(arrayOfBits) {
-  const selectedIndexes = [];
-  for (let i = 0; i < arrayOfBits.length; i++) {
-    if (arrayOfBits[i] === 1) {
-      selectedIndexes.push(i);
+    const selectedIndexes = [];
+    for (let i = 0; i < arrayOfBits.length; i++) {
+        if (arrayOfBits[i] === 1) {
+            selectedIndexes.push(i);
+        }
     }
-  }
-  return new Uint32Array(selectedIndexes);
+    return new Uint32Array(selectedIndexes);
 }
 
 function selectNodesInRect(simulator, selection) {
-  logger.debug('selectNodesInRect', selection);
+    logger.debug('selectNodesInRect', selection);
 
-  if (selection.all) {
-    const { dataframe } = simulator;
-    const { lastMasks = {} } = dataframe;
-    const numPoints = lastMasks.point ? lastMasks.point.length || 0 : dataframe.numPoints();
-    return Q(_.range(0, numPoints));
-  }
+    if (selection.all) {
+        const { dataframe } = simulator;
+        const { lastMasks = {} } = dataframe;
+        const numPoints = lastMasks.point ? lastMasks.point.length || 0 : dataframe.numPoints();
+        return Q(_.range(0, numPoints));
+    }
 
-  return simulator.otherKernels.selectNodesInRect
-    .run(simulator, selection)
-    .then(arrayOfBits => {
-      return selectionKernelResultToMask(arrayOfBits);
-    })
-    .fail(log.makeQErrorHandler(logger, 'Failure trying to compute selection'));
+    return simulator.otherKernels.selectNodesInRect
+        .run(simulator, selection)
+        .then(arrayOfBits => {
+            return selectionKernelResultToMask(arrayOfBits);
+        })
+        .fail(log.makeQErrorHandler(logger, 'Failure trying to compute selection'));
 }
 
 function selectNodesInCircle(simulator, selection) {
-  logger.debug('selectNodesInCircle', selection);
+    logger.debug('selectNodesInCircle', selection);
 
-  if (selection.all) {
-    const { dataframe } = simulator;
-    const { lastMasks = {} } = dataframe;
-    const numPoints = lastMasks.point ? lastMasks.point.length || 0 : dataframe.numPoints();
-    return Q(_.range(0, numPoints));
-  }
+    if (selection.all) {
+        const { dataframe } = simulator;
+        const { lastMasks = {} } = dataframe;
+        const numPoints = lastMasks.point ? lastMasks.point.length || 0 : dataframe.numPoints();
+        return Q(_.range(0, numPoints));
+    }
 
-  return simulator.otherKernels.selectNodesInCircle
-    .run(simulator, selection)
-    .then(arrayOfBits => {
-      return selectionKernelResultToMask(arrayOfBits);
-    })
-    .fail(log.makeQErrorHandler(logger, 'Failure trying to compute selection'));
+    return simulator.otherKernels.selectNodesInCircle
+        .run(simulator, selection)
+        .then(arrayOfBits => {
+            return selectionKernelResultToMask(arrayOfBits);
+        })
+        .fail(log.makeQErrorHandler(logger, 'Failure trying to compute selection'));
 }
 
 // Return the set of edge indices which are connected (either as src or dst)
@@ -856,50 +865,50 @@ function selectNodesInCircle(simulator, selection) {
 // Returns SORTED EDGE INDICES
 // TODO: Move into dataframe, since it has the crazy sorted/unsorted knowledge?
 function connectedEdges(simulator, nodeIndices) {
-  // As far as I can tell this is not needed. Maybe for dataframe operations?
-  const forwardsBuffers = simulator.dataframe.getHostBuffer('forwardsEdges');
-  const backwardsBuffers = simulator.dataframe.getHostBuffer('backwardsEdges');
-  const setOfEdges = [],
-    edgeHash = [];
-  let edgesLen = -1;
+    // As far as I can tell this is not needed. Maybe for dataframe operations?
+    const forwardsBuffers = simulator.dataframe.getHostBuffer('forwardsEdges');
+    const backwardsBuffers = simulator.dataframe.getHostBuffer('backwardsEdges');
+    const setOfEdges = [],
+        edgeHash = [];
+    let edgesLen = -1;
 
-  const addOutgoingEdgesToSet = buffers => {
-    _.each(nodeIndices, idx => {
-      const workItemId = buffers.srcToWorkItem[idx];
-      const firstEdgeId = buffers.workItemsTyped[4 * workItemId];
-      const numEdges = buffers.workItemsTyped[4 * workItemId + 1];
-      const permutation = buffers.edgePermutationInverseTyped;
+    const addOutgoingEdgesToSet = buffers => {
+        _.each(nodeIndices, idx => {
+            const workItemId = buffers.srcToWorkItem[idx];
+            const firstEdgeId = buffers.workItemsTyped[4 * workItemId];
+            const numEdges = buffers.workItemsTyped[4 * workItemId + 1];
+            const permutation = buffers.edgePermutationInverseTyped;
 
-      for (let i = 0; i < numEdges; i++) {
-        const edge = permutation[firstEdgeId + i];
-        if (!edgeHash[edge]) {
-          edgeHash[edge] = true;
-          setOfEdges[++edgesLen] = edge;
-        }
-      }
-    });
-  };
+            for (let i = 0; i < numEdges; i++) {
+                const edge = permutation[firstEdgeId + i];
+                if (!edgeHash[edge]) {
+                    edgeHash[edge] = true;
+                    setOfEdges[++edgesLen] = edge;
+                }
+            }
+        });
+    };
 
-  addOutgoingEdgesToSet(forwardsBuffers);
-  addOutgoingEdgesToSet(backwardsBuffers);
+    addOutgoingEdgesToSet(forwardsBuffers);
+    addOutgoingEdgesToSet(backwardsBuffers);
 
-  return new Uint32Array(setOfEdges);
+    return new Uint32Array(setOfEdges);
 }
 
 // TODO: Deprecate this fully once we don't have any versioned buffers
 // attached directly to the simulator.
 function tickInitialBufferVersions(simulator) {
-  simulator.tickBuffers([
-    // points/edges
-    'curPoints',
-    'nextPoints',
-    // style
-    'edgeColors',
-    // midpoints/midedges
-    'curMidPoints',
-    'nextMidPoints',
-    'curMidPoints'
-  ]);
+    simulator.tickBuffers([
+        // points/edges
+        'curPoints',
+        'nextPoints',
+        // style
+        'edgeColors',
+        // midpoints/midedges
+        'curMidPoints',
+        'nextMidPoints',
+        'curMidPoints'
+    ]);
 }
 
 /**
@@ -911,63 +920,63 @@ function tickInitialBufferVersions(simulator) {
  * @returns Promise<Simulator>
  */
 function tick(simulator, stepNumber, cfg) {
-  // If there are no points in the graph, don't run the simulation
-  const numPoints = simulator.dataframe.getNumElements('point');
-  if (numPoints < 1) {
-    return Q(simulator);
-  }
-
-  simulator.versions.tick++;
-
-  if (!cfg.layout) {
-    logger.trace('No layout algs to run, early exit');
-    return Q(simulator);
-  }
-
-  // run each algorithm to completion before calling next
-  const tickAllHelper = remainingAlgorithms => {
-    if (!remainingAlgorithms.length) {
-      return Q(undefined);
+    // If there are no points in the graph, don't run the simulation
+    const numPoints = simulator.dataframe.getNumElements('point');
+    if (numPoints < 1) {
+        return Q(simulator);
     }
-    const algorithm = remainingAlgorithms.shift();
+
+    simulator.versions.tick++;
+
+    if (!cfg.layout) {
+        logger.trace('No layout algs to run, early exit');
+        return Q(simulator);
+    }
+
+    // run each algorithm to completion before calling next
+    const tickAllHelper = remainingAlgorithms => {
+        if (!remainingAlgorithms.length) {
+            return Q(undefined);
+        }
+        const algorithm = remainingAlgorithms.shift();
+        return Q()
+            .then(() => {
+                return algorithm.tick(simulator, stepNumber);
+            })
+            .then(() => {
+                return tickAllHelper(remainingAlgorithms);
+            });
+    };
+
     return Q()
-      .then(() => {
-        return algorithm.tick(simulator, stepNumber);
-      })
-      .then(() => {
-        return tickAllHelper(remainingAlgorithms);
-      });
-  };
+        .then(() => tickAllHelper(simulator.layoutAlgorithms.slice(0)))
+        .then(() => {
+            if (stepNumber % 20 === 0 && stepNumber !== 0) {
+                // TODO: move to perflogging
+                logger.trace('Layout Perf Report (step: %d)', stepNumber);
 
-  return Q()
-    .then(() => tickAllHelper(simulator.layoutAlgorithms.slice(0)))
-    .then(() => {
-      if (stepNumber % 20 === 0 && stepNumber !== 0) {
-        // TODO: move to perflogging
-        logger.trace('Layout Perf Report (step: %d)', stepNumber);
+                const totals = {};
+                const runs = {};
+                // Compute sum of means so we can print percentage of runtime
+                _.each(simulator.layoutAlgorithms, la => {
+                    totals[la.name] = 0;
+                    runs[la.name] = 0;
+                });
+                _.each(simulator.layoutAlgorithms, la => {
+                    const total = totals[la.name] / stepNumber;
+                    logger.trace(sprintf('  %s (Total:%f) [ms]', la.name, total.toFixed(0)));
+                });
+            }
+            // This cl.queue.finish() needs to be here because, without it, the queue appears to outside
+            // code as running really fast, and tons of ticks will be called, flooding the GPU/CPU with
+            // more stuff than they can handle.
+            // What we really want here is to give finish() a callback and resolve the promise when it's
+            // called, but node-webcl is out-of-date and doesn't support WebCL 1.0's optional callback
+            // argument to finish().
 
-        const totals = {};
-        const runs = {};
-        // Compute sum of means so we can print percentage of runtime
-        _.each(simulator.layoutAlgorithms, la => {
-          totals[la.name] = 0;
-          runs[la.name] = 0;
-        });
-        _.each(simulator.layoutAlgorithms, la => {
-          const total = totals[la.name] / stepNumber;
-          logger.trace(sprintf('  %s (Total:%f) [ms]', la.name, total.toFixed(0)));
-        });
-      }
-      // This cl.queue.finish() needs to be here because, without it, the queue appears to outside
-      // code as running really fast, and tons of ticks will be called, flooding the GPU/CPU with
-      // more stuff than they can handle.
-      // What we really want here is to give finish() a callback and resolve the promise when it's
-      // called, but node-webcl is out-of-date and doesn't support WebCL 1.0's optional callback
-      // argument to finish().
-
-      simulator.cl.finish(simulator.cl.queue);
-      logger.trace('Tick Finished.');
-      simulator.renderer.finish();
-    })
-    .fail(log.makeQErrorHandler(logger, 'SimCl tick failed'));
+            simulator.cl.finish(simulator.cl.queue);
+            logger.trace('Tick Finished.');
+            simulator.renderer.finish();
+        })
+        .fail(log.makeQErrorHandler(logger, 'SimCl tick failed'));
 }

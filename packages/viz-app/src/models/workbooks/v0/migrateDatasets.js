@@ -1,36 +1,36 @@
 import { dataset as createDataset } from 'viz-app/models/workbooks';
 
 export function migrateDatasets(workbook, options = {}) {
-  if (workbook.datasets) {
-    return workbook;
-  }
-
-  const datasetsList = { length: 0 };
-  const workbookDatasets = workbook.datasetReferences;
-
-  for (const datasetId in workbookDatasets) {
-    if (!workbookDatasets.hasOwnProperty(datasetId)) {
-      continue;
+    if (workbook.datasets) {
+        return workbook;
     }
 
-    datasetsList[datasetsList.length++] = createDataset(
-      {
-        bg: options.bg,
-        url: datasetId,
-        name: datasetId,
-        ...workbookDatasets[datasetId]
-      },
-      datasetId
-    );
-  }
+    const datasetsList = { length: 0 };
+    const workbookDatasets = workbook.datasetReferences;
 
-  if (datasetsList.length === 0) {
-    datasetsList[datasetsList.length++] = createDataset(options);
-  }
+    for (const datasetId in workbookDatasets) {
+        if (!workbookDatasets.hasOwnProperty(datasetId)) {
+            continue;
+        }
 
-  workbook.datasets = datasetsList;
+        datasetsList[datasetsList.length++] = createDataset(
+            {
+                bg: options.bg,
+                url: datasetId,
+                name: datasetId,
+                ...workbookDatasets[datasetId]
+            },
+            datasetId
+        );
+    }
 
-  delete workbook.datasetReferences;
+    if (datasetsList.length === 0) {
+        datasetsList[datasetsList.length++] = createDataset(options);
+    }
 
-  return workbook;
+    workbook.datasets = datasetsList;
+
+    delete workbook.datasetReferences;
+
+    return workbook;
 }

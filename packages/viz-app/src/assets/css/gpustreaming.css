@@ -1,102 +1,102 @@
 html {
-  margin: 0;
-  padding: 0;
+    margin: 0;
+    padding: 0;
 }
 
 .graphistry-body {
-  background-color: rgb(255, 255, 255);
-  font-family: 'Source Sans Pro', sans-serif;
-  font-size: 15px;
-  margin: 0;
-  padding: 0;
+    background-color: rgb(255, 255, 255);
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 15px;
+    margin: 0;
+    padding: 0;
 }
 
 #main {
-  margin: 1em auto 0 auto;
-  width: 702px;
-  background-color: rgb(255, 255, 255);
-  padding: 0 1em 1em 1em;
+    margin: 1em auto 0 auto;
+    width: 702px;
+    background-color: rgb(255, 255, 255);
+    padding: 0 1em 1em 1em;
 }
 
 .heading {
-  position: relative;
-  margin-top: 0;
-  padding-top: 0;
-  margin-left: auto;
-  margin-right: auto;
+    position: relative;
+    margin-top: 0;
+    padding-top: 0;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .title {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
 }
 
 .controls {
-  display: none;
-  position: absolute;
-  right: 5px;
-  top: -15px;
+    display: none;
+    position: absolute;
+    right: 5px;
+    top: -15px;
 }
 //.debug .controls { display: block; }
 
 .controls button {
-  color: buttontext;
-  font-size: 9pt;
-  font-weight: 200;
-  font-style: italic;
+    color: buttontext;
+    font-size: 9pt;
+    font-weight: 200;
+    font-style: italic;
 }
 
 .content {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  text-align: center;
-  clear: both;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    clear: both;
 }
 
 .sim-container {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
 }
 
 #simulation {
-  display: block;
-  margin: 0;
-  padding: 0;
-  border: 1px solid black;
-  width: 100%;
-  height: 100%;
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 1px solid black;
+    width: 100%;
+    height: 100%;
 }
 
 .sim-container.disconnected {
-  background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
 .sim-container.disconnected #simulation {
-  /*opacity: 0.9;*/
-  /*-webkit-filter: brightness(0.6);*/
-  /*filter: brightness(0.6);*/
+    /*opacity: 0.9;*/
+    /*-webkit-filter: brightness(0.6);*/
+    /*filter: brightness(0.6);*/
 }
 
 .status-bar {
-  visibility: hidden;
-  position: fixed;
-  left: 0px;
-  bottom: 0px;
-  width: 100%;
-  text-align: left;
-  z-index: 10000;
-  background-color: rgba(255, 0, 0, 0.9);
-  color: rgb(255, 255, 255);
-  font-weight: 800;
+    visibility: hidden;
+    position: fixed;
+    left: 0px;
+    bottom: 0px;
+    width: 100%;
+    text-align: left;
+    z-index: 10000;
+    background-color: rgba(255, 0, 0, 0.9);
+    color: rgb(255, 255, 255);
+    font-weight: 800;
 }
 
 .status-error {
-  padding-left: 0.25em;
-  cursor: pointer;
+    padding-left: 0.25em;
+    cursor: pointer;
 }
 
 .status-error:hover {
-  background-color: rgba(200, 0, 0, 0.9);
+    background-color: rgba(200, 0, 0, 0.9);
 }

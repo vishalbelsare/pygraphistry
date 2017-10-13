@@ -7,12 +7,12 @@ import { Connector } from 'pivot-shared/connectors';
 import { Investigation } from 'pivot-shared/investigations';
 
 export default withSchema((QL, { get, set }, services) => {
-  const { loadApp } = services;
-  const readOnlyHandler = {
-    get: get(loadApp)
-  };
+    const { loadApp } = services;
+    const readOnlyHandler = {
+        get: get(loadApp)
+    };
 
-  return QL`{
+    return QL`{
         ['title', 'currentUser', 'serverStatus']: ${readOnlyHandler},
         usersById: {
             [{ keys: userIds }]: ${User.schema(services)}

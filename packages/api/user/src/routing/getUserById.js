@@ -6,13 +6,13 @@ const { send } = require('micro');
 const { getUserById } = require('../services/user');
 
 module.exports = visualize(
-  cors(async (req, res) => {
-    try {
-      const user = await getUserById(req.params.id);
-      send(res, 200, user);
-    } catch (e) {
-      send(res, 400, { error: e.message });
-    }
-  }),
-  process.env.NODE_ENV === 'development' ? 'dev' : ''
+    cors(async (req, res) => {
+        try {
+            const user = await getUserById(req.params.id);
+            send(res, 200, user);
+        } catch (e) {
+            send(res, 400, { error: e.message });
+        }
+    }),
+    process.env.NODE_ENV === 'development' ? 'dev' : ''
 );

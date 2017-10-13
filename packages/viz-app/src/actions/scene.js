@@ -5,26 +5,26 @@ export const SELECTED_POINT_TOUCH_START = 'selected-point-touch-start';
 export const SELECTION_MASK_TOUCH_START = 'selection-rect-touch-start';
 
 export const sceneShiftDown = props => ({
-  ...props,
-  type: SCENE_SHIFT_DOWN
+    ...props,
+    type: SCENE_SHIFT_DOWN
 });
 
 export const sceneMouseMove = props => ({
-  ...props,
-  type: SCENE_MOUSE_MOVE
+    ...props,
+    type: SCENE_MOUSE_MOVE
 });
 
 export const sceneTouchStart = props => ({
-  ...props,
-  type: SCENE_TOUCH_START
+    ...props,
+    type: SCENE_TOUCH_START
 });
 
 export const onSelectedPointTouchStart = props => ({
-  ...props,
-  type: SELECTED_POINT_TOUCH_START
+    ...props,
+    type: SELECTED_POINT_TOUCH_START
 });
 
 export const onSelectionMaskTouchStart = props => ({
-  ...props,
-  type: SELECTION_MASK_TOUCH_START
+    ...props,
+    type: SELECTION_MASK_TOUCH_START
 });

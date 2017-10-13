@@ -13,7 +13,9 @@ import _ from 'underscore';
  */
 export function ensureValidUrl() {
     var args = [{}];
-    for(var i in arguments) { args.push(arguments[i]); }
+    for (var i in arguments) {
+        args.push(arguments[i]);
+    }
 
     var adHocUrl = _.extend.apply(_, args);
 

@@ -1,20 +1,20 @@
 {
-  "name": "Botnet",
-  "id": "3dbf55904a21e5de",
-  "description": "Tracking down a botnet using FireEye, BlueCoat, and PAN",
-  "tags": ["Demo"],
-  "modifiedOn": 1505112837458,
-  "layout": "stackedBushyGraph",
-  "pivots": [
-    "3dbf55904a77e964",
-    "3dbf56157f9e4567",
-    "3dbf563fa4ebcfd4",
-    "3dbf566346f5ecd4",
-    "3e2e68d0f3c0d7fa"
-  ],
-  "time": {
-    "from": {
-      "date": "2016-07-01T19:00:00.000Z"
+    "name": "Botnet",
+    "id": "3dbf55904a21e5de",
+    "description": "Tracking down a botnet using FireEye, BlueCoat, and PAN",
+    "tags": ["Demo"],
+    "modifiedOn": 1505112837458,
+    "layout": "stackedBushyGraph",
+    "pivots": [
+        "3dbf55904a77e964",
+        "3dbf56157f9e4567",
+        "3dbf563fa4ebcfd4",
+        "3dbf566346f5ecd4",
+        "3e2e68d0f3c0d7fa"
+    ],
+    "time": {
+        "from": {
+            "date": "2016-07-01T19:00:00.000Z"
+        }
     }
-  }
 }

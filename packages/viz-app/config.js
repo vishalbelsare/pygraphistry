@@ -12,52 +12,54 @@ const configSchema = require('./config-schema.js');
 const conf = convict(configSchema);
 
 function loadConfigFiles() {
-  let configFiles = [];
+    let configFiles = [];
 
-  if (process.env.CONFIG_FILES) {
-    // eslint-disable-next-line no-console
-    console.log(
-      `$CONFIG_FILES environment variable set to "${process.env
-        .CONFIG_FILES}". Will use that value instead of the files in './config/*.json'`
-    );
-    configFiles = process.env.CONFIG_FILES.split(',').map(function(configFilePath) {
-      return configFilePath.trim();
-    });
-  } else {
-    const defaultConfigPath = path.resolve('.', 'config', '*.json');
-    configFiles = glob.sync(defaultConfigPath);
-  }
-
-  const validConfigFiles = configFiles.filter(function(configFilePath) {
-    try {
-      if (!fs.existsSync(configFilePath)) {
-        console.error(
-          `Warning: config file "${configFilePath}" does not exist, and will be omitted from config file loading.`
+    if (process.env.CONFIG_FILES) {
+        // eslint-disable-next-line no-console
+        console.log(
+            `$CONFIG_FILES environment variable set to "${process.env
+                .CONFIG_FILES}". Will use that value instead of the files in './config/*.json'`
         );
-        return false;
-      }
-
-      if (!fs.statSync(configFilePath).isFile()) {
-        console.error(`Warning: config file "${configFilePath}" is not a regular file. Ignoring.`);
-        return false;
-      }
-
-      return true;
-    } catch (e) {
-      console.error(
-        `Warning: could not read config file "${configFilePath}" due to the error: ${e.toString()}`
-      );
-      return false;
+        configFiles = process.env.CONFIG_FILES.split(',').map(function(configFilePath) {
+            return configFilePath.trim();
+        });
+    } else {
+        const defaultConfigPath = path.resolve('.', 'config', '*.json');
+        configFiles = glob.sync(defaultConfigPath);
     }
-  });
 
-  if (validConfigFiles.length > 0) {
-    // eslint-disable-next-line no-console
-    console.log(`Loading configuration from ${validConfigFiles.join(', ')}`);
-    conf.loadFile(validConfigFiles);
-  }
+    const validConfigFiles = configFiles.filter(function(configFilePath) {
+        try {
+            if (!fs.existsSync(configFilePath)) {
+                console.error(
+                    `Warning: config file "${configFilePath}" does not exist, and will be omitted from config file loading.`
+                );
+                return false;
+            }
 
-  return validConfigFiles;
+            if (!fs.statSync(configFilePath).isFile()) {
+                console.error(
+                    `Warning: config file "${configFilePath}" is not a regular file. Ignoring.`
+                );
+                return false;
+            }
+
+            return true;
+        } catch (e) {
+            console.error(
+                `Warning: could not read config file "${configFilePath}" due to the error: ${e.toString()}`
+            );
+            return false;
+        }
+    });
+
+    if (validConfigFiles.length > 0) {
+        // eslint-disable-next-line no-console
+        console.log(`Loading configuration from ${validConfigFiles.join(', ')}`);
+        conf.loadFile(validConfigFiles);
+    }
+
+    return validConfigFiles;
 }
 
 loadConfigFiles();

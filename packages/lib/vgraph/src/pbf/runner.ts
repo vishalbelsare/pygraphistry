@@ -15,7 +15,5 @@ export interface RunnerOptions extends ForkOptions {
 
 export function runner(options: RunnerOptions) {
     const numWorkers = options.workers || os.cpus().length;
-    return function runWorkers(vectors: VectorMetadata[]) {
-        
-    }
+    return function runWorkers(vectors: VectorMetadata[]) {};
 }

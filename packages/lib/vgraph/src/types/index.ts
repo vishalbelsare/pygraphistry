@@ -15,16 +15,27 @@ export default {
     uint32: identity,
     boolean: identity,
     int64: longToString,
-    string: decodeAndSanitize,
+    string: decodeAndSanitize
 };
 
-function identity(x: any) { return x; }
-function longToString(long: Long) { return long.toString(); };
+function identity(x: any) {
+    return x;
+}
+function longToString(long: Long) {
+    return long.toString();
+}
 function decodeAndSanitize(input) {
-    let decoded = input, value = input;
-    try { decoded = decodeURIComponent(input); }
-    catch (e) { decoded = input; }
-    try { value = sanitizeHTML(decoded); }
-    catch (e) { value = decoded; }
+    let decoded = input,
+        value = input;
+    try {
+        decoded = decodeURIComponent(input);
+    } catch (e) {
+        decoded = input;
+    }
+    try {
+        value = sanitizeHTML(decoded);
+    } catch (e) {
+        value = decoded;
+    }
     return value;
 }

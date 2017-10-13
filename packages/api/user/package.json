@@ -1,46 +1,46 @@
 {
-  "name": "@graphistry/user-service",
-  "version": "2.12.0",
-  "description": "CRUD for users",
-  "main": "src/index.js",
-  "scripts": {
-    "start": "pm2 start micro --name 'user-service' -- ./src/index.js",
-    "dev": "NODE_ENV=development micro src/index.js",
-    "restart": "pm2 restart user-service",
-    "test": "NODE_ENV=test DBNAME=graphistry-test jest --watchAll",
-    "test:coverage": "NODE_ENV=test DBNAME=graphistry-test jest --coverage",
-    "test:ci": "jest --ci"
-  },
-  "jest": {
-    "testResultsProcessor": "jest-junit"
-  },
-  "jest-junit": {
-    "output": "./coverage/junit/report.xml"
-  },
-  "author": "@mykola",
-  "license": "ISC",
-  "dependencies": {
-    "@graphistry/db": "*",
-    "bcryptjs": "^2.4.3",
-    "convict": "^4.0.1",
-    "knex": "^0.13.0",
-    "micro": "^8.0.4",
-    "micro-cookie-session": "^2.0.0-beta.1",
-    "micro-cors": "0.0.4",
-    "micro-visualize": "^3.0.1",
-    "microrouter": "^2.2.2",
-    "moment": "^2.18.1",
-    "pg": "^7.3.0",
-    "request-promise": "^4.2.1",
-    "uuid": "^3.1.0"
-  },
-  "devDependencies": {
-    "chai": "^4.1.2",
-    "jest": "^21.0.1",
-    "jest-junit": "^3.0.0",
-    "prettier": "^1.7.0",
-    "request": "^2.81.0",
-    "test-listen": "^1.0.2",
-    "tough-cookie": "^2.3.2"
-  }
+    "name": "@graphistry/user-service",
+    "version": "2.12.0",
+    "description": "CRUD for users",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "pm2 start micro --name 'user-service' -- ./src/index.js",
+        "dev": "NODE_ENV=development micro src/index.js",
+        "restart": "pm2 restart user-service",
+        "test": "NODE_ENV=test DBNAME=graphistry-test jest --watchAll",
+        "test:coverage": "NODE_ENV=test DBNAME=graphistry-test jest --coverage",
+        "test:ci": "jest --ci"
+    },
+    "jest": {
+        "testResultsProcessor": "jest-junit"
+    },
+    "jest-junit": {
+        "output": "./coverage/junit/report.xml"
+    },
+    "author": "@mykola",
+    "license": "ISC",
+    "dependencies": {
+        "@graphistry/db": "*",
+        "bcryptjs": "^2.4.3",
+        "convict": "^4.0.1",
+        "knex": "^0.13.0",
+        "micro": "^8.0.4",
+        "micro-cookie-session": "^2.0.0-beta.1",
+        "micro-cors": "0.0.4",
+        "micro-visualize": "^3.0.1",
+        "microrouter": "^2.2.2",
+        "moment": "^2.18.1",
+        "pg": "^7.3.0",
+        "request-promise": "^4.2.1",
+        "uuid": "^3.1.0"
+    },
+    "devDependencies": {
+        "chai": "^4.1.2",
+        "jest": "^21.0.1",
+        "jest-junit": "^3.0.0",
+        "prettier": "^1.7.0",
+        "request": "^2.81.0",
+        "test-listen": "^1.0.2",
+        "tough-cookie": "^2.3.2"
+    }
 }

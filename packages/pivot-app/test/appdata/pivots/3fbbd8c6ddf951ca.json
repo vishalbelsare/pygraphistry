@@ -1,31 +1,31 @@
 {
-  "id": "3fbbd8c6ddf951ca",
-  "enabled": true,
-  "pivotParameters": {
-    "search-splunk-plain$$$query": "error",
-    "search-splunk-plain$$$fields": [
-      "module",
-      "level",
-      "err.message",
-      "time",
-      "metadata.dataset",
-      "err.stackArray{}.file",
-      "err.stackArray{}.function",
-      "msg",
-      "fileName"
-    ],
-    "http-search$$$endpoint": "http://73.63.6.63:9999/bigdata/namespace/netflow300000/sparql",
-    "http-search$$$method": "POST",
-    "http-search$$$headers": [
-      "Accept:application/sparql-results+json",
-      "Content-Type: application/x-www-form-urlencoded"
-    ],
-    "http-search$$$body":
-      "query=PREFIX cybox: <http://cybox.mitre.org/objects/> select distinct ?srcIP ?srcPort ?dstIP ?dstPort ?weight ?procName WHERE{ ?cxn rdf:type cybox:NetworkConnection ; cybox:properties ?props ; cybox:destinationSocketAddress ?dstSocket ; cybox:sourceSocketAddress ?srcSocket . ?dstSocket  cybox::ipAddress ?dstIPObj ; cybox::port ?dstPortObj . ?dstIPObj   cybox::addressValue ?dstIP . ?dstPortObj cybox::portValue ?dstPort . ?srcSocket  cybox::ipAddress ?srcIPObj ; cybox::port ?srcPortObj . ?srcIPObj   cybox::addressValue ?srcIP . ?srcPortObj cybox::portValue ?srcPort . ?proc  rdf:type cybox:Process ; cybox::networkConnection ?cxn ; cybox::processName ?procName . ?props  cybox::name \"weight\" ; cybox::value ?weight . } LIMIT 1000",
-    "http-search$$$jq":
-      "{edges: [.results.bindings[] | {\n    source: .srcIP.value, \n    destination: .dstIP.value, \n    srcPort: .srcPort.value, \n    dstPort: .dstPort.value, \n    weight: .weight.value, \n    procName: .procName.value}]}",
-    "http-search$$$outputType": "graph",
-    "http-search$$$timeout": "1000"
-  },
-  "pivotTemplate": "http-search"
+    "id": "3fbbd8c6ddf951ca",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [
+            "module",
+            "level",
+            "err.message",
+            "time",
+            "metadata.dataset",
+            "err.stackArray{}.file",
+            "err.stackArray{}.function",
+            "msg",
+            "fileName"
+        ],
+        "http-search$$$endpoint": "http://73.63.6.63:9999/bigdata/namespace/netflow300000/sparql",
+        "http-search$$$method": "POST",
+        "http-search$$$headers": [
+            "Accept:application/sparql-results+json",
+            "Content-Type: application/x-www-form-urlencoded"
+        ],
+        "http-search$$$body":
+            "query=PREFIX cybox: <http://cybox.mitre.org/objects/> select distinct ?srcIP ?srcPort ?dstIP ?dstPort ?weight ?procName WHERE{ ?cxn rdf:type cybox:NetworkConnection ; cybox:properties ?props ; cybox:destinationSocketAddress ?dstSocket ; cybox:sourceSocketAddress ?srcSocket . ?dstSocket  cybox::ipAddress ?dstIPObj ; cybox::port ?dstPortObj . ?dstIPObj   cybox::addressValue ?dstIP . ?dstPortObj cybox::portValue ?dstPort . ?srcSocket  cybox::ipAddress ?srcIPObj ; cybox::port ?srcPortObj . ?srcIPObj   cybox::addressValue ?srcIP . ?srcPortObj cybox::portValue ?srcPort . ?proc  rdf:type cybox:Process ; cybox::networkConnection ?cxn ; cybox::processName ?procName . ?props  cybox::name \"weight\" ; cybox::value ?weight . } LIMIT 1000",
+        "http-search$$$jq":
+            "{edges: [.results.bindings[] | {\n    source: .srcIP.value, \n    destination: .dstIP.value, \n    srcPort: .srcPort.value, \n    dstPort: .dstPort.value, \n    weight: .weight.value, \n    procName: .procName.value}]}",
+        "http-search$$$outputType": "graph",
+        "http-search$$$timeout": "1000"
+    },
+    "pivotTemplate": "http-search"
 }

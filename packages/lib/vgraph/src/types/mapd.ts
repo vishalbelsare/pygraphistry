@@ -9,5 +9,5 @@ export const metaTypesToMapd = {
     double: { type: TDatumType.DOUBLE, encoding: TEncodingType.NONE, compression: null },
     string: { type: TDatumType.STR, encoding: TEncodingType.DICT, compression: null },
     uint32: { type: TDatumType.INT, encoding: TEncodingType.NONE, compression: null },
-    timestamp: { type: TDatumType.TIMESTAMP, encoding: TEncodingType.NONE, compression: null },
+    timestamp: { type: TDatumType.TIMESTAMP, encoding: TEncodingType.NONE, compression: null }
 };

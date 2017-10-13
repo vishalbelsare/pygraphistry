@@ -1,20 +1,20 @@
 {
-  "name": "@graphistry/db",
-  "version": "1.0.0",
-  "description": "Centralized database migrations, seeds and access",
-  "main": "index.js",
-  "scripts": {
-    "migrate:make": "NODE_ENV=development knex migrate:make",
-    "migrate:latest": "NODE_ENV=development knex migrate:latest",
-    "migrate:rollback": "NODE_ENV=development knex migrate:rollback",
-    "seed:make": "NODE_ENV=development knex seed:make",
-    "seed:run": "NODE_ENV=development knex seed:run"
-  },
-  "author": "@mykola",
-  "license": "ISC",
-  "dependencies": {
-    "convict": "^4.0.1",
-    "knex": "^0.13.0",
-    "pg": "^7.3.0"
-  }
+    "name": "@graphistry/db",
+    "version": "1.0.0",
+    "description": "Centralized database migrations, seeds and access",
+    "main": "index.js",
+    "scripts": {
+        "migrate:make": "NODE_ENV=development knex migrate:make",
+        "migrate:latest": "NODE_ENV=development knex migrate:latest",
+        "migrate:rollback": "NODE_ENV=development knex migrate:rollback",
+        "seed:make": "NODE_ENV=development knex seed:make",
+        "seed:run": "NODE_ENV=development knex seed:run"
+    },
+    "author": "@mykola",
+    "license": "ISC",
+    "dependencies": {
+        "convict": "^4.0.1",
+        "knex": "^0.13.0",
+        "pg": "^7.3.0"
+    }
 }

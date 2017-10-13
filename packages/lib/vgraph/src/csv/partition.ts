@@ -15,9 +15,9 @@ export interface TableMetadata {
     attributes: AttributesMetadata;
     encodings: {
         [encodingName: string]: {
-            attributes: string[]
-        }
-    }
+            attributes: string[];
+        };
+    };
 }
 
 export interface AttributesMetadata {
@@ -25,19 +25,20 @@ export interface AttributesMetadata {
 }
 
 export interface AttributeMetadata {
-    ctype: string,
-    userType?: string,
+    ctype: string;
+    userType?: string;
     aggregations: {
         min: any;
         max: any;
         valid: number;
         missing: number;
         distinct: number;
-    }
+    };
 }
 
 export interface VGraphTable {
-    name: string; length: number;
+    name: string;
+    length: number;
     edges?: VectorGraph.IEdge[];
     bool_vectors?: VectorGraph.IBoolAttributeVector[];
     float_vectors?: VectorGraph.IFloatAttributeVector[];
@@ -56,7 +57,7 @@ const {
     Int32AttributeVector,
     Int64AttributeVector,
     FloatAttributeVector,
-    BoolAttributeVector,
+    BoolAttributeVector
 } = VectorGraph;
 
 export function partition({ vgraph, edges, nodes }: PartitionOptions) {
@@ -64,18 +65,21 @@ export function partition({ vgraph, edges, nodes }: PartitionOptions) {
     return Observable.from([
         createColsTable(typedVGraph),
         createNodesTable(typedVGraph),
-        createEdgesTable(typedVGraph),
+        createEdgesTable(typedVGraph)
     ]);
 }
 
-function assignColumnMappings(vgraph: VectorGraph,
-                              nodeAttrs: AttributesMetadata = {},
-                              edgeAttrs: AttributesMetadata = {}) {
-
-    const mappings = ((vgraph.bindings || {}).mappings || [].concat(
-        Object.keys(edgeAttrs).map(convertAttributeMetadata(edgeAttrs, AttributeTarget.EDGE)),
-        Object.keys(nodeAttrs).map(convertAttributeMetadata(nodeAttrs, AttributeTarget.VERTEX)),
-    ));
+function assignColumnMappings(
+    vgraph: VectorGraph,
+    nodeAttrs: AttributesMetadata = {},
+    edgeAttrs: AttributesMetadata = {}
+) {
+    const mappings =
+        (vgraph.bindings || {}).mappings ||
+        [].concat(
+            Object.keys(edgeAttrs).map(convertAttributeMetadata(edgeAttrs, AttributeTarget.EDGE)),
+            Object.keys(nodeAttrs).map(convertAttributeMetadata(nodeAttrs, AttributeTarget.VERTEX))
+        );
 
     const getMapping = getVectorMapping(mappings);
 
@@ -85,17 +89,26 @@ function assignColumnMappings(vgraph: VectorGraph,
         float_vectors: (vgraph.float_vectors || []).map(withMapping(FloatAttributeVector, 'float')),
         int32_vectors: (vgraph.int32_vectors || []).map(withMapping(Int32AttributeVector, 'int32')),
         int64_vectors: (vgraph.int64_vectors || []).map(withMapping(Int64AttributeVector, 'int64')),
-        double_vectors: (vgraph.double_vectors || []).map(withMapping(DoubleAttributeVector, 'double')),
-        string_vectors: (vgraph.string_vectors || []).map(withMapping(StringAttributeVector, 'string')),
-        uint32_vectors: (vgraph.uint32_vectors || []).map(withMapping(UInt32AttributeVector, 'uint32')),
+        double_vectors: (vgraph.double_vectors || []).map(
+            withMapping(DoubleAttributeVector, 'double')
+        ),
+        string_vectors: (vgraph.string_vectors || []).map(
+            withMapping(StringAttributeVector, 'string')
+        ),
+        uint32_vectors: (vgraph.uint32_vectors || []).map(
+            withMapping(UInt32AttributeVector, 'uint32')
+        )
     };
 
     function withMapping(encoder, type) {
         return function(vector) {
-            return doesVectorRequireConversion(vector) &&
-                getMapping(vector, type, encoder) ||
-                { type, ...vector };
-        }
+            return (
+                (doesVectorRequireConversion(vector) && getMapping(vector, type, encoder)) || {
+                    type,
+                    ...vector
+                }
+            );
+        };
     }
 
     function doesVectorRequireConversion({ name = '', type = '' }) {
@@ -104,7 +117,8 @@ function assignColumnMappings(vgraph: VectorGraph,
 
     function convertAttributeMetadata(mappings: any, target: number) {
         return function createMapping(name: string) {
-            let type = undefined, format = undefined;
+            let type = undefined,
+                format = undefined;
             let { ctype = '', userType } = mappings[name];
             if (ctype === 'utf8') {
                 type = 'string';
@@ -113,26 +127,35 @@ function assignColumnMappings(vgraph: VectorGraph,
                 format = 'unix';
             }
             return { name, type, format, target };
-        }
+        };
     }
 
     function getVectorMapping(mappings: VectorGraph.IMapping[] = []) {
         return function getMapping(vector, type, encoder) {
-            let vecMapping, { name, target } = vector;
-            let mapping = mappings.find((mapping) =>
-                mapping.name === name && mapping.target === target) || {} as any;
-            let vecType = mapping.type || type || '', vecFormat = mapping.format || '';
+            let vecMapping,
+                { name, target } = vector;
+            let mapping =
+                mappings.find(mapping => mapping.name === name && mapping.target === target) ||
+                ({} as any);
+            let vecType = mapping.type || type || '',
+                vecFormat = mapping.format || '';
             if (isColorColumn(name, vecType)) {
                 vecMapping = colorVectorMapping({
-                    vector, encoder, type: vecType, format: vecFormat
+                    vector,
+                    encoder,
+                    type: vecType,
+                    format: vecFormat
                 });
             } else if (isDateTimeColumn(name, vecType)) {
                 vecMapping = dateTimeVectorMapping({
-                    vector, encoder, type: vecType, format: vecFormat
+                    vector,
+                    encoder,
+                    type: vecType,
+                    format: vecFormat
                 });
             }
             return { ...vector, type: vecType, format: vecFormat, ...vecMapping };
-        }
+        };
     }
 }
 
@@ -143,20 +166,27 @@ const orderedVGraphVectorGroups = [
     'float_vectors',
     'int64_vectors',
     'double_vectors',
-    'uint32_vectors',
+    'uint32_vectors'
 ];
 
 function createNodesTable(typedVGraph: VectorGraph) {
     const nodesVec = vecForTarget(AttributeTarget.VERTEX);
     const nodes = assignTableInternalColumnNames({
-        ...typedVGraph, name: 'nodes',
+        ...typedVGraph,
+        name: 'nodes',
         length: typedVGraph.vertexCount,
-        ...orderedVGraphVectorGroups.reduce((xs, group) => ({
-            ...xs, [group]: typedVGraph[group].filter(nodesVec)
-        }), {})
+        ...orderedVGraphVectorGroups.reduce(
+            (xs, group) => ({
+                ...xs,
+                [group]: typedVGraph[group].filter(nodesVec)
+            }),
+            {}
+        )
     });
     nodes.uint32_vectors.push({
-        name: 'id', type: 'uint32', target: AttributeTarget.VERTEX,
+        name: 'id',
+        type: 'uint32',
+        target: AttributeTarget.VERTEX,
         values: Array.from({ length: nodes.length }, (x, i) => i)
     });
     return nodes;
@@ -165,29 +195,37 @@ function createNodesTable(typedVGraph: VectorGraph) {
 function createEdgesTable(typedVGraph: VectorGraph) {
     const edgesVec = vecForTarget(AttributeTarget.EDGE);
     const edges = assignTableInternalColumnNames({
-        ...typedVGraph, name: 'edges',
+        ...typedVGraph,
+        name: 'edges',
         length: typedVGraph.edgeCount,
-        ...orderedVGraphVectorGroups.reduce((xs, group) => ({
-            ...xs, [group]: typedVGraph[group].filter(edgesVec)
-        }), {})
+        ...orderedVGraphVectorGroups.reduce(
+            (xs, group) => ({
+                ...xs,
+                [group]: typedVGraph[group].filter(edgesVec)
+            }),
+            {}
+        )
     });
-    edges.uint32_vectors = edges.uint32_vectors.concat(typedVGraph.edges.reduce((vecs, { src, dst }, idx) => (
-        (vecs[0].values.push(src) && false) ||
-        (vecs[1].values.push(dst) && false) ||
-        (vecs)
-    ), [
-        { name: 'src', type: 'uint32', target: AttributeTarget.EDGE, values: [] },
-        { name: 'dst', type: 'uint32', target: AttributeTarget.EDGE, values: [] },
-    ]));
+    edges.uint32_vectors = edges.uint32_vectors.concat(
+        typedVGraph.edges.reduce(
+            (vecs, { src, dst }, idx) =>
+                (vecs[0].values.push(src) && false) || (vecs[1].values.push(dst) && false) || vecs,
+            [
+                { name: 'src', type: 'uint32', target: AttributeTarget.EDGE, values: [] },
+                { name: 'dst', type: 'uint32', target: AttributeTarget.EDGE, values: [] }
+            ]
+        )
+    );
     edges.uint32_vectors.push({
-        name: 'id', type: 'uint32', target: AttributeTarget.EDGE,
+        name: 'id',
+        type: 'uint32',
+        target: AttributeTarget.EDGE,
         values: Array.from({ length: edges.length }, (x, i) => i)
     });
     return edges;
 }
 
 function createColsTable(typedVGraph: VectorGraph) {
-
     const { columns } = orderedVGraphVectorGroups
         .reduce((xs, group) => [...xs, ...typedVGraph[group]], [])
         .reduce(
@@ -198,19 +236,40 @@ function createColsTable(typedVGraph: VectorGraph) {
                 columns.push({
                     column_name: name,
                     column_type: type,
-                    table_name, internal_name
+                    table_name,
+                    internal_name
                 });
                 return { targets, columns };
             },
             {
                 columns: [
-                    { column_name: 'id', column_type: 'uint32', table_name: 'nodes', internal_name: 'id' },
-                    { column_name: 'id', column_type: 'uint32', table_name: 'edges', internal_name: 'id' },
-                    { column_name: 'src', column_type: 'uint32', table_name: 'edges', internal_name: 'src' },
-                    { column_name: 'dst', column_type: 'uint32', table_name: 'edges', internal_name: 'dst' },
+                    {
+                        column_name: 'id',
+                        column_type: 'uint32',
+                        table_name: 'nodes',
+                        internal_name: 'id'
+                    },
+                    {
+                        column_name: 'id',
+                        column_type: 'uint32',
+                        table_name: 'edges',
+                        internal_name: 'id'
+                    },
+                    {
+                        column_name: 'src',
+                        column_type: 'uint32',
+                        table_name: 'edges',
+                        internal_name: 'src'
+                    },
+                    {
+                        column_name: 'dst',
+                        column_type: 'uint32',
+                        table_name: 'edges',
+                        internal_name: 'dst'
+                    }
                 ],
                 targets: {
-                    [AttributeTarget.EDGE]  : { name: 'edges', columns: 0 },
+                    [AttributeTarget.EDGE]: { name: 'edges', columns: 0 },
                     [AttributeTarget.VERTEX]: { name: 'nodes', columns: 0 }
                 }
             }
@@ -220,11 +279,16 @@ function createColsTable(typedVGraph: VectorGraph) {
         ...typedVGraph,
         name: 'columns',
         length: columns.length,
-        bool_vectors: [], float_vectors: [],
-        int32_vectors: [], int64_vectors: [],
-        double_vectors: [], uint32_vectors: [],
-        string_vectors: ['table_name', 'column_name', 'column_type', 'internal_name'].map((name) => ({
-            name, type: 'string', values: columns.map((col) => col[name])
+        bool_vectors: [],
+        float_vectors: [],
+        int32_vectors: [],
+        int64_vectors: [],
+        double_vectors: [],
+        uint32_vectors: [],
+        string_vectors: ['table_name', 'column_name', 'column_type', 'internal_name'].map(name => ({
+            name,
+            type: 'string',
+            values: columns.map(col => col[name])
         }))
     };
 }
@@ -232,7 +296,7 @@ function createColsTable(typedVGraph: VectorGraph) {
 function vecForTarget(target: number) {
     return function(vector: { target: number }) {
         return vector.target === target;
-    }
+    };
 }
 
 function assignTableInternalColumnNames(table) {

@@ -26,43 +26,43 @@ const logger = log.createLogger('graph-viz', 'simulator/kernel/KernelPreload.js'
 let preloadedValue = null;
 
 export function initialize() {
-  if (preloadedValue) {
-    throw new Error('initialize() called more than one time');
-  }
+    if (preloadedValue) {
+        throw new Error('initialize() called more than one time');
+    }
 
-  preloadedValue = initializeGlobals();
-  warm(preloadedValue);
+    preloadedValue = initializeGlobals();
+    warm(preloadedValue);
 }
 
 export function preloaded() {
-  if (!preloadedValue) {
-    throw new Error('preload() run before initialize()');
-  }
+    if (!preloadedValue) {
+        throw new Error('preload() run before initialize()');
+    }
 
-  return preloadedValue;
+    return preloadedValue;
 }
 
 //////////////////////////////////////////////////////
 
 function initializeGlobals() {
-  const { GPU_OPTIONS: { vendor, device } = {} } = _config();
+    const { GPU_OPTIONS: { vendor, device } = {} } = _config();
 
-  const renderer = new Renderer();
-  const contexts = CLjs.createSync(renderer, device, vendor);
-  const kernelCache = new KernelCache();
+    const renderer = new Renderer();
+    const contexts = CLjs.createSync(renderer, device, vendor);
+    const kernelCache = new KernelCache();
 
-  return { vendor, device, renderer, contexts, kernelCache };
+    return { vendor, device, renderer, contexts, kernelCache };
 }
 
 function warm({ vendor, device, renderer, contexts, kernelCache }) {
-  controls.default.forEach(cfg => {
-    cfg.layoutAlgorithms.forEach(({ algo, params }) => {
-      const compiled = new algo(contexts, kernelCache);
+    controls.default.forEach(cfg => {
+        cfg.layoutAlgorithms.forEach(({ algo, params }) => {
+            const compiled = new algo(contexts, kernelCache);
+        });
     });
-  });
 
-  new MoveNodes(contexts, kernelCache);
-  new MoveNodesByIds(contexts, kernelCache);
-  new SelectNodesInCircle(contexts, kernelCache);
-  new SelectNodesInRect(contexts, kernelCache);
+    new MoveNodes(contexts, kernelCache);
+    new MoveNodesByIds(contexts, kernelCache);
+    new SelectNodesInCircle(contexts, kernelCache);
+    new SelectNodesInRect(contexts, kernelCache);
 }

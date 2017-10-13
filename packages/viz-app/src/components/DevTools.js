@@ -6,11 +6,11 @@ import DockMonitor from 'redux-devtools-dock-monitor';
 import Inspector from 'redux-devtools-inspector';
 
 export const DevTools = createDevTools(
-  <DockMonitor
-    defaultPosition="top"
-    defaultIsVisible={false}
-    toggleVisibilityKey="ctrl-h"
-    changePositionKey="ctrl-w">
-    <Inspector />
-  </DockMonitor>
+    <DockMonitor
+        defaultPosition="top"
+        defaultIsVisible={false}
+        toggleVisibilityKey="ctrl-h"
+        changePositionKey="ctrl-w">
+        <Inspector />
+    </DockMonitor>
 );

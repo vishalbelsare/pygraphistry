@@ -1,8 +1,8 @@
 {
-  "extends": "./tsconfig",
-  "exclude": ["../src/**/*.js"],
-  "compilerOptions": {
-    "allowJs": false,
-    "declaration": true
-  }
+    "extends": "./tsconfig",
+    "exclude": ["../src/**/*.js"],
+    "compilerOptions": {
+        "allowJs": false,
+        "declaration": true
+    }
 }

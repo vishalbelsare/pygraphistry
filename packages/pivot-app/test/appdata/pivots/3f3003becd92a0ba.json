@@ -1,23 +1,23 @@
 {
-  "id": "3f3003becd92a0ba",
-  "enabled": true,
-  "pivotParameters": {
-    "search-splunk-plain$$$query": "error",
-    "search-splunk-plain$$$fields": [
-      "module",
-      "level",
-      "err.message",
-      "time",
-      "metadata.dataset",
-      "err.stackArray{}.file",
-      "err.stackArray{}.function",
-      "msg",
-      "fileName"
-    ],
-    "manual-data$$$events":
-      "{\n  \"origin\": \"Carbon Black\",\n  \"host\": \"host186\",\n  \"cmd\": \"\\\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\\" -noprofile -windowstyle hidden -executionpolicy bypass iex ([Text.Encoding]::ASCII.GetString([Convert]::FromBase64String((gp 'HKCU:\\\\Software\\\\Classes\\\\KQHXEKIYBUGGZS').JKWQN)));\",\n  \"registry\": \"HKCU:\\\\Software\\\\Classes\\\\KQHXEKIYBUGGZS\",\n  \"domain\": \"wd9szyfi.ru\",\n  \"ip\": \"176.123.8.76\"\n}",
-    "manual-data$$$nodes": ["host", "domain", "ip"],
-    "manual-data$$$attributes": ["origin", "cmd", "registry"]
-  },
-  "pivotTemplate": "manual-data"
+    "id": "3f3003becd92a0ba",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [
+            "module",
+            "level",
+            "err.message",
+            "time",
+            "metadata.dataset",
+            "err.stackArray{}.file",
+            "err.stackArray{}.function",
+            "msg",
+            "fileName"
+        ],
+        "manual-data$$$events":
+            "{\n  \"origin\": \"Carbon Black\",\n  \"host\": \"host186\",\n  \"cmd\": \"\\\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\\" -noprofile -windowstyle hidden -executionpolicy bypass iex ([Text.Encoding]::ASCII.GetString([Convert]::FromBase64String((gp 'HKCU:\\\\Software\\\\Classes\\\\KQHXEKIYBUGGZS').JKWQN)));\",\n  \"registry\": \"HKCU:\\\\Software\\\\Classes\\\\KQHXEKIYBUGGZS\",\n  \"domain\": \"wd9szyfi.ru\",\n  \"ip\": \"176.123.8.76\"\n}",
+        "manual-data$$$nodes": ["host", "domain", "ip"],
+        "manual-data$$$attributes": ["origin", "cmd", "registry"]
+    },
+    "pivotTemplate": "manual-data"
 }

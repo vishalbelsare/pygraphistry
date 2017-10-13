@@ -6,43 +6,43 @@ const junitCoverageDir = path.join(coverageDir, './junit');
 const webpackConfig = require('../webpack/webpack.config.karma');
 
 module.exports = config => {
-  config.set({
-    browsers: ['PhantomJS'],
+    config.set({
+        browsers: ['PhantomJS'],
 
-    singleRun: true,
+        singleRun: true,
 
-    frameworks: ['mocha'],
+        frameworks: ['mocha'],
 
-    files: ['../../node_modules/babel-polyfill/dist/polyfill.js', './test-bundler.js'],
+        files: ['../../node_modules/babel-polyfill/dist/polyfill.js', './test-bundler.js'],
 
-    preprocessors: {
-      './test-bundler.js': ['webpack', 'sourcemap']
-    },
+        preprocessors: {
+            './test-bundler.js': ['webpack', 'sourcemap']
+        },
 
-    reporters: ['mocha', 'coverage'],
+        reporters: ['mocha', 'coverage'],
 
-    webpack: webpackConfig,
+        webpack: webpackConfig,
 
-    // Make Webpack bundle generation quiet
-    webpackMiddleware: {
-      quiet: true,
-      noInfo: true,
-      stats: 'errors-only'
-    },
+        // Make Webpack bundle generation quiet
+        webpackMiddleware: {
+            quiet: true,
+            noInfo: true,
+            stats: 'errors-only'
+        },
 
-    junitReporter: {
-      outputFile: 'report.xml',
-      outputDir: junitCoverageDir
-    },
+        junitReporter: {
+            outputFile: 'report.xml',
+            outputDir: junitCoverageDir
+        },
 
-    // Set the format of reporter
-    coverageReporter: {
-      dir: coverageDir,
-      reporters: [
-        { type: 'html', subdir: 'html' },
-        { type: 'lcov', subdir: 'lcov' },
-        { type: 'text-summary', subdir: '.', file: 'text-summary.txt' }
-      ]
-    }
-  });
+        // Set the format of reporter
+        coverageReporter: {
+            dir: coverageDir,
+            reporters: [
+                { type: 'html', subdir: 'html' },
+                { type: 'lcov', subdir: 'lcov' },
+                { type: 'text-summary', subdir: '.', file: 'text-summary.txt' }
+            ]
+        }
+    });
 };

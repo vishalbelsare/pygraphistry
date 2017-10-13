@@ -1,27 +1,27 @@
 {
-  "id": "3f73fe8af32a25ab",
-  "enabled": true,
-  "pivotParameters": {
-    "search-splunk-plain$$$query": "error",
-    "search-splunk-plain$$$fields": [
-      "module",
-      "level",
-      "err.message",
-      "time",
-      "metadata.dataset",
-      "err.stackArray{}.file",
-      "err.stackArray{}.function",
-      "msg",
-      "fileName"
-    ],
-    "http-expand-vt-url$$$apikey":
-      "b0f1ce2eede797d3a485be09b86990570fd0ec47ac6cf8057624b126836d89df",
-    "http-expand-vt-url$$$pRef": ["3f73b8de629db4eb"],
-    "http-expand-vt-url$$$endpoint":
-      "https://www.virustotal.com/vtapi/v2/url/report?resource={url}&apikey={apikey}",
-    "http-expand-vt-url$$$jq":
-      "({url: \"{url}\", source: \"VirusTotal\"}) as $root   | ({}) as $nodes   | ({scan_id:  .scan_id, resource: .resource, response_code: .response_code, scan_date: .scan_date, permalink: .permalink, verbose_msg: .verbose_msg, filescan_id: .filescan_id, positives: .positives, total: .total}) as $attrs   | ([.scans[] | . + $root + {field: \"scans\"}])  + [$attrs + $nodes + $root]",
-    "http-expand-vt-url$$$nodes": ["detected", "url"]
-  },
-  "pivotTemplate": "http-expand-vt-url"
+    "id": "3f73fe8af32a25ab",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [
+            "module",
+            "level",
+            "err.message",
+            "time",
+            "metadata.dataset",
+            "err.stackArray{}.file",
+            "err.stackArray{}.function",
+            "msg",
+            "fileName"
+        ],
+        "http-expand-vt-url$$$apikey":
+            "b0f1ce2eede797d3a485be09b86990570fd0ec47ac6cf8057624b126836d89df",
+        "http-expand-vt-url$$$pRef": ["3f73b8de629db4eb"],
+        "http-expand-vt-url$$$endpoint":
+            "https://www.virustotal.com/vtapi/v2/url/report?resource={url}&apikey={apikey}",
+        "http-expand-vt-url$$$jq":
+            "({url: \"{url}\", source: \"VirusTotal\"}) as $root   | ({}) as $nodes   | ({scan_id:  .scan_id, resource: .resource, response_code: .response_code, scan_date: .scan_date, permalink: .permalink, verbose_msg: .verbose_msg, filescan_id: .filescan_id, positives: .positives, total: .total}) as $attrs   | ([.scans[] | . + $root + {field: \"scans\"}])  + [$attrs + $nodes + $root]",
+        "http-expand-vt-url$$$nodes": ["detected", "url"]
+    },
+    "pivotTemplate": "http-expand-vt-url"
 }

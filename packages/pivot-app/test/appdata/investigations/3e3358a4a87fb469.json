@@ -1,10 +1,10 @@
 {
-  "name": "Darpa Challenge",
-  "url":
-    "https://staging.graphistry.com/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&dataset=PivotApp/3e3358fdd4a40bf5",
-  "id": "3e3358a4a87fb469",
-  "description": "Expose attacks in netflow data using graph analytics from Blazegraph",
-  "tags": ["Blazegraph"],
-  "modifiedOn": 1481305521649,
-  "pivots": ["3e3358a4a81e46a7", "3e3358c5b5e22ba7"]
+    "name": "Darpa Challenge",
+    "url":
+        "https://staging.graphistry.com/graph/graph.html?play=2000&bg=%23eeeeee&type=vgraph&dataset=PivotApp/3e3358fdd4a40bf5",
+    "id": "3e3358a4a87fb469",
+    "description": "Expose attacks in netflow data using graph analytics from Blazegraph",
+    "tags": ["Blazegraph"],
+    "modifiedOn": 1481305521649,
+    "pivots": ["3e3358a4a81e46a7", "3e3358c5b5e22ba7"]
 }

@@ -21,70 +21,70 @@ import { loadNBody, setLayoutControl } from './nBody';
 import { setEncoding, getEncoding, getEncodingOptions } from './encodings';
 import { loadRows, appendColumn, maskDataframe, tickLayout } from './dataframe';
 import {
-  addHistogram,
-  removeHistogram,
-  loadHistograms,
-  loadSelectionHistograms,
-  computeMaskForHistogramBin
+    addHistogram,
+    removeHistogram,
+    loadHistograms,
+    loadSelectionHistograms,
+    computeMaskForHistogramBin
 } from './histograms';
 import { addExpression, updateExpression, removeExpression } from './expressions';
 
 function services({ config, s3WorkbookCache = {}, nBodiesById = {}, workbooksById = {} }) {
-  const loadConfig = () => Observable.of(config);
-  const loadDatasetNBody = loadNBody(nBodiesById);
-  const loadWorkbooksById = loadWorkbooks(workbooksById, config, s3WorkbookCache);
-  const saveWorkbook = saveWorkbookService(config, s3WorkbookCache);
+    const loadConfig = () => Observable.of(config);
+    const loadDatasetNBody = loadNBody(nBodiesById);
+    const loadWorkbooksById = loadWorkbooks(workbooksById, config, s3WorkbookCache);
+    const saveWorkbook = saveWorkbookService(config, s3WorkbookCache);
 
-  const loadViewsById = loadViews(loadDatasetNBody, loadWorkbooksById);
-  const moveSelectedNodesImpl = moveSelectedNodes(loadViewsById);
-  const loadHistogramsById = loadHistograms(loadViewsById);
-  const loadLabelsByIndexAndType = loadLabels(loadViewsById);
-  const setLayoutControlById = setLayoutControl(loadViewsById);
-  const filterRowsByQuery = filterRows(loadViewsById);
-  const loadRowsByIndexAndType = loadRows(loadViewsById);
-  const loadSelectionHistogramsById = loadSelectionHistograms(loadViewsById);
+    const loadViewsById = loadViews(loadDatasetNBody, loadWorkbooksById);
+    const moveSelectedNodesImpl = moveSelectedNodes(loadViewsById);
+    const loadHistogramsById = loadHistograms(loadViewsById);
+    const loadLabelsByIndexAndType = loadLabels(loadViewsById);
+    const setLayoutControlById = setLayoutControl(loadViewsById);
+    const filterRowsByQuery = filterRows(loadViewsById);
+    const loadRowsByIndexAndType = loadRows(loadViewsById);
+    const loadSelectionHistogramsById = loadSelectionHistograms(loadViewsById);
 
-  const addExpressionImpl = addExpression(loadViewsById);
-  const removeExpressionById = removeExpression(loadViewsById);
-  const updateExpressionById = updateExpression(loadViewsById);
+    const addExpressionImpl = addExpression(loadViewsById);
+    const removeExpressionById = removeExpression(loadViewsById);
+    const updateExpressionById = updateExpression(loadViewsById);
 
-  const addHistogramImpl = addHistogram(loadViewsById);
-  const removeHistogramById = removeHistogram(loadViewsById);
+    const addHistogramImpl = addHistogram(loadViewsById);
+    const removeHistogramById = removeHistogram(loadViewsById);
 
-  return {
-    loadConfig,
-    loadVGraph,
-    loadViewsById,
-    sendFalcorUpdate,
-    loadWorkbooksById,
+    return {
+        loadConfig,
+        loadVGraph,
+        loadViewsById,
+        sendFalcorUpdate,
+        loadWorkbooksById,
 
-    saveWorkbook,
-    filterRowsByQuery,
-    loadHistogramsById,
-    loadRowsByIndexAndType,
-    loadLabelsByIndexAndType,
-    loadSelectionHistogramsById,
+        saveWorkbook,
+        filterRowsByQuery,
+        loadHistogramsById,
+        loadRowsByIndexAndType,
+        loadLabelsByIndexAndType,
+        loadSelectionHistogramsById,
 
-    setEncoding,
-    getEncoding,
-    getEncodingOptions,
+        setEncoding,
+        getEncoding,
+        getEncodingOptions,
 
-    moveSelectedNodes: moveSelectedNodesImpl,
+        moveSelectedNodes: moveSelectedNodesImpl,
 
-    loadDatasetNBody,
-    setLayoutControlById,
+        loadDatasetNBody,
+        setLayoutControlById,
 
-    appendColumn,
-    tickLayout,
-    maskDataframe,
-    updateExpressionById,
-    removeExpressionById,
-    addExpression: addExpressionImpl,
+        appendColumn,
+        tickLayout,
+        maskDataframe,
+        updateExpressionById,
+        removeExpressionById,
+        addExpression: addExpressionImpl,
 
-    removeHistogramById,
-    addHistogram: addHistogramImpl,
-    computeMaskForHistogramBin
-  };
+        removeHistogramById,
+        addHistogram: addHistogramImpl,
+        computeMaskForHistogramBin
+    };
 }
 
 export { services };

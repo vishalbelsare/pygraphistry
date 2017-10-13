@@ -7,54 +7,54 @@ export const TOGGLE_PIVOTS = 'toggle-pivots';
 export const SAVE_LAYOUT = 'save-layout';
 
 export const searchPivot = ({ index, pivotId, investigationId }) => {
-  return {
-    investigationId,
-    pivotId,
-    index,
-    type: SEARCH_PIVOT
-  };
+    return {
+        investigationId,
+        pivotId,
+        index,
+        type: SEARCH_PIVOT
+    };
 };
 
 export const splicePivot = ({ index }) => {
-  return {
-    index,
-    type: SPLICE_PIVOT
-  };
+    return {
+        index,
+        type: SPLICE_PIVOT
+    };
 };
 
 export const insertPivot = ({ index }) => {
-  return {
-    index,
-    type: INSERT_PIVOT
-  };
+    return {
+        index,
+        type: INSERT_PIVOT
+    };
 };
 
 export const graphInvestigation = ({ length, investigationId }) => {
-  return {
-    investigationId,
-    length,
-    type: GRAPH_INVESTIGATION
-  };
+    return {
+        investigationId,
+        length,
+        type: GRAPH_INVESTIGATION
+    };
 };
 
 export const dismissAlert = () => {
-  return {
-    type: DISMISS_ALERT
-  };
+    return {
+        type: DISMISS_ALERT
+    };
 };
 
 export function togglePivots({ indices, enabled, investigationId }) {
-  return {
-    investigationId,
-    type: TOGGLE_PIVOTS,
-    indices,
-    enabled
-  };
+    return {
+        investigationId,
+        type: TOGGLE_PIVOTS,
+        indices,
+        enabled
+    };
 }
 
 export function saveLayout({ layoutType }) {
-  return {
-    type: SAVE_LAYOUT,
-    layoutType
-  };
+    return {
+        type: SAVE_LAYOUT,
+        layoutType
+    };
 }

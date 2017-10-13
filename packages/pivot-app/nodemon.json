@@ -1,15 +1,15 @@
 {
-  "signal": "SIGHUP",
-  "verbose": true,
-  "watch": [
-    "index.js",
-    "tools/webpack/",
-    "!tools/webpack/webpack.config.karma.js",
-    "logger.js",
-    "config.js",
-    "config-schema.js",
-    "config/*.json",
-    "package.json",
-    "nodemon.json"
-  ]
+    "signal": "SIGHUP",
+    "verbose": true,
+    "watch": [
+        "index.js",
+        "tools/webpack/",
+        "!tools/webpack/webpack.config.karma.js",
+        "logger.js",
+        "config.js",
+        "config-schema.js",
+        "config/*.json",
+        "package.json",
+        "nodemon.json"
+    ]
 }

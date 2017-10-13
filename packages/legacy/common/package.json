@@ -1,28 +1,28 @@
 {
-  "name": "@graphistry/common",
-  "version": "3.2.0",
-  "main": "index.js",
-  "description": "",
-  "scripts": {
-    "test": "echo \"No test available\""
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/graphistry/common.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/graphistry/common/issues"
-  },
-  "homepage": "https://github.com/graphistry/common",
-  "dependencies": {
-    "@graphistry/bunyan": "1.8.4",
-    "chalk": "~1.0.0",
-    "@graphistry/config": "3.0.7",
-    "fs-tools": "~0.2.0",
-    "q": "~1.1.0",
-    "underscore": "~1.8.3",
-    "request": "~2.54.0"
-  }
+    "name": "@graphistry/common",
+    "version": "3.2.0",
+    "main": "index.js",
+    "description": "",
+    "scripts": {
+        "test": "echo \"No test available\""
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/graphistry/common.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/graphistry/common/issues"
+    },
+    "homepage": "https://github.com/graphistry/common",
+    "dependencies": {
+        "@graphistry/bunyan": "1.8.4",
+        "chalk": "~1.0.0",
+        "@graphistry/config": "3.0.7",
+        "fs-tools": "~0.2.0",
+        "q": "~1.1.0",
+        "underscore": "~1.8.3",
+        "request": "~2.54.0"
+    }
 }

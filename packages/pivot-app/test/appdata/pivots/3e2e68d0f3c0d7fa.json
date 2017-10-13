@@ -1,13 +1,13 @@
 {
-  "id": "3e2e68d0f3c0d7fa",
-  "enabled": true,
-  "pivotParameters": {
-    "query": "Enter search query",
-    "pRef": ["3dbf566346f5ecd4"],
-    "fields": ["src_ip"],
-    "expand-ids-botnet-demo$$$pRef": ["3dbf566346f5ecd4"],
-    "expand-ids-botnet-demo$$$fields": ["src_ip"],
-    "expand-ids-botnet-demo$$$ref": ["3dbf566346f5ecd4"]
-  },
-  "pivotTemplate": "expand-ids-botnet-demo"
+    "id": "3e2e68d0f3c0d7fa",
+    "enabled": true,
+    "pivotParameters": {
+        "query": "Enter search query",
+        "pRef": ["3dbf566346f5ecd4"],
+        "fields": ["src_ip"],
+        "expand-ids-botnet-demo$$$pRef": ["3dbf566346f5ecd4"],
+        "expand-ids-botnet-demo$$$fields": ["src_ip"],
+        "expand-ids-botnet-demo$$$ref": ["3dbf566346f5ecd4"]
+    },
+    "pivotTemplate": "expand-ids-botnet-demo"
 }

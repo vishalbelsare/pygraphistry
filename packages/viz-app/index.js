@@ -19,8 +19,8 @@ const port = convict.get('port');
 const host = convict.get('host');
 const logger = createLogger('viz-app');
 const io = (app.io = new SocketIOServer({
-  serveClient: false,
-  upgradeTimeout: config.SOCKET_CLAIM_TIMEOUT * 1000
+    serveClient: false,
+    upgradeTimeout: config.SOCKET_CLAIM_TIMEOUT * 1000
 }));
 
 global.__graphistry_convict_conf__ = app.convict = convict;
@@ -30,9 +30,9 @@ app.disable('x-powered-by');
 
 // Using helmet to secure Express with various HTTP headers
 app.use(
-  helmet({
-    frameguard: false
-  })
+    helmet({
+        frameguard: false
+    })
 );
 
 // Prevent HTTP parameter pollution.
@@ -53,61 +53,61 @@ app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
 // Log all requests as the first action
 app.use(function(req, res, next) {
-  logger.info({ req, res }, 'HTTP request received by Express.js');
-  next();
+    logger.info({ req, res }, 'HTTP request received by Express.js');
+    next();
 });
 
 // Run express as webpack dev server
 if (process.env.NODE_ENV === 'development' && config.ENVIRONMENT === 'local') {
-  global.__DEV__ = true;
-  const webpack = require('webpack');
-  const clientWebpackConfig = require('./tools/webpack/webpack.config.client');
-  const serverWebpackConfig = require('./tools/webpack/webpack.config.server');
-  const compiler = webpack([clientWebpackConfig, serverWebpackConfig]);
-  app.use(
-    require('webpack-universal-middleware')(compiler, {
-      webpackDevMiddleware: { serverSideRender: true },
-      reporter: require('./src/webpack-dev-reporter')({ logger, logWarnings: false })
-    })
-  );
+    global.__DEV__ = true;
+    const webpack = require('webpack');
+    const clientWebpackConfig = require('./tools/webpack/webpack.config.client');
+    const serverWebpackConfig = require('./tools/webpack/webpack.config.server');
+    const compiler = webpack([clientWebpackConfig, serverWebpackConfig]);
+    app.use(
+        require('webpack-universal-middleware')(compiler, {
+            webpackDevMiddleware: { serverSideRender: true },
+            reporter: require('./src/webpack-dev-reporter')({ logger, logWarnings: false })
+        })
+    );
 } else {
-  const SERVER_STATS = require('./www/server-assets.json');
-  app.use(require(`./www/${SERVER_STATS.server.js}`).default);
+    const SERVER_STATS = require('./www/server-assets.json');
+    app.use(require(`./www/${SERVER_STATS.server.js}`).default);
 }
 
 if (port) {
-  io.listen(
-    app.listen(port, host, function(err) {
-      if (err) {
-        logger.error({ err }, `😭  Failed to start viz-app:server`);
-      } else {
-        logger.info(`Started viz-app:server at http://${host}:${port}`);
-        console.log(
-          [
-            ``,
-            `***********************************************************`,
-            `Express app listening at http://${host}:${port}`,
-            `Time        : ${new Date().toDateString()}`,
-            config.ENVIRONMENT !== 'local'
-              ? ''
-              : `args        : "${process.argv.slice(2).join('", "')}"`,
-            `NODE_ENV    : ${process.env.NODE_ENV}`,
-            `process.pid : ${process.pid}`,
-            `__dirname   : ${__dirname}`,
-            `root        : ${path.resolve()}`,
-            `***********************************************************`,
-            ``
-          ].join('\n')
-        );
+    io.listen(
+        app.listen(port, host, function(err) {
+            if (err) {
+                logger.error({ err }, `😭  Failed to start viz-app:server`);
+            } else {
+                logger.info(`Started viz-app:server at http://${host}:${port}`);
+                console.log(
+                    [
+                        ``,
+                        `***********************************************************`,
+                        `Express app listening at http://${host}:${port}`,
+                        `Time        : ${new Date().toDateString()}`,
+                        config.ENVIRONMENT !== 'local'
+                            ? ''
+                            : `args        : "${process.argv.slice(2).join('", "')}"`,
+                        `NODE_ENV    : ${process.env.NODE_ENV}`,
+                        `process.pid : ${process.pid}`,
+                        `__dirname   : ${__dirname}`,
+                        `root        : ${path.resolve()}`,
+                        `***********************************************************`,
+                        ``
+                    ].join('\n')
+                );
 
-        // if (config.ENVIRONMENT === 'local') {
-        //     // Open a browser window
-        //     require('./tools/openBrowser').default(port);
-        // }
-      }
-    })
-  );
+                // if (config.ENVIRONMENT === 'local') {
+                //     // Open a browser window
+                //     require('./tools/openBrowser').default(port);
+                // }
+            }
+        })
+    );
 } else {
-  logger.error(`😭  Failed to start viz-app:server`);
-  console.error(chalk.red('==> 😭  No PORT environment variable specified'));
+    logger.error(`😭  Failed to start viz-app:server`);
+    console.error(chalk.red('==> 😭  No PORT environment variable specified'));
 }

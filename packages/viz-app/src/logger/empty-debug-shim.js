@@ -1,3 +1,3 @@
 module.exports = function noop() {
-  return noop;
+    return noop;
 };

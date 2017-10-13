@@ -7,7 +7,7 @@ export function convertVGraph(runnerOptions: RunnerOptions) {
     const runWorkers = runner(runnerOptions);
     return function convertVGraph(partitionOptions: PartitionOptions) {
         return partition(partitionOptions).concatMap(runWorkers);
-    }
+    };
 }
 
 export { VGraphTable };

@@ -7,16 +7,16 @@
  */
 
 module.exports = {
-  styleLoader: require('extract-text-webpack-plugin').extract(
-    'style-loader',
-    'css-loader!less-loader'
-  ),
-  styles: {
-    mixins: false,
-    core: false,
-    icons: true,
-    larger: false,
-    path: true,
-    animated: false
-  }
+    styleLoader: require('extract-text-webpack-plugin').extract(
+        'style-loader',
+        'css-loader!less-loader'
+    ),
+    styles: {
+        mixins: false,
+        core: false,
+        icons: true,
+        larger: false,
+        path: true,
+        animated: false
+    }
 };

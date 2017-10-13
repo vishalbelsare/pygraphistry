@@ -1,23 +1,23 @@
 {
-  "id": "3f7373af99b95374",
-  "enabled": true,
-  "pivotParameters": {
-    "search-splunk-plain$$$query": "error",
-    "search-splunk-plain$$$fields": [
-      "module",
-      "level",
-      "err.message",
-      "time",
-      "metadata.dataset",
-      "err.stackArray{}.file",
-      "err.stackArray{}.function",
-      "msg",
-      "fileName"
-    ],
-    "http-expand$$$pRef": ["3f395ee7c27dd560"],
-    "http-expand$$$endpoint":
-      "http://localhost:3000/pivot/echo?domain={domain}&host=host12&host=host13&host=host14&host=host15",
-    "http-expand$$$jq": ". as $x | [.host[] |  {\"host\": ., \"domain\": $x.domain} ]"
-  },
-  "pivotTemplate": "http-expand"
+    "id": "3f7373af99b95374",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [
+            "module",
+            "level",
+            "err.message",
+            "time",
+            "metadata.dataset",
+            "err.stackArray{}.file",
+            "err.stackArray{}.function",
+            "msg",
+            "fileName"
+        ],
+        "http-expand$$$pRef": ["3f395ee7c27dd560"],
+        "http-expand$$$endpoint":
+            "http://localhost:3000/pivot/echo?domain={domain}&host=host12&host=host13&host=host14&host=host15",
+        "http-expand$$$jq": ". as $x | [.host[] |  {\"host\": ., \"domain\": $x.domain} ]"
+    },
+    "pivotTemplate": "http-expand"
 }

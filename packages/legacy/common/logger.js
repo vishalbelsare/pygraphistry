@@ -4,12 +4,9 @@ var bunyan = require('@graphistry/bunyan');
 var _ = require('underscore');
 var config = require('@graphistry/config')();
 
-
 function inBrowser() {
-    return typeof (window) !== 'undefined' && window.window === window;
+    return typeof window !== 'undefined' && window.window === window;
 }
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Error serializer
@@ -24,10 +21,10 @@ function getFullErrorStack(ex) {
     var framesStr = (ex.stack || ex.toString()).split('\n');
     var framesObj = [];
 
-    for(var i = 1; i < framesStr.length; i++) {
+    for (var i = 1; i < framesStr.length; i++) {
         var matches = framesStr[i].match(_stackRegExp);
 
-        if(matches) {
+        if (matches) {
             framesObj.push({
                 file: matches[2] || null,
                 line: parseInt(matches[3], 10) || null,
@@ -40,7 +37,6 @@ function getFullErrorStack(ex) {
     return framesObj;
 }
 
-
 // Serialize an Error object
 // (Core error properties are enumerable in node 0.4, not in 0.6).
 // Modified error serializer
@@ -52,13 +48,12 @@ function errSerializer(e) {
     var obj = bunyan.stdSerializers.err(e);
     obj.stackArray = getFullErrorStack(e);
 
-    if (e.cause && typeof (e.cause) === 'function') {
+    if (e.cause && typeof e.cause === 'function') {
         obj.cause = errSerializer(e.cause);
     }
 
     return obj;
 }
-
 
 // A list of HTTP request headers to omit when logging an HTTP request.
 const headersToRedact = [
@@ -71,23 +66,22 @@ const headersToRedact = [
 function redactedReqSerializer(req) {
     const serializedReq = bunyan.stdSerializers.req(req);
 
-    if(serializedReq.headers) {
+    if (serializedReq.headers) {
         serializedReq.headers = _.omit(serializedReq.headers, headersToRedact);
     }
 
     return serializedReq;
 }
 
-
 function BrowserConsoleStream() {
     this.levelToConsole = {
-        'trace': 'debug',
-        'debug': 'debug',
-        'info': 'info',
-        'warn': 'warn',
-        'error': 'error',
-        'fatal': 'error',
-    }
+        trace: 'debug',
+        debug: 'debug',
+        info: 'info',
+        warn: 'warn',
+        error: 'error',
+        fatal: 'error'
+    };
 
     this.fieldsToOmit = [
         'v',
@@ -102,22 +96,19 @@ function BrowserConsoleStream() {
     ];
 }
 
-
-BrowserConsoleStream.prototype.write = function (rec) {
+BrowserConsoleStream.prototype.write = function(rec) {
     const levelName = bunyan.nameFromLevel[rec.level];
     const method = this.levelToConsole[levelName];
     const prunedRec = _.omit(rec, this.fieldsToOmit);
 
     if (_.isEmpty(prunedRec)) {
         console[method](rec.msg);
-    } else if ('err' in prunedRec){
+    } else if ('err' in prunedRec) {
         console[method](rec.err, rec.msg);
     } else {
         console[method](prunedRec, rec.msg);
     }
-}
-
-
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Parent logger
@@ -134,7 +125,7 @@ function createServerLogger() {
     // Always starts with a stream that writes fatal errors to STDERR
     var streams = [];
 
-    if(_.isUndefined(config.LOG_FILE)) {
+    if (_.isUndefined(config.LOG_FILE)) {
         streams = [{ name: 'stdout', stream: process.stdout, level: config.LOG_LEVEL }];
     } else {
         streams = [
@@ -147,7 +138,7 @@ function createServerLogger() {
         src: config.LOG_SOURCE,
         name: 'graphistry',
         metadata: {
-            userInfo: { }
+            userInfo: {}
         },
         serializers: serializers,
         streams: streams
@@ -160,7 +151,7 @@ function createServerLogger() {
         process.exit(60);
     };
 
-    process.on('SIGUSR2', function () {
+    process.on('SIGUSR2', function() {
         logger.reopenFileStreams();
     });
 
@@ -182,8 +173,6 @@ function createClientLogger() {
 
 const parentLogger = inBrowser() ? createClientLogger() : createServerLogger();
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // Exports
 //
@@ -193,8 +182,8 @@ const parentLogger = inBrowser() ? createClientLogger() : createServerLogger();
 
 module.exports = {
     createLogger: function(module, fileName) {
-        return (function () {
-            var childLogger = parentLogger.child({module: module, fileName:fileName}, true);
+        return (function() {
+            var childLogger = parentLogger.child({ module: module, fileName: fileName }, true);
 
             //add any additional logging methods here
 
@@ -217,12 +206,16 @@ module.exports = {
 
     addMetadataField: function(metadata) {
         //metadata is global, same for all loggers
-        if(!_.isObject(metadata)) { throw new Error('metadata must be an object'); }
+        if (!_.isObject(metadata)) {
+            throw new Error('metadata must be an object');
+        }
         return _.extend(parentLogger.fields.metadata, metadata);
     },
 
-    clearMetadataField: function (fields) {
-        _.each(fields, function (field) { delete parentLogger.fields.metadata[field]; });
+    clearMetadataField: function(fields) {
+        _.each(fields, function(field) {
+            delete parentLogger.fields.metadata[field];
+        });
     },
 
     addUserInfo: function(newUserInfo) {
@@ -238,7 +231,7 @@ module.exports = {
 
     makeQErrorHandler: function(childLogger, msg) {
         //This should return a function that takes an error as an argument and logs a formatted version of it, and rethrows the error.
-        var args = Array.prototype.slice.call(arguments)
+        var args = Array.prototype.slice.call(arguments);
         var shifted = args.shift();
         return function(err) {
             args.unshift(err);
@@ -249,8 +242,6 @@ module.exports = {
 
     getFullErrorStack: getFullErrorStack
 };
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // `config` module logging
@@ -263,14 +254,13 @@ module.exports = {
 var configLogger = module.exports.createLogger('config');
 var configErrors = config.getErrors(true);
 
-if(_.isArray(configErrors) && configErrors.length > 0) {
-    for(var ceIdx = 0; ceIdx < configErrors.length; ceIdx++) {
+if (_.isArray(configErrors) && configErrors.length > 0) {
+    for (var ceIdx = 0; ceIdx < configErrors.length; ceIdx++) {
         configLogger.error(configErrors[ceIdx], 'Config error');
     }
 }
 
-
-if(_.isUndefined(process.env.didLogConfig) || process.env.didLogConfig !== true) {
-    configLogger.debug({config: config}, 'Config options resolved');
+if (_.isUndefined(process.env.didLogConfig) || process.env.didLogConfig !== true) {
+    configLogger.debug({ config: config }, 'Config options resolved');
     process.env.didLogConfig = true;
 }

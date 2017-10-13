@@ -17,46 +17,46 @@ import url from 'url';
  *  parameter in the URL query string, with their corresponding values.
  */
 export function getURLParameters(href) {
-  const { query = {} } = url.parse(href, true);
-  var options = { client: 'main' };
+    const { query = {} } = url.parse(href, true);
+    var options = { client: 'main' };
 
-  for (var param in query) {
-    if (!query.hasOwnProperty(param)) {
-      continue;
+    for (var param in query) {
+        if (!query.hasOwnProperty(param)) {
+            continue;
+        }
+
+        // Special-case normalization for certain params
+        switch (param) {
+            case 'static':
+                options.client = 'static';
+                continue;
+            case 'offline':
+                options.client = 'offline';
+                continue;
+            case 'datasetname':
+                options.dataset = query.datasetname;
+                break;
+        }
+
+        // Normalize param value
+        switch (query[param].toLowerCase()) {
+            case '':
+            case 'yes':
+            case 'true':
+                options[param] = true;
+                break;
+            case 'no':
+            case 'false':
+                options[param] = false;
+                break;
+            case 'null':
+                options[param] = null;
+                break;
+            default:
+                options[param] = !isNaN(query[param]) ? Number(query[param]) : query[param];
+                break;
+        }
     }
 
-    // Special-case normalization for certain params
-    switch (param) {
-      case 'static':
-        options.client = 'static';
-        continue;
-      case 'offline':
-        options.client = 'offline';
-        continue;
-      case 'datasetname':
-        options.dataset = query.datasetname;
-        break;
-    }
-
-    // Normalize param value
-    switch (query[param].toLowerCase()) {
-      case '':
-      case 'yes':
-      case 'true':
-        options[param] = true;
-        break;
-      case 'no':
-      case 'false':
-        options[param] = false;
-        break;
-      case 'null':
-        options[param] = null;
-        break;
-      default:
-        options[param] = !isNaN(query[param]) ? Number(query[param]) : query[param];
-        break;
-    }
-  }
-
-  return options;
+    return options;
 }

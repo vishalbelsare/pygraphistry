@@ -1,14 +1,14 @@
 {
-  "name": "@graphistry/config",
-  "description": "Graphistry configuration resolver",
-  "version": "3.0.7",
-  "main": "./index.js",
-  "bin": {
-    "graphistry-config": "./bin/graphistry-config"
-  },
-  "dependencies": {
-    "aws-sdk": "~2.6.9",
-    "debug": "~2.2.0",
-    "lodash": "~4.16.4"
-  }
+    "name": "@graphistry/config",
+    "description": "Graphistry configuration resolver",
+    "version": "3.0.7",
+    "main": "./index.js",
+    "bin": {
+        "graphistry-config": "./bin/graphistry-config"
+    },
+    "dependencies": {
+        "aws-sdk": "~2.6.9",
+        "debug": "~2.2.0",
+        "lodash": "~4.16.4"
+    }
 }

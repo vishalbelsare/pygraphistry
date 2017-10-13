@@ -11,11 +11,11 @@ export const products = encodings.reduce((acc, v) => ({ ...acc, [v.product]: v }
 
 //[ {[fld] -> a} ] * String -> {[fld] -> a}
 function combineEncodings(encodings, field) {
-  return encodings.reduce((acc, lib) => ({ ...acc, ...lib[field] }), {});
+    return encodings.reduce((acc, lib) => ({ ...acc, ...lib[field] }), {});
 }
 
 function combineArrays(encodings, field) {
-  return _.unique([].concat.apply([], encodings.map(o => o[field] || [])));
+    return _.unique([].concat.apply([], encodings.map(o => o[field] || [])));
 }
 
 export const colTypes = combineEncodings(encodings, 'colTypes');

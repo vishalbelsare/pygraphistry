@@ -1,10 +1,10 @@
 {
-  "id": "3dbf55904a77e964",
-  "enabled": true,
-  "pivotParameters": {
-    "query": "Enter search query",
-    "event": "BRO8ZA4A",
-    "search-splunk-fireeye-botnet-demo$$$event": "BRO8ZA4A"
-  },
-  "pivotTemplate": "search-splunk-fireeye-botnet-demo"
+    "id": "3dbf55904a77e964",
+    "enabled": true,
+    "pivotParameters": {
+        "query": "Enter search query",
+        "event": "BRO8ZA4A",
+        "search-splunk-fireeye-botnet-demo$$$event": "BRO8ZA4A"
+    },
+    "pivotTemplate": "search-splunk-fireeye-botnet-demo"
 }

@@ -9,7 +9,7 @@ var rl = readline.createInterface({
 });
 
 var lastDate;
-rl.on('line', function (line) {
+rl.on('line', function(line) {
     try {
         var log = JSON.parse(line);
         if (log.msg === undefined || !log.level === undefined) {
@@ -38,7 +38,6 @@ rl.on('line', function (line) {
 
         str += '\t+' + timeDeltaMs + 'ms';
         console.log(str);
-
     } catch (err) {
         console.log(line);
     }

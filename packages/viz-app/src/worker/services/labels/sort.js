@@ -9,49 +9,47 @@ export const mostImportantEntityKeys = [
     'refTypes'
 ];
 
-
 export const mostImportantEventKeys = [
-  'Source',
-  'Destination',
+    'Source',
+    'Destination',
 
-  'time',
-  'Pivot',
+    'time',
+    'Pivot',
 
-  'src',
-  'src_hostname',
-  'src_ip',
-  'src_mac',
-  'src_port',
-  'src_user',
-  'dest',
-  'dest_hostname',
-  'dest_ip',
-  'dest_location',
-  'dest_mac',
-  'dest_port',
-  'dest_user',
-  'user',
+    'src',
+    'src_hostname',
+    'src_ip',
+    'src_mac',
+    'src_port',
+    'src_user',
+    'dest',
+    'dest_hostname',
+    'dest_ip',
+    'dest_location',
+    'dest_mac',
+    'dest_port',
+    'dest_user',
+    'user',
 
-  'type',
-  'edgeType',
-  'cols',
-  'vendor',
-  'product',
-  'externalId',
+    'type',
+    'edgeType',
+    'cols',
+    'vendor',
+    'product',
+    'externalId',
 
-  'msg',
-  'fname',
-  'filename',
-  'fileHash',
-  'filePath',
-  'link',
-  'url'
+    'msg',
+    'fname',
+    'filename',
+    'fileHash',
+    'filePath',
+    'link',
+    'url'
 ];
 
-
-
-function sortKeys (cols, order) {
-    return cols.map(kv => {
+function sortKeys(cols, order) {
+    return cols
+        .map(kv => {
             const topKeyIndex = order.indexOf(kv.key);
             return topKeyIndex > -1 ? { topKeyIndex, ...kv } : null;
         })
@@ -59,21 +57,19 @@ function sortKeys (cols, order) {
         .sort(({ topKeyIndex: k1 }, { topKeyIndex: k2 }) => k1 - k2);
 }
 
-
 //[ {key, value} ] -> [ {key, value, topKeyIndex}]
 //Select subset of fields and return in sorted order
 export function selectImportantKeys(columns = []) {
-
     //Event
-    return columns.some(({ key, value }) => 
-        (key === 'type' && value === 'EventID') || (key === 'edgeType' && value.match(/^EventID-((&gt;)|>)/)))    
+    return columns.some(
+        ({ key, value }) =>
+            (key === 'type' && value === 'EventID') ||
+            (key === 'edgeType' && value.match(/^EventID-((&gt;)|>)/))
+    )
         ? sortKeys(columns, mostImportantEventKeys)
-
-        //Entity
-        : columns.some(({ key, value }) => key === 'canonicalType') 
-        ? sortKeys(columns, mostImportantEntityKeys)
-
-        //Wazzat
-        : undefined;
-
+        : //Entity
+          columns.some(({ key, value }) => key === 'canonicalType')
+          ? sortKeys(columns, mostImportantEntityKeys)
+          : //Wazzat
+            undefined;
 }

@@ -6,35 +6,35 @@ import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 export default withSchema((QL, { get, set }, services) => {
-  const { loadUsersById } = services;
+    const { loadUsersById } = services;
 
-  const readOnlyHandler = {
-    get: get(loadUsersById)
-  };
-  const readWriteHandler = {
-    get: get(loadUsersById),
-    set: set({
-      unboxAtoms: false,
-      service: loadUsersById
-    })
-  };
+    const readOnlyHandler = {
+        get: get(loadUsersById)
+    };
+    const readWriteHandler = {
+        get: get(loadUsersById),
+        set: set({
+            unboxAtoms: false,
+            service: loadUsersById
+        })
+    };
 
-  const activeInvestigationReadWriteHandler = {
-    get: get(loadUsersById),
-    set: setActiveInvestigationRoute({
-      ...services,
-      setUserHandler: set({
-        unboxAtoms: false,
-        service: loadUsersById
-      })
-    })
-  };
+    const activeInvestigationReadWriteHandler = {
+        get: get(loadUsersById),
+        set: setActiveInvestigationRoute({
+            ...services,
+            setUserHandler: set({
+                unboxAtoms: false,
+                service: loadUsersById
+            })
+        })
+    };
 
-  const cloneInvestigationsHandler = { call: cloneInvestigationsCallRoute(services) };
-  const createInvestigationHandler = { call: createInvestigationCallRoute(services) };
-  const removeInvestigationsHandler = { call: removeInvestigationsCallRoute(services) };
+    const cloneInvestigationsHandler = { call: cloneInvestigationsCallRoute(services) };
+    const createInvestigationHandler = { call: createInvestigationCallRoute(services) };
+    const removeInvestigationsHandler = { call: removeInvestigationsCallRoute(services) };
 
-  return QL`{
+    return QL`{
         ['id', 'name', 'graphistryHost']: ${readOnlyHandler},
         activeScreen: ${readWriteHandler},
         activeInvestigation: ${activeInvestigationReadWriteHandler},
@@ -48,111 +48,111 @@ export default withSchema((QL, { get, set }, services) => {
 });
 
 function setActiveInvestigationRoute({
-  loadUsersById,
-  loadInvestigationsById,
-  unloadInvestigationsById,
-  unloadPivotsById,
-  switchActiveInvestigation,
-  setUserHandler
+    loadUsersById,
+    loadInvestigationsById,
+    unloadInvestigationsById,
+    unloadPivotsById,
+    switchActiveInvestigation,
+    setUserHandler
 }) {
-  return function(json) {
-    const self = this;
+    return function(json) {
+        const self = this;
 
-    return Observable.forkJoin(
-      _.map(json.usersById, (user, userId) =>
-        switchActiveInvestigation({
-          loadUsersById,
-          loadInvestigationsById,
-          unloadInvestigationsById,
-          unloadPivotsById,
-          userId
-        })
-      )
-    ).switchMap(() => setUserHandler.bind(self)(json));
-  };
+        return Observable.forkJoin(
+            _.map(json.usersById, (user, userId) =>
+                switchActiveInvestigation({
+                    loadUsersById,
+                    loadInvestigationsById,
+                    unloadInvestigationsById,
+                    unloadPivotsById,
+                    userId
+                })
+            )
+        ).switchMap(() => setUserHandler.bind(self)(json));
+    };
 }
 
 function removeInvestigationsCallRoute({
-  removeInvestigationsById,
-  loadUsersById,
-  unlinkInvestigationsById,
-  unlinkPivotsById
+    removeInvestigationsById,
+    loadUsersById,
+    unlinkInvestigationsById,
+    unlinkPivotsById
 }) {
-  return function(path, args) {
-    const userIds = path[1];
-    const investigationIds = args[0];
+    return function(path, args) {
+        const userIds = path[1];
+        const investigationIds = args[0];
 
-    return removeInvestigationsById({
-      loadUsersById,
-      unlinkInvestigationsById,
-      unlinkPivotsById,
-      investigationIds,
-      userIds
-    }).mergeMap(({ user, investigation, newLength, oldLength }) => [
-      $invalidation(`investigationsById['${investigation.id}']`),
-      $invalidation(`usersById['${user.id}'].activeInvestigation`),
-      $invalidation(`usersById['${user.id}'].investigations[${newLength}..${oldLength}]`),
+        return removeInvestigationsById({
+            loadUsersById,
+            unlinkInvestigationsById,
+            unlinkPivotsById,
+            investigationIds,
+            userIds
+        }).mergeMap(({ user, investigation, newLength, oldLength }) => [
+            $invalidation(`investigationsById['${investigation.id}']`),
+            $invalidation(`usersById['${user.id}'].activeInvestigation`),
+            $invalidation(`usersById['${user.id}'].investigations[${newLength}..${oldLength}]`),
 
-      $value(`usersById['${user.id}'].investigations.length`, newLength),
-      $value(`usersById['${user.id}'].activeInvestigation`, user.activeInvestigation),
+            $value(`usersById['${user.id}'].investigations.length`, newLength),
+            $value(`usersById['${user.id}'].activeInvestigation`, user.activeInvestigation),
 
-      ...user.investigations.map((investigationRef, index) =>
-        $value(`usersById['${user.id}'].investigations[${index}]`, investigationRef)
-      )
-    ]);
-  };
+            ...user.investigations.map((investigationRef, index) =>
+                $value(`usersById['${user.id}'].investigations[${index}]`, investigationRef)
+            )
+        ]);
+    };
 }
 
 function cloneInvestigationsCallRoute({
-  loadInvestigationsById,
-  loadPivotsById,
-  loadUsersById,
-  unloadInvestigationsById,
-  unloadPivotsById,
-  cloneInvestigationsById
+    loadInvestigationsById,
+    loadPivotsById,
+    loadUsersById,
+    unloadInvestigationsById,
+    unloadPivotsById,
+    cloneInvestigationsById
 }) {
-  return function(path, investigationIds = []) {
-    return cloneInvestigationsById({
-      loadInvestigationsById,
-      loadPivotsById,
-      unloadInvestigationsById,
-      unloadPivotsById,
-      loadUsersById,
-      investigationIds
-    }).mergeMap(({ user, clonedInvestigation, numInvestigations }) => [
-      $value(`usersById['${user.id}'].investigations.length`, numInvestigations),
-      $value(`usersById['${user.id}'].activeInvestigation`, user.activeInvestigation),
-      $value(
-        `usersById['${user.id}'].investigations[${numInvestigations - 1}]`,
-        $ref(`investigationsById['${clonedInvestigation.id}']`)
-      )
-    ]);
-  };
+    return function(path, investigationIds = []) {
+        return cloneInvestigationsById({
+            loadInvestigationsById,
+            loadPivotsById,
+            unloadInvestigationsById,
+            unloadPivotsById,
+            loadUsersById,
+            investigationIds
+        }).mergeMap(({ user, clonedInvestigation, numInvestigations }) => [
+            $value(`usersById['${user.id}'].investigations.length`, numInvestigations),
+            $value(`usersById['${user.id}'].activeInvestigation`, user.activeInvestigation),
+            $value(
+                `usersById['${user.id}'].investigations[${numInvestigations - 1}]`,
+                $ref(`investigationsById['${clonedInvestigation.id}']`)
+            )
+        ]);
+    };
 }
 
 function createInvestigationCallRoute({
-  createInvestigation,
-  loadUsersById,
-  loadInvestigationsById,
-  unloadInvestigationsById,
-  unloadPivotsById
+    createInvestigation,
+    loadUsersById,
+    loadInvestigationsById,
+    unloadInvestigationsById,
+    unloadPivotsById
 }) {
-  return function(path) {
-    const userIds = path[1];
+    return function(path) {
+        const userIds = path[1];
 
-    return createInvestigation({
-      loadUsersById,
-      loadInvestigationsById,
-      unloadInvestigationsById,
-      unloadPivotsById,
-      userIds
-    }).mergeMap(({ user, newInvestigation, numInvestigations }) => [
-      $value(`usersById['${user.id}'].investigations.length`, numInvestigations),
-      $value(`usersById['${user.id}'].activeInvestigation`, user.activeInvestigation),
-      $value(
-        `usersById['${user.id}'].investigations[${numInvestigations - 1}]`,
-        $ref(`investigationsById['${newInvestigation.id}']`)
-      )
-    ]);
-  };
+        return createInvestigation({
+            loadUsersById,
+            loadInvestigationsById,
+            unloadInvestigationsById,
+            unloadPivotsById,
+            userIds
+        }).mergeMap(({ user, newInvestigation, numInvestigations }) => [
+            $value(`usersById['${user.id}'].investigations.length`, numInvestigations),
+            $value(`usersById['${user.id}'].activeInvestigation`, user.activeInvestigation),
+            $value(
+                `usersById['${user.id}'].investigations[${numInvestigations - 1}]`,
+                $ref(`investigationsById['${newInvestigation.id}']`)
+            )
+        ]);
+    };
 }

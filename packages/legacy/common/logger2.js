@@ -7,12 +7,9 @@
 var bunyan = require('@graphistry/bunyan');
 var _ = require('underscore');
 
-
 function inBrowser() {
-    return typeof (window) !== 'undefined' && window.window === window;
+    return typeof window !== 'undefined' && window.window === window;
 }
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Error serializer
@@ -27,10 +24,10 @@ function getFullErrorStack(ex) {
     var framesStr = (ex.stack || ex.toString()).split('\n');
     var framesObj = [];
 
-    for(var i = 1; i < framesStr.length; i++) {
+    for (var i = 1; i < framesStr.length; i++) {
         var matches = framesStr[i].match(_stackRegExp);
 
-        if(matches) {
+        if (matches) {
             framesObj.push({
                 file: matches[2] || null,
                 line: parseInt(matches[3], 10) || null,
@@ -43,7 +40,6 @@ function getFullErrorStack(ex) {
     return framesObj;
 }
 
-
 // Serialize an Error object
 // (Core error properties are enumerable in node 0.4, not in 0.6).
 // Modified error serializer
@@ -55,23 +51,22 @@ function errSerializer(e) {
     var obj = bunyan.stdSerializers.err(e);
     obj.stackArray = getFullErrorStack(e);
 
-    if (e.cause && typeof (e.cause) === 'function') {
+    if (e.cause && typeof e.cause === 'function') {
         obj.cause = errSerializer(e.cause);
     }
 
     return obj;
 }
 
-
 function BrowserConsoleStream() {
     this.levelToConsole = {
-        'trace': 'debug',
-        'debug': 'debug',
-        'info': 'info',
-        'warn': 'warn',
-        'error': 'error',
-        'fatal': 'error',
-    }
+        trace: 'debug',
+        debug: 'debug',
+        info: 'info',
+        warn: 'warn',
+        error: 'error',
+        fatal: 'error'
+    };
 
     this.fieldsToOmit = [
         'v',
@@ -86,22 +81,19 @@ function BrowserConsoleStream() {
     ];
 }
 
-
-BrowserConsoleStream.prototype.write = function (rec) {
+BrowserConsoleStream.prototype.write = function(rec) {
     const levelName = bunyan.nameFromLevel[rec.level];
     const method = this.levelToConsole[levelName];
     const prunedRec = _.omit(rec, this.fieldsToOmit);
 
     if (_.isEmpty(prunedRec)) {
         console[method](rec.msg);
-    } else if ('err' in prunedRec){
+    } else if ('err' in prunedRec) {
         console[method](rec.err, rec.msg);
     } else {
         console[method](prunedRec, rec.msg);
     }
-}
-
-
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Parent logger
@@ -117,7 +109,7 @@ function createServerLogger() {
     // Always starts with a stream that writes fatal errors to STDERR
     var streams = [];
 
-    if(_.isUndefined(process.env.LOG_FILE)) {
+    if (_.isUndefined(process.env.LOG_FILE)) {
         streams = [{ name: 'stdout', stream: process.stdout, level: process.env.LOG_LEVEL }];
     } else {
         streams = [
@@ -130,7 +122,7 @@ function createServerLogger() {
         src: process.env.LOG_SOURCE,
         name: 'graphistry',
         metadata: {
-            userInfo: { }
+            userInfo: {}
         },
         serializers: serializers,
         streams: streams
@@ -143,7 +135,7 @@ function createServerLogger() {
         process.exit(60);
     };
 
-    process.on('SIGUSR2', function () {
+    process.on('SIGUSR2', function() {
         logger.reopenFileStreams();
     });
 
@@ -165,8 +157,6 @@ function createClientLogger() {
 
 const parentLogger = inBrowser() ? createClientLogger() : createServerLogger();
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // Exports
 //
@@ -176,8 +166,8 @@ const parentLogger = inBrowser() ? createClientLogger() : createServerLogger();
 
 module.exports = {
     createLogger: function(module, fileName) {
-        return (function () {
-            var childLogger = parentLogger.child({module: module, fileName:fileName}, true);
+        return (function() {
+            var childLogger = parentLogger.child({ module: module, fileName: fileName }, true);
 
             //add any additional logging methods here
 
@@ -196,9 +186,7 @@ module.exports = {
 
             return childLogger;
         })();
-    },
-
-
+    }
 
     /* DEPRECATED
      *

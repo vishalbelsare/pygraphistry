@@ -2,12 +2,12 @@
 // `@graphistry/common` logger. This is done via a WebPack module alias in viz-client's build.
 
 import {
-  each as _each,
-  omit as _omit,
-  merge as _merge,
-  extend as _extend,
-  isEmpty as _isEmpty,
-  isObject as _isObject
+    each as _each,
+    omit as _omit,
+    merge as _merge,
+    extend as _extend,
+    isEmpty as _isEmpty,
+    isObject as _isObject
 } from 'lodash';
 
 import bunyan from 'bunyan';
@@ -17,57 +17,57 @@ export const originalConsole = window.originalConsole || _merge({}, console);
 window.originalConsole = originalConsole;
 
 const levelToConsole = {
-  trace: 'debug',
-  debug: 'debug',
-  info: 'info',
-  warn: 'warn',
-  error: 'error',
-  fatal: 'error'
+    trace: 'debug',
+    debug: 'debug',
+    info: 'info',
+    warn: 'warn',
+    error: 'error',
+    fatal: 'error'
 };
 
 class BrowserConsoleStream {
-  constructor() {
-    this.fieldsToOmit = [
-      'v',
-      'name',
-      'fileName',
-      'pid',
-      'hostname',
-      'level',
-      'module',
-      'time',
-      'msg'
-    ];
-  }
-
-  write(rec) {
-    const levelName = bunyan.nameFromLevel[rec.level];
-    const method = levelToConsole[levelName] || 'log';
-    const prunedRec = _omit(rec, this.fieldsToOmit);
-
-    if (_isEmpty(prunedRec)) {
-      originalConsole[method](rec.msg);
-    } else if ('err' in prunedRec) {
-      const e = new Error(rec.err.message);
-      e.stack = rec.err.stack;
-      rec.msg === rec.err.message
-        ? originalConsole[method](e)
-        : originalConsole[method](rec.msg, e);
-    } else {
-      originalConsole[method](rec.msg, prunedRec);
+    constructor() {
+        this.fieldsToOmit = [
+            'v',
+            'name',
+            'fileName',
+            'pid',
+            'hostname',
+            'level',
+            'module',
+            'time',
+            'msg'
+        ];
     }
-  }
+
+    write(rec) {
+        const levelName = bunyan.nameFromLevel[rec.level];
+        const method = levelToConsole[levelName] || 'log';
+        const prunedRec = _omit(rec, this.fieldsToOmit);
+
+        if (_isEmpty(prunedRec)) {
+            originalConsole[method](rec.msg);
+        } else if ('err' in prunedRec) {
+            const e = new Error(rec.err.message);
+            e.stack = rec.err.stack;
+            rec.msg === rec.err.message
+                ? originalConsole[method](e)
+                : originalConsole[method](rec.msg, e);
+        } else {
+            originalConsole[method](rec.msg, prunedRec);
+        }
+    }
 }
 
 class BrowserForwarderStream {
-  constructor() {}
+    constructor() {}
 
-  write(rec) {
-    const ajax = new XMLHttpRequest();
-    ajax.open('POST', '/error', true);
-    ajax.setRequestHeader('Content-type', 'application/json');
-    ajax.send(rec);
-  }
+    write(rec) {
+        const ajax = new XMLHttpRequest();
+        ajax.open('POST', '/error', true);
+        ajax.setRequestHeader('Content-type', 'application/json');
+        ajax.send(rec);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -79,32 +79,32 @@ class BrowserForwarderStream {
 // Normally pulled from window.localStorage, if set. However, since trying to use that API when it's
 // not available can lead to a crash, add some extra logic to detect that and default to 'info'.
 function getClientLogLevel() {
-  // From https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
-  try {
-    var storage = window['localStorage'];
-    var x = '__storage_test__';
-    storage.setItem(x, x);
-    storage.removeItem(x);
+    // From https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
+    try {
+        var storage = window['localStorage'];
+        var x = '__storage_test__';
+        storage.setItem(x, x);
+        storage.removeItem(x);
 
-    return window.localStorage.debugLevel || 'info';
-  } catch (e) {
-    console.warn('Cannot read localStorage to set LOG_LEVEL, defaulting to "info"');
-    return 'info';
-  }
+        return window.localStorage.debugLevel || 'info';
+    } catch (e) {
+        console.warn('Cannot read localStorage to set LOG_LEVEL, defaulting to "info"');
+        return 'info';
+    }
 }
 
 // The parent logger is the parent of all other loggers. It sends all 'warn' or higher level
 // messages to the server Metadata fields, etc. should be added to it, to ensure all subsequent log
 // messages include those fields.
 const parentLogger = bunyan.createLogger({
-  name: 'viz-client',
-  streams: [
-    {
-      level: 'warn',
-      stream: new BrowserForwarderStream(),
-      type: 'stream'
-    }
-  ]
+    name: 'viz-client',
+    streams: [
+        {
+            level: 'warn',
+            stream: new BrowserForwarderStream(),
+            type: 'stream'
+        }
+    ]
 });
 
 // The console logger is the parent of all of our app-code loggers (i.e., the parent of loggers
@@ -113,42 +113,42 @@ const parentLogger = bunyan.createLogger({
 // all >= 'warn' messages to the server as well.
 const consoleLogLevel = getClientLogLevel();
 const consoleLogger = parentLogger.child({
-  streams: [
-    {
-      level: consoleLogLevel,
-      stream: new BrowserConsoleStream(),
-      type: 'raw'
-    }
-  ]
+    streams: [
+        {
+            level: consoleLogLevel,
+            stream: new BrowserConsoleStream(),
+            type: 'raw'
+        }
+    ]
 });
 
 export function createDirectLogger(module, filename) {
-  return parentLogger.child({ module, filename });
+    return parentLogger.child({ module, filename });
 }
 
 export function createLogger(module, fileName) {
-  return consoleLogger.child({ module, fileName }, true);
+    return consoleLogger.child({ module, fileName }, true);
 }
 
 export function addMetadataField(metadata) {
-  //metadata is global, same for all loggers
-  if (!_isObject(metadata)) {
-    throw new Error('metadata must be an object');
-  }
-  parentLogger.fields.metadata = parentLogger.fields.metadata || {};
-  return _extend(parentLogger.fields.metadata, metadata);
+    //metadata is global, same for all loggers
+    if (!_isObject(metadata)) {
+        throw new Error('metadata must be an object');
+    }
+    parentLogger.fields.metadata = parentLogger.fields.metadata || {};
+    return _extend(parentLogger.fields.metadata, metadata);
 }
 
 export function clearMetadataField(fields) {
-  _each(fields, function(field) {
-    delete parentLogger.fields.metadata[field];
-  });
+    _each(fields, function(field) {
+        delete parentLogger.fields.metadata[field];
+    });
 }
 
 export function addUserInfo(newUserInfo) {
-  parentLogger.fields.metadata = parentLogger.fields.metadata || {};
-  parentLogger.fields.metadata.userInfo = parentLogger.fields.metadata.userInfo || {};
-  return _extend(parentLogger.fields.metadata.userInfo, newUserInfo);
+    parentLogger.fields.metadata = parentLogger.fields.metadata || {};
+    parentLogger.fields.metadata.userInfo = parentLogger.fields.metadata.userInfo || {};
+    return _extend(parentLogger.fields.metadata.userInfo, newUserInfo);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -158,7 +158,7 @@ export function addUserInfo(newUserInfo) {
 ////////////////////////////////////////////////////////////////////////////////
 
 if (window.graphistryClientId) {
-  addUserInfo({ cid: window.graphistryClientId });
+    addUserInfo({ cid: window.graphistryClientId });
 }
 
 //

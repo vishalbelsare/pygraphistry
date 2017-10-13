@@ -1,16 +1,16 @@
 {
-  "id": "410043db88e7034c",
-  "enabled": true,
-  "pivotParameters": {
-    "search-splunk-plain$$$query":
-      "index=\"jerry-7sept\" 14.17.70.207 OR 00:1b:17:c4:9c:30 OR 00:de:fb:79:af:c1 OR \t 10.19.106.114",
-    "search-splunk-plain$$$fields": [],
-    "expand-splunk-plain$$$ref": ["40ff607091cb3846"],
-    "expand-splunk-plain$$$filter": "vendor=FireEye index=jerry-7sept",
-    "expand-splunk-plain$$$matchAttributes": false,
-    "expand-splunk-plain$$$colMatch": false,
-    "expand-splunk-plain$$$fields": [],
-    "expand-splunk-plain$$$pivotFields": ["src", "smac"]
-  },
-  "pivotTemplate": "expand-splunk-plain"
+    "id": "410043db88e7034c",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query":
+            "index=\"jerry-7sept\" 14.17.70.207 OR 00:1b:17:c4:9c:30 OR 00:de:fb:79:af:c1 OR \t 10.19.106.114",
+        "search-splunk-plain$$$fields": [],
+        "expand-splunk-plain$$$ref": ["40ff607091cb3846"],
+        "expand-splunk-plain$$$filter": "vendor=FireEye index=jerry-7sept",
+        "expand-splunk-plain$$$matchAttributes": false,
+        "expand-splunk-plain$$$colMatch": false,
+        "expand-splunk-plain$$$fields": [],
+        "expand-splunk-plain$$$pivotFields": ["src", "smac"]
+    },
+    "pivotTemplate": "expand-splunk-plain"
 }

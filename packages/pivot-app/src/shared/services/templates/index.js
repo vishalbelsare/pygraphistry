@@ -9,25 +9,25 @@ import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 export const pivots = []
-  .concat(
-    splunkPivots || [],
-    blazegraphPivots || [],
-    httpPivots || [],
-    manualPivots || [],
-    systemPivots || []
-  )
-  .filter(pivot => {
-    if (!pivot) {
-      log.error('NULL PIVOT');
-      throw new Error('Null pivot');
-    }
+    .concat(
+        splunkPivots || [],
+        blazegraphPivots || [],
+        httpPivots || [],
+        manualPivots || [],
+        systemPivots || []
+    )
+    .filter(pivot => {
+        if (!pivot) {
+            log.error('NULL PIVOT');
+            throw new Error('Null pivot');
+        }
 
-    ['id', 'name', 'tags', 'searchAndShape', 'parameters'].forEach(fld => {
-      if (!pivot[fld]) {
-        log.error('Pivot missing field', fld, pivot);
-        throw new Error({ msg: 'Pivot missing field', fld, pivot });
-      }
+        ['id', 'name', 'tags', 'searchAndShape', 'parameters'].forEach(fld => {
+            if (!pivot[fld]) {
+                log.error('Pivot missing field', fld, pivot);
+                throw new Error({ msg: 'Pivot missing field', fld, pivot });
+            }
+        });
+
+        return true;
     });
-
-    return true;
-  });

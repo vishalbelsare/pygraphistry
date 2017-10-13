@@ -5,25 +5,25 @@ const graphistryConfig = require('@graphistry/config')();
 const buildDate = Date.now();
 const buildNumber = process.env.BUILD_NUMBER || 'dev';
 const commitId =
-  process.env.COMMIT_ID ||
-  child_process
-    .execSync('git rev-parse --short HEAD')
-    .toString()
-    .trim();
+    process.env.COMMIT_ID ||
+    child_process
+        .execSync('git rev-parse --short HEAD')
+        .toString()
+        .trim();
 const revName =
-  process.env.BRANCH_NAME ||
-  child_process
-    .execSync('git name-rev --name-only HEAD')
-    .toString()
-    .trim();
+    process.env.BRANCH_NAME ||
+    child_process
+        .execSync('git name-rev --name-only HEAD')
+        .toString()
+        .trim();
 
 const versions = {
-  __BUILDDATE__: `${buildDate}`,
-  __GITBRANCH__: `"${revName}"`,
-  __GITCOMMIT__: `"${commitId}"`,
-  __VERSION__: JSON.stringify(vizAppPackage.version),
-  __RELEASE__: JSON.stringify(graphistryConfig.RELEASE),
-  __BUILDNUMBER__: buildNumber ? `"${buildNumber}"` : undefined
+    __BUILDDATE__: `${buildDate}`,
+    __GITBRANCH__: `"${revName}"`,
+    __GITCOMMIT__: `"${commitId}"`,
+    __VERSION__: JSON.stringify(vizAppPackage.version),
+    __RELEASE__: JSON.stringify(graphistryConfig.RELEASE),
+    __BUILDNUMBER__: buildNumber ? `"${buildNumber}"` : undefined
 };
 
 // Disable CSSModules here
@@ -31,56 +31,56 @@ const CSSModules = true;
 
 // Register vendors here
 const vendor = [
-  'brace',
-  'debug',
-  'lodash',
-  'recompose',
-  'underscore',
+    'brace',
+    'debug',
+    'lodash',
+    'recompose',
+    'underscore',
 
-  'd3-color',
-  'd3-scale',
-  'd3-time-format',
+    'd3-color',
+    'd3-scale',
+    'd3-time-format',
 
-  'react',
-  'redux',
-  'react-ace',
-  'react-dom',
-  'react-redux',
-  'react-helmet',
-  'redbox-react',
-  'react-overlays',
-  'react-bootstrap',
-  'react-hot-loader',
-  'redux-observable',
+    'react',
+    'redux',
+    'react-ace',
+    'react-dom',
+    'react-redux',
+    'react-helmet',
+    'redbox-react',
+    'react-overlays',
+    'react-bootstrap',
+    'react-hot-loader',
+    'redux-observable',
 
-  'simpleflakes',
-  'socket.io-client',
+    'simpleflakes',
+    'socket.io-client',
 
-  'moment',
-  'moment-timezone',
+    'moment',
+    'moment-timezone',
 
-  'rxjs',
-  'rxjs-gestures',
+    'rxjs',
+    'rxjs-gestures',
 
-  'pegjs',
-  'pegjs-util',
+    'pegjs',
+    'pegjs-util',
 
-  'rc-switch',
-  'rc-color-picker',
-  '@graphistry/rc-slider',
-  '@graphistry/react-select',
+    'rc-switch',
+    'rc-color-picker',
+    '@graphistry/rc-slider',
+    '@graphistry/react-select',
 
-  '@graphistry/falcor',
-  '@graphistry/falcor-router',
-  '@graphistry/falcor-model-rxjs',
-  '@graphistry/falcor-json-graph',
-  '@graphistry/falcor-path-syntax',
-  '@graphistry/falcor-path-utils',
-  '@graphistry/falcor-react-redux',
-  '@graphistry/falcor-query-syntax',
-  '@graphistry/falcor-react-schema',
-  '@graphistry/falcor-router-saddle',
-  '@graphistry/falcor-socket-datasource'
+    '@graphistry/falcor',
+    '@graphistry/falcor-router',
+    '@graphistry/falcor-model-rxjs',
+    '@graphistry/falcor-json-graph',
+    '@graphistry/falcor-path-syntax',
+    '@graphistry/falcor-path-utils',
+    '@graphistry/falcor-react-redux',
+    '@graphistry/falcor-query-syntax',
+    '@graphistry/falcor-react-schema',
+    '@graphistry/falcor-router-saddle',
+    '@graphistry/falcor-socket-datasource'
 ];
 
 module.exports = { CSSModules, vendor, versions };

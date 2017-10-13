@@ -1,37 +1,39 @@
 {
-  "name": "@graphistry/central",
-  "main": "dist/server.js",
-  "description": "central",
-  "version": "4.1.0",
-  "scripts": {
-    "start": "node ./bin/central",
-    "build": "npm run clean && babel lib -d dist --source-maps --presets node6-es6 --plugins transform-runtime",
-    "watch": "npm run clean && babel lib -d dist --source-maps --presets node6-es6 --plugins transform-runtime --watch",
-    "clean": "rm -rf ./dist && mkdir -p ./dist",
-    "debug": "node --inspect --debug ./bin/central"
-  },
-  "bin": {
-    "graphistry-central": "./bin/central"
-  },
-  "dependencies": {
-    "@graphistry/common": "3.2.5",
-    "@graphistry/config": "~3.0.7",
-    "@graphistry/docs-update": "latest",
-    "babel-runtime": "~6.11.6",
-    "body-parser": "~1.15.2",
-    "express": "~4.12.3",
-    "lodash": "~4.16.4",
-    "mongodb": "~2.0.25",
-    "node-s3-url-encode": "0.0.4",
-    "request": "~2.54.0",
-    "rxjs": "~5.4.0",
-    "simpleflakes": "~1.2.3",
-    "socket.io-client": "1.4.8",
-    "source-map-support": "0.4.2"
-  },
-  "devDependencies": {
-    "babel-cli": "6.11.4",
-    "babel-plugin-transform-runtime": "~6.12.0",
-    "babel-preset-node6-es6": "~11.2.5"
-  }
+    "name": "@graphistry/central",
+    "main": "dist/server.js",
+    "description": "central",
+    "version": "4.1.0",
+    "scripts": {
+        "start": "node ./bin/central",
+        "build":
+            "npm run clean && babel lib -d dist --source-maps --presets node6-es6 --plugins transform-runtime",
+        "watch":
+            "npm run clean && babel lib -d dist --source-maps --presets node6-es6 --plugins transform-runtime --watch",
+        "clean": "rm -rf ./dist && mkdir -p ./dist",
+        "debug": "node --inspect --debug ./bin/central"
+    },
+    "bin": {
+        "graphistry-central": "./bin/central"
+    },
+    "dependencies": {
+        "@graphistry/common": "3.2.5",
+        "@graphistry/config": "~3.0.7",
+        "@graphistry/docs-update": "latest",
+        "babel-runtime": "~6.11.6",
+        "body-parser": "~1.15.2",
+        "express": "~4.12.3",
+        "lodash": "~4.16.4",
+        "mongodb": "~2.0.25",
+        "node-s3-url-encode": "0.0.4",
+        "request": "~2.54.0",
+        "rxjs": "~5.4.0",
+        "simpleflakes": "~1.2.3",
+        "socket.io-client": "1.4.8",
+        "source-map-support": "0.4.2"
+    },
+    "devDependencies": {
+        "babel-cli": "6.11.4",
+        "babel-plugin-transform-runtime": "~6.12.0",
+        "babel-preset-node6-es6": "~11.2.5"
+    }
 }

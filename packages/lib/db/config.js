@@ -3,44 +3,44 @@ const Path = require('path');
 
 // Define a schema
 var config = convict({
-  env: {
-    doc: 'The node environment',
-    format: ['production', 'development', 'test'],
-    default: 'development',
-    env: 'NODE_ENV'
-  },
-  db: {
-    host: {
-      doc: 'The host for your database.',
-      format: String,
-      default: 'localhost',
-      env: 'DBHOST'
+    env: {
+        doc: 'The node environment',
+        format: ['production', 'development', 'test'],
+        default: 'development',
+        env: 'NODE_ENV'
     },
-    port: {
-      doc: 'The port for your database',
-      format: Number,
-      default: 5432,
-      env: 'DBPORT'
-    },
-    username: {
-      doc: 'Your database username',
-      format: String,
-      default: 'graphistry',
-      env: 'DBUSER'
-    },
-    password: {
-      doc: 'Your database password',
-      format: String,
-      default: 'graphtheplanet!',
-      env: 'DBPASSWORD'
-    },
-    dbname: {
-      doc: 'Your database name',
-      format: String,
-      default: 'graphistry',
-      env: 'DBNAME'
+    db: {
+        host: {
+            doc: 'The host for your database.',
+            format: String,
+            default: 'localhost',
+            env: 'DBHOST'
+        },
+        port: {
+            doc: 'The port for your database',
+            format: Number,
+            default: 5432,
+            env: 'DBPORT'
+        },
+        username: {
+            doc: 'Your database username',
+            format: String,
+            default: 'graphistry',
+            env: 'DBUSER'
+        },
+        password: {
+            doc: 'Your database password',
+            format: String,
+            default: 'graphtheplanet!',
+            env: 'DBPASSWORD'
+        },
+        dbname: {
+            doc: 'Your database name',
+            format: String,
+            default: 'graphistry',
+            env: 'DBNAME'
+        }
     }
-  }
 });
 
 var env = config.get('env');

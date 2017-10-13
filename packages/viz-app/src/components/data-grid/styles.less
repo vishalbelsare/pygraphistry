@@ -1,110 +1,110 @@
 .grid-scroller-container {
-  contain: layout;
-  overflow: hidden;
-  backface-visibility: hidden;
-  transform: translate3d(0, 0, 0);
+    contain: layout;
+    overflow: hidden;
+    backface-visibility: hidden;
+    transform: translate3d(0, 0, 0);
 }
 
 .grid-scroller {
-  overflow: auto;
+    overflow: auto;
 }
 
 .grid {
-  will-change: transform;
+    will-change: transform;
 }
 
 .grid,
 .grid > tbody {
-  backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .grid-cell {
-  color: black;
-  font-size: 0.9em;
-  overflow: hidden;
-  white-space: nowrap;
-  vertical-align: middle;
-  text-overflow: ellipsis;
-  border-right: 1px solid #ccc;
-  border-bottom: 1px solid #ccc;
-  &:after {
-    content: '\00a0';
-  }
+    color: black;
+    font-size: 0.9em;
+    overflow: hidden;
+    white-space: nowrap;
+    vertical-align: middle;
+    text-overflow: ellipsis;
+    border-right: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    &:after {
+        content: '\00a0';
+    }
 }
 
 .grid-head-cell {
-  transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
 }
 
 /* table column header cell - fixed to the top */
 .grid-head-col-cell {
-  top: 0;
-  position: fixed;
-  background: white;
-  vertical-align: middle;
-  font-variant: small-caps;
-  border-right: 1px solid #ccc;
-  border-bottom: 2px solid #ccc;
+    top: 0;
+    position: fixed;
+    background: white;
+    vertical-align: middle;
+    font-variant: small-caps;
+    border-right: 1px solid #ccc;
+    border-bottom: 2px solid #ccc;
 }
 
 /* table row header cell content. Hidden so the corner cell width will grow as the grid is scrolled vertically */
 .grid-head-row-cell-content {
-  position: static;
-  visibility: hidden;
-  padding-left: 4px;
-  padding-right: 4px;
-  border-right: 2px solid #ccc;
+    position: static;
+    visibility: hidden;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-right: 2px solid #ccc;
 }
 
 /* table row header cell wrapper - fixed to the left */
 .grid-head-row-cell-wrapper {
-  top: 0;
-  left: 0;
-  position: absolute;
+    top: 0;
+    left: 0;
+    position: absolute;
 }
 
 /* table row header cell - fixed to the left */
 .grid-head-row-cell {
-  left: 0;
-  z-index: 2;
-  position: fixed;
-  background: white;
-  padding-left: 4px;
-  padding-right: 4px;
-  text-align: center;
-  vertical-align: middle;
-  font-variant: small-caps;
-  border-bottom: 1px solid #ccc;
-  border-right: 2px solid #ccc;
+    left: 0;
+    z-index: 2;
+    position: fixed;
+    background: white;
+    padding-left: 4px;
+    padding-right: 4px;
+    text-align: center;
+    vertical-align: middle;
+    font-variant: small-caps;
+    border-bottom: 1px solid #ccc;
+    border-right: 2px solid #ccc;
 }
 
 .grid-head-corner-cell {
-  backface-visibility: hidden;
-  border-right: 2px solid #ccc;
-  border-bottom: 2px solid #ccc;
-  & :global(.Select-loading) {
-    top: 50%;
-    left: 50%;
-    margin-top: -8px;
-    margin-left: -8px;
-    position: absolute;
-  }
+    backface-visibility: hidden;
+    border-right: 2px solid #ccc;
+    border-bottom: 2px solid #ccc;
+    & :global(.Select-loading) {
+        top: 50%;
+        left: 50%;
+        margin-top: -8px;
+        margin-left: -8px;
+        position: absolute;
+    }
 }
 
 .grid > tbody .grid-cell {
-  padding-left: 4px;
-  padding-right: 4px;
+    padding-left: 4px;
+    padding-right: 4px;
 }
 
 .grid > tbody .grid-cell-odd {
-  background-color: #eee;
+    background-color: #eee;
 }
 
 .grid > tbody .grid-cell-even {
-  background-color: white;
+    background-color: white;
 }
 
 .grid > thead th,
 .grid > tfoot th {
-  pointer-events: none;
+    pointer-events: none;
 }

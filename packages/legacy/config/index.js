@@ -5,33 +5,31 @@ var util = require('util');
 var path = require('path');
 var _ = require('lodash');
 
-
 var configErrors = [];
-
 
 function getS3(access, secret, region) {
     try {
         var AWS = require('aws-sdk');
-        AWS.config.update({accessKeyId: access, secretAccessKey: secret});
-        AWS.config.update({region: region});
+        AWS.config.update({ accessKeyId: access, secretAccessKey: secret });
+        AWS.config.update({ region: region });
 
         return new AWS.S3();
-    } catch(err) {
+    } catch (err) {
         console.log(err);
         configErrors.push(err);
         return null;
     }
 }
 
-
 function getErrors(clear) {
     var errors = configErrors.slice(0);
 
-    if(clear) { configErrors = []; }
+    if (clear) {
+        configErrors = [];
+    }
 
     return errors;
 }
-
 
 /**
  * Sane default options (assumes local dev server). All possible options MUST be set to some value
@@ -47,13 +45,13 @@ function defaults() {
         ENVIRONMENT: 'local',
         ALLOW_MULTIPLE_VIZ_CONNECTIONS: true,
 
-        CLUSTER: util.format('%s.local', (process.env['USER'] || 'localuser')),
+        CLUSTER: util.format('%s.local', process.env['USER'] || 'localuser'),
 
         // FIXME: Change this to 'VIZ_BIND_ADDRESS', to clarify this is the IP the server binds to,
         // not the IP it is reachable at. Binding to 0.0.0.0 is legal, but not a real, routable IP.
         VIZ_LISTEN_ADDRESS: '127.0.0.1',
-        VIZ_LISTEN_PORTS: [10000],   // Fixed list of workers for central.
-        VIZ_LISTEN_PORT: 10000,      // Port for this worker.
+        VIZ_LISTEN_PORTS: [10000], // Fixed list of workers for central.
+        VIZ_LISTEN_PORT: 10000, // Port for this worker.
 
         // The number of seconds old a GPU ping may be before being considered stale
         GPU_PING_TIMEOUT: 60,
@@ -72,14 +70,14 @@ function defaults() {
         S3UPLOADS: true,
         BUCKET: 'graphistry.data',
         S3: null,
-        S3_REGION: "us-west-1",
+        S3_REGION: 'us-west-1',
         READ_PROCESS_DISCARD: false,
 
         MONGO_USERNAME: undefined,
         MONGO_PASSWORD: undefined,
         MONGO_HOSTS: ['localhost'],
         MONGO_DATABASE: 'graphistry-local',
-        DATABASE: 'graphistry-local',   // legacy option name
+        DATABASE: 'graphistry-local', // legacy option name
         MONGO_REPLICA_SET: undefined,
         // This option will be set by synthesized; it's only here for reference
         MONGO_SERVER: 'mongodb://localhost/graphistry-local',
@@ -96,7 +94,7 @@ function defaults() {
             latestVersion: '0.9.49'
         },
 
-        RELEASE: 'Nov 16 R1',  // human-readable, shown under logo
+        RELEASE: 'Nov 16 R1', // human-readable, shown under logo
 
         LOCAL_DATASET_CACHE: true,
         LOCAL_DATASET_CACHE_DIR: '/tmp/graphistry/data_cache',
@@ -131,14 +129,13 @@ function defaults() {
                 COMPUTE_SUMS: 6,
                 SORT: 8,
                 EDGE_FORCES: 100,
-                SEG_REDUCE:1000,
+                SEG_REDUCE: 1000,
                 CALCULATE_FORCES: 60,
                 SEG_REDUCE: 40
             }
         }
     };
 }
-
 
 /**
  * Parses command-line arguments as JSON and combines that with the existing options.
@@ -149,7 +146,8 @@ function commandLine() {
         try {
             return JSON.parse(process.argv[2]);
         } catch (err) {
-            err.message = 'WARNING Cannot parse command line arguments, ignoring. Error: ' + err.message;
+            err.message =
+                'WARNING Cannot parse command line arguments, ignoring. Error: ' + err.message;
             configErrors.push(err);
 
             return {};
@@ -157,19 +155,17 @@ function commandLine() {
     }
 }
 
-
 function getProcessName() {
-    if(process.env.SUPERVISOR_PROCESS_NAME) {
+    if (process.env.SUPERVISOR_PROCESS_NAME) {
         return process.env.SUPERVISOR_PROCESS_NAME;
-    } else if(process.env.npm_package_name) {
+    } else if (process.env.npm_package_name) {
         return process.env.npm_package_name + '-' + process.pid;
-    } else if(require.main) {
+    } else if (require.main) {
         return path.basename(require.main.filename, '.js') + '-' + process.pid;
     } else {
         return __filename + '-' + process.pid;
     }
 }
-
 
 /**
  * Sets/modifies the existing options based off the current `ENVIRONMENT` option value
@@ -177,7 +173,7 @@ function getProcessName() {
  * @return {Object} A new set of options combining existing options with ENVIRONMENT options
  */
 function deployEnv(options) {
-    if(_.isEmpty(options) || _.isUndefined(options.ENVIRONMENT)) {
+    if (_.isEmpty(options) || _.isUndefined(options.ENVIRONMENT)) {
         return {};
     }
 
@@ -191,7 +187,10 @@ function deployEnv(options) {
         LOG_FILE: '/var/log/graphistry-json/' + getProcessName() + '.log',
         LOG_LEVEL: 'info',
 
-        MONGO_HOSTS: ['c48.lighthouse.2.mongolayer.com:10048', 'c48.lighthouse.3.mongolayer.com:10048'],
+        MONGO_HOSTS: [
+            'c48.lighthouse.2.mongolayer.com:10048',
+            'c48.lighthouse.3.mongolayer.com:10048'
+        ],
         MONGO_REPLICA_SET: 'set-545152bc461811298c009c03',
         ALLOW_MULTIPLE_VIZ_CONNECTIONS: false,
 
@@ -200,31 +199,31 @@ function deployEnv(options) {
     };
 
     var stagingOptions = {
-        CLUSTER: "staging",
+        CLUSTER: 'staging',
 
         DATABASE: 'graphistry-staging',
         MONGO_DATABASE: 'graphistry-staging'
     };
 
     var prodOptions = {
-        CLUSTER: "production",
+        CLUSTER: 'production',
 
         DATABASE: 'graphistry-prod',
         MONGO_DATABASE: 'graphistry-prod'
     };
 
-    switch(options.ENVIRONMENT) {
+    switch (options.ENVIRONMENT) {
         case 'staging':
             return _.extend({}, cloudOptions, stagingOptions);
             break;
         case 'production':
             return _.extend({}, cloudOptions, prodOptions);
             break;
-        default:  // 'local'
+        default:
+            // 'local'
             return {};
     }
 }
-
 
 /**
  * Sets options based off the value of existing options (except for `ENVIRONMENT`).
@@ -239,13 +238,13 @@ function synthesized(options) {
         options['MONGO_USERNAME'],
         options['MONGO_PASSWORD'],
         options['MONGO_DATABASE'],
-        options['MONGO_REPLICA_SET']);
+        options['MONGO_REPLICA_SET']
+    );
 
     var s3 = getS3(options['S3_ACCESS'], options['S3_SECRET'], options['S3_REGION']);
 
-    return {MONGO_SERVER: mongoServer, S3: s3};
+    return { MONGO_SERVER: mongoServer, S3: s3 };
 }
-
 
 /**
  * Creates a MongoDB connection URL from individual parameters
@@ -270,10 +269,6 @@ function getMongoURL(hosts, username, password, database, replicaSet) {
     return util.format('mongodb://%s%s/%s%s', credentialsUrl, hostsUrl, database, replicaSetUrl);
 }
 
-
-
-
-
 /**
  * Run each resolver function (passing in the current options) and then combine their output (with
  * later resolvers taking precedence).
@@ -292,11 +287,12 @@ function resolve(resolvers) {
                 return _.merge(
                     resolved,
                     _.isFunction(resolver) ? resolver(resolved) : resolver,
-                    function (curVal, newVal) {
-                        //force nested funcs to resolve                        
+                    function(curVal, newVal) {
+                        //force nested funcs to resolve
                         return resolve(curVal, newVal);
-                    });
-            } catch(err) {
+                    }
+                );
+            } catch (err) {
                 configErrors.push(err);
                 return resolved;
             }
@@ -304,7 +300,6 @@ function resolve(resolvers) {
         {}
     );
 }
-
 
 /**
  * Returns an object containing the current set of resolved options for Graphistry apps.
@@ -317,11 +312,10 @@ function getOptions(optionOverrides) {
 
     var optionsResolved = resolve(defaults, overrides, deployEnv, synthesized, overrides);
     return optionsResolved;
-};
-
+}
 
 module.exports = (function() {
-    var emptyArgKey = (Math.random()).toString();
+    var emptyArgKey = Math.random().toString();
 
     return _.memoize(getOptions, function() {
         return arguments.length > 0 ? JSON.stringify(arguments) : emptyArgKey;
