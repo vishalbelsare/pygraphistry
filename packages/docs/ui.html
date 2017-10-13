@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Docs : Graphistry API information for cross-language use, e.g., REST">
+	<link rel="stylesheet" type="text/css" media="screen" href="css/bootstrap.css">
+
+    <title>Docs</title>
+  </head>
+
+  <body>
+
+<nav class="navbar navbar-default navbar-fixed-top navbar-inverse">
+  <div class="container-fluid">
+    <div class="navbar-left">
+	<img style="max-height:30px; margin-top: 10px; margin-left:30px;" src="images/logo.png">
+    </div>
+	<div class="navbar-left"><a style="color:#E6E6E6;" class="navbar-text" href="#">Graphistry</a>
+<!--	<a style="margin-top: 18px; margin-left: 40px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Server Status: Active</a>
+	<a style="margin-top: 18px; font-size: 11px; color:#E6E6E6;" class="navbar-text" href="#">Location: USA</a>		-->
+</div>  
+    <div class="collapse navbar-collapse" id="myNavbar">
+      <ul class="nav navbar-nav">
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+<!--        <li><a href="index.html">Dashboard</a></li>-->
+        <li class="active"><a href="index.html">Getting Started</a></li>
+        <li><a style="margin-right:30px;" href="docs.html">Docs</a></li>
+		<li><!--<button style="margin-top:8px; margin-right:30px;" type="button" class="btn btn-info">Launch</button>--></li>   
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="jumbotron">
+  <div class="container text-center">
+	  <p style="font-size:21px;"><br><br>UI Guide & Advanced Links</p>      
+  </div>
+</div>
+
+
+<div class="container-fluid text-center">    
+  <p style="margin-top:60px;"><strong>Let's take a look at the Graphistry UI...</strong></p><br><p style="margin-left:200px; margin-right:200px;">The Graphistry user interface provides analyst powertools for working with massive graphs. Filter, cluster, drilldown, compare, color, and manipulate data on the fly, giving you a new way to explore your network data.</p> <br><br>
+	
+
+  <div style="text-align: center;" class="row">
+	<img src="images/ui_callouts.png" style="max-width:1000px; margin-right:50px;" class="img-fluid" alt="Responsive image">	  
+  </div><br>
+	<p style="margin-top:60px;"><strong>Toolbar Overview</strong></p><br><p style="margin-left:200px; margin-right:200px;">The UI toolbar is home to a large suite of powertools for manipulating and exploring your graph. The toolbar is broken down into 5 major sections: <strong>Graph Tools</strong> directly manipulate the graph visualization's appearance and behavior, <strong>Selection Tools</strong> select/inspect and move graph elements, <strong>Query Tools</strong> quickly filter and exclude and show the current values, <strong>Inspection Tools</strong> open and close the various data inspection panels, and <strong>Workbook Tools</strong> take you fullscreen, open in a new tab, and save your current graph. </p> <br><br><br><br>
+	
+	
+  <div style="text-align: center;" class="row">
+	<img src="images/toolbar.png" style="max-width:900px; margin-right:0px;" class="img-fluid" alt="Responsive image">	  
+  </div><br><br><br><br><br><br>
+	
+	  <div style="text-align: center;" class="row">
+	  	<div style="margin-left: 100px;" class="col-sm-5">
+	<img src="images/Screen%20Shot%202017-07-20%20at%204.34.06%20PM.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	</div>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><strong>Graph Visualization </strong><i> (main panel)	 </i><br><br>
+	  <p>Explore your graph data in the main visualization panel:
+	  <ul>
+	   <li><b>Inspect &amp; Move</b>: Click a node to see its details, and click again and drag to move a single or group of nodes.</li> 
+	   <li><b>Drill</b>: When a label is click-opened, click on the various attributes to add filters or exclusions for them.</li>
+	   <li><b>Clean</b>: At the bottom left of the panel, quickly toggle whether to show labels and icons, and prune isolated node (unconnected data points)</li></ul></p><br><br><br></div>
+	  
+  </div>
+	
+  <div style="text-align: center;" class="row">
+	  	<div style="margin-left: 100px;" class="col-sm-5">
+	<img src="images/Screen%20Shot%202017-07-20%20at%204.35.28%20PM.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	</div>
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><strong>Histograms</strong><i> (right panel)</i><br><br>
+		  <p>Analyze and manipulate all of your data columns:
+		  <ul>
+		  <li><b>Chart & analyze</b>: Create histogram summaries for any node or edge attribute</li>
+		  <li><b>Filter</b>: Click-drag an attribute to only see the selected range of values</li>
+		  <li><b>Color</b>: Paint the main graph visualization based on an attribute's values and a color palette of your choice to understand where the values occur</li>
+		  <li><b>Size</b>: Control node size based on attribute values to understand what is important</li>
+		 </ul>
+		 	</p><br><a href="ui_histograms.html"><button class="btn btn-info">More: Histograms and encodings deep dive</button></a><br><br><br></div>
+	  
+  </div>
+
+  <div style="text-align: center;" class="row">
+		<div style="margin-left: 100px;" class="col-sm-5">
+	<img src="images/Screen%20Shot%202017-07-20%20at%204.37.13%20PM.png" style="max-width:500px; margin-right:50px;" class="img-fluid" alt="Responsive image">
+	</div>  
+	  <div style="margin-left: 50px; text-align: left;" class="col-sm-4"><br><br><strong>Data Inspector</strong><br><i>bottom panel</i><br><br>
+	  <p>Explore your data with the underlying data tables.
+	  <ul>
+	  <li><b>Classic</b>: Search, sort, and navigate</li>
+	  <li><b>Visualize</b>: Click any row to find it in the graph</li>
+	  <li><b>Inspect visual regions</b>: Use the data brush tool to highlight regions of the graph and see the selection's values populated here! </p></div>
+	  
+  </div>	
+	
+	
+	<br><br><br><br>
+	<p style="margin-top:60px;"><strong>Next Up: UI Deep Dives</strong></p><p style="margin-left:200px; margin-right:200px;"></p>
+	<p style="margin-left:200px; margin-right:200px;">Now let's dive into some UI walkthroughs of some of these important features, select a tutorial below to learn more.</p>
+	<br><br>
+	
+	
+  <div style="text-align: center;" class="row">	
+	 <a style="color:black;" href="ui_basics.html">
+	  <div style="text-align:left; margin: 10px;   float: none; display: inline-block; border-radius: 5px; border: solid 1px; border-color:#E6E6E6; padding:20px; "class="col-sm-3">
+	  	  	
+      <p><strong>Filters & Exclusions</strong></p>
+	  <p style="font-size:12px;">Drilldowns & data cleaning</p><br>	
+	  <img src="images/icons/filter.png" class="img-responsive" style="width:100%;" alt="Image">	  
+    </div>
+	</a>	 
+    <a style="color:black;" href="ui_histograms.html">
+	  <div style="text-align:left; margin: 10px;   float: none; display: inline-block; border-radius: 5px; border: solid 1px; border-color:#E6E6E6; padding:20px; "class="col-sm-3">
+	  	  	
+      <p><strong>Histograms!</strong></p>
+	  <p style="font-size:12px;">Advanced filtering and coloring</p><br>	  
+	  <img src="images/icons/histo.png" class="img-responsive" style="width:100%;">	  
+    </div>
+	</a>	
+    <a style="color:black;" href="ui_tips.html">
+	  <div style="text-align:left; margin: 10px;   float: none; display: inline-block; border-radius: 5px; border: solid 1px; border-color:#E6E6E6; padding:20px; "class="col-sm-3">
+      	  	
+      <p><strong>Tips & Tricks</strong></p>
+	  <p style="font-size:12px;">Databrush & Prune Isolated Nodes</p><br>	  
+	  <img src="images/icons/3.png" class="img-responsive" style="width:100%;" alt="Image">	  
+    </div>
+	</a>		  
+  </div>	
+	
+	
+<br>
+	
+	
+	
+<p style="margin-top:70px;"><strong>Looking for more information?</strong></p><br>
+   <p style="margin-left:100px; margin-right:100px;">Browse our in-depth UI guide slideshow to take you through all the details of the Graphistry tool suite.
+</p><br>	
+  <div style="text-align: center;" class="row">
+    <a href="ui_guide/Graphistry_UI_Guide/index.html">
+	  <div style="float: none; display: inline-block; border-radius: 5px; border: solid 1px; border-color:#E6E6E6; padding-top: 25px; "class="col-sm-3">
+      <p>Browse UI Guide slideshow</p><br>
+    </div>
+	</a>			  
+  </div>			
+<br><br><br><br>	
+	
+</div><br>
+
+
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-3 col-sm-6 footerleft ">
+        <div class="logofooter"> <img style="max-height:40px; margin-top: 10px;" src="images/logo.png"></div>
+        
+      </div>
+      <div class="col-md-2 col-sm-6 paddingtop-bottom">
+        <ul class="footer-ul">
+		  <li><a href="#"> Home </a></li>
+		  <li><a href="#"> Learn More </a></li>
+          <li><a href="#"> Setup Guide</a></li>
+          <li><a href="#"> UI Guide</a></li>
+        </ul>
+      </div>
+      <div class="col-md-3 col-sm-6 paddingtop-bottom">
+			<p style="color:#E6E6E6; font-size:12px;">1212 Broadway Floor 11, Oakland, CA 94612</p>
+        <p style="color:#E6E6E6; font-size:12px;">info@graphistry.com</p>	  
+      </div>
+      <div class="col-md-3 col-sm-6 paddingtop-bottom">
+        </div>
+      </div>
+    </div>
+</footer>
+<!--footer start from here-->
+
+<div class="copyright">
+  <div class="container">
+    <div class="col-md-6">
+      <p>© Graphistry Inc 2017</p>
+    </div>
+    <div class="col-md-6">
+      <ul class="bottom_ul">
+        <li><a href="#">graphistry.com</a></li>
+        <li><a href="#">About us</a></li>
+        <li><a href="#">Getting Started</a></li>
+        <li><a href="#">Docs</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+	 
+
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,4371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: Graphistry</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+  <script src="/js/es5-shim.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Class: Graphistry</h1>
+
+
+
+
+
+
+<section>
+
+<header>
+
+        <h2>Graphistry</h2>
+
+            <div class="class-description"><p>This object wraps a HTML IFrame of a Graphistry Visualization in order
+to provide an API for interacting with the graph.</p></div>
+
+
+</header>
+
+<article>
+    <div class="container-overview">
+
+
+
+
+    <h2>Constructor</h2>
+
+
+    <h4 class="name" id="Graphistry"><span class="type-signature"></span>new Graphistry<span class="signature">()</span><span class="type-signature"></span></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line36">line 36</a>
+    </li></ul></dd>
+
+
+
+
+
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="https://github.com/ReactiveX/rxjs/blob/master/doc/observable.md">https://github.com/ReactiveX/rxjs/blob/master/doc/observable.md</a></li>
+        </ul>
+    </dd>
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    </div>
+
+
+        <h3 class="subsection-title">Extends</h3>
+
+
+
+
+    <ul>
+        <li><a href="Observable.html">Observable</a></li>
+    </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h3 class="subsection-title">Methods</h3>
+
+
+
+
+
+
+    <h4 class="name" id=".addColumns"><span class="type-signature">(static) </span>addColumns<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Graphistry.html">Graphistry</a>.&lt;Array.&lt;Column>>}</span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Add columns to the current graph visuzliation's dataset</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line111">line 111</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p>A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits an Array of the new columns</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+
+<span class="param-type"><a href="Graphistry.html">Graphistry</a>.&lt;Array.&lt;Column>></span>
+
+
+    </dd>
+</dl>
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function(g) {
+        window.g = g;
+        const columns = [
+            ['edge', 'highways', [66, 101, 280], 'number'],
+            ['point', 'theme parks', ['six flags', 'disney world', 'great america'], 'string']
+        ];
+        console.log('adding columns', columns);
+        return g.addColumns.apply(g, columns);
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".addExclusion"><span class="type-signature">(static) </span>addExclusion<span class="signature">(expr)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Add an exclusion to the visualization with the given expression</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>expr</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">string</span>
+
+
+
+            </td>
+
+
+
+
+
+            <td class="description last"><p>An expression using the same language as our in-tool
+exclusion and filter panel</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line626">line 626</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        console.log('Adding exclusion for "point:degree > 0"');
+        return g.addExclusion('point:degree > 0');
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".addFilter"><span class="type-signature">(static) </span>addFilter<span class="signature">(expr)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Add a filter to the visualization with the given expression</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>expr</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">string</span>
+
+
+
+            </td>
+
+
+
+
+
+            <td class="description last"><p>An expression using the same language as our in-tool
+exclusion and filter panel</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line597">line 597</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        console.log('Adding filter for "point:degree > 0"');
+        return g.addFilter('point:degree > 0');
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".autocenter"><span class="type-signature">(static) </span>autocenter<span class="signature">(percentile, cb<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Center the view of the graph</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+        <th>Attributes</th>
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>percentile</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">number</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>Controls sensitivity to outliers</p></td>
+        </tr>
+
+
+
+        <tr>
+
+                <td class="name"><code>cb</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">function</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>Callback function of type callback(error, result)</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line500">line 500</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+    <dt class="tag-todo">To Do:</dt>
+    <dd class="tag-todo">
+        <ul>
+            <li>Implement this function</li>
+        </ul>
+    </dd>
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        console.log('centering');
+        return g.autocenter(.90);
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".encodeAxis"><span class="type-signature">(static) </span>encodeAxis<span class="signature">(array)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Change axis</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>array</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">Array</span>
+
+
+
+            </td>
+
+
+
+
+
+            <td class="description last"><p>of strings</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line204">line 204</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        return g.encodeAxis({})
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".encodeColor"><span class="type-signature">(static) </span>encodeColor<span class="signature">(graphType<span class="signature-attributes">opt</span>, attribute<span class="signature-attributes">opt</span>, variation<span class="signature-attributes">opt</span>, colors<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Change colors based on an attribute</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+        <th>Attributes</th>
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>graphType</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">GraphType</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>'point' or 'edge'</p></td>
+        </tr>
+
+
+
+        <tr>
+
+                <td class="name"><code>attribute</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">Attribute</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>name of data column, e.g., 'degree'</p></td>
+        </tr>
+
+
+
+        <tr>
+
+                <td class="name"><code>variation</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">Variant</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>If there are more bins than colors, use 'categorical' to repeat colors and 'continuous' to interpolate</p></td>
+        </tr>
+
+
+
+        <tr>
+
+                <td class="name"><code>colors</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">Array</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>array of color name or hex codes</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line149">line 149</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        return g.encodeColor('point', 'degree', 'categorical', ['black', 'white'])
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".encodeIcons"><span class="type-signature">(static) </span>encodeIcons<span class="signature">(graphType<span class="signature-attributes">opt</span>, attribute<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Change icons based on an attribute</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+        <th>Attributes</th>
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>graphType</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">GraphType</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>'point' or 'edge'</p></td>
+        </tr>
+
+
+
+        <tr>
+
+                <td class="name"><code>attribute</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">Attribute</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>name of data column, e.g., 'icon'</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line257">line 257</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        return g.encodeIcons('point', 'icon')
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".encodeSize"><span class="type-signature">(static) </span>encodeSize<span class="signature">(graphType<span class="signature-attributes">opt</span>, attribute<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Change size based on an attribute</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+        <th>Attributes</th>
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>graphType</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">GraphType</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>'point'</p></td>
+        </tr>
+
+
+
+        <tr>
+
+                <td class="name"><code>attribute</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">Attribute</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>name of data column, e.g., 'degree'</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line310">line 310</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        return g.encodeSize('point', 'community_infomap')
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".getCurrentWorkbook"><span class="type-signature">(static) </span>getCurrentWorkbook<span class="signature">(cb<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Read the workbook ID</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+        <th>Attributes</th>
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>cb</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">function</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>Callback function of type callback(error, result)</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line522">line 522</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        console.log('getting workbook id');
+        return g.getCurrentWorkbook();
+    })
+    .subscribe(function (workbook) {
+        alert('id: ' + workbook.id)
+    });</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".labelUpdates"><span class="type-signature">(static) </span>labelUpdates<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Observable.html">Observable</a>.&lt;<a href="Observable.html">Observable</a>.&lt;<a href="global.html#LabelEvent">LabelEvent</a>>>}</span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Get or create an <a href="Observable.html">Observable</a> stream of all label updates from the visualization.</p>
+<p><p>
+The <a href="Observable.html">Observable</a> returned by this method emits inner Observables, where each
+inner <a href="Observable.html">Observable</a> is tied to the lifetime of the label for which it was created.
+</p><p>
+For each label rendered in the visualization, the <a href="Observable.html">Observable</a> returned by this
+method will create and emit a new inner <a href="Observable.html">Observable</a>. The inner <a href="Observable.html">Observable</a> will
+emit events when the label changes. For example, if the user clicks on the label,
+or the label changes position because of a pan/zoom, the inner <a href="Observable.html">Observable</a> will
+emit an event.
+</p><p>
+The inner <a href="Observable.html">Observable</a> for a label will complete if the label is removed from the screen.
+</p><p></p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line745">line 745</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p>An <a href="Observable.html">Observable</a> of inner {Observables}, where each
+inner <a href="Observable.html">Observable</a> represents the lifetime of a label in the visualization.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+
+<span class="param-type"><a href="Observable.html">Observable</a>.&lt;<a href="Observable.html">Observable</a>.&lt;<a href="global.html#LabelEvent">LabelEvent</a>>></span>
+
+
+    </dd>
+</dl>
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        console.log('Listening for label updates');
+        return g.labelUpdates();
+    })
+    .flatMap(function (labelUpdates) {
+        return labelUpdates
+            .do(function ({ id, tag, pageX, pageY }) {
+                // prints messages like
+                // > 'Label 13 added at (200, 340)'
+                // > 'Label 74 updated at (750, 100)'
+                console.log(`Label ${id} ${tag} at (${pageX}, ${pageY})`);
+            })
+            .takeLast(1)
+            .do(function ({ id, pageX, pageY }) {
+                console.log(`Label ${id} removed at (${pageX}, ${pageY})`);
+            });
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".resetAxis"><span class="type-signature">(static) </span>resetAxis<span class="signature">()</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Reset axis to value at page load</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line232">line 232</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        return g.encodeAxis()
+        return g.resetAxis()
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".resetColor"><span class="type-signature">(static) </span>resetColor<span class="signature">(graphType<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Reset color to value at page load</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+        <th>Attributes</th>
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>graphType</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">GraphType</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>'point' or 'edge'</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line178">line 178</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        return g.encodeColor('point', 'degree', 'categorical', ['black', 'white'])
+        return g.resetColor('point')
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".resetIcons"><span class="type-signature">(static) </span>resetIcons<span class="signature">(graphType<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Reset icons to value at page load</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+        <th>Attributes</th>
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>graphType</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">GraphType</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>'point' or 'edge'</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line284">line 284</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        return g.encodeIcons('point', 'icon')
+        return g.resetIcons('point')
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".resetSize"><span class="type-signature">(static) </span>resetSize<span class="signature">(graphType<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Reset size to value at page load</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+        <th>Attributes</th>
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>graphType</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">GraphType</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>'point'</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line337">line 337</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        return g.encodeSize('point', 'community_infomap')
+        return g.resetSize('point')
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".saveWorkbook"><span class="type-signature">(static) </span>saveWorkbook<span class="signature">()</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Save the current workbook. A saved workbook will persist the analytics state
+of the visualization, including active filters and exclusions</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line551">line 551</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        return g.saveWorkbook();
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".subscribeLabels"><span class="type-signature">(static) </span>subscribeLabels<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Subscription.html">Subscription</a>}</span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Subscribe to label change and exit events</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+
+        <th>Type</th>
+
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+
+            <td class="type">
+
+
+<span class="param-type">Object</span>
+
+
+
+            </td>
+
+
+
+
+
+            <td class="description last"><p>An Object with <code>onChange</code> and <code>onExit</code> callbacks</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line864">line 864</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p>A <a href="Subscription.html">Subscription</a> that can be used to stop reacting to label updates</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+
+<span class="param-type"><a href="Subscription.html">Subscription</a></span>
+
+
+    </dd>
+</dl>
+
+
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".tickClustering"><span class="type-signature">(static) </span>tickClustering<span class="signature">(ticks)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Run a number of steps of Graphistry's clustering algorithm</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>ticks</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">number</span>
+
+
+
+            </td>
+
+
+
+
+
+            <td class="description last"><p>The number of ticks to run</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line463">line 463</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        console.log('starting to cluster');
+        return g.tickClustering();
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".toggleHistograms"><span class="type-signature">(static) </span>toggleHistograms<span class="signature">(turnOn<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Toggle histogram panel</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+        <th>Attributes</th>
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>turnOn</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">boolean</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>Whether to make panel visible</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line430">line 430</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        console.log('opening histogram panel');
+        return g.toggleHistograms(true);
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".toggleInspector"><span class="type-signature">(static) </span>toggleInspector<span class="signature">(turnOn<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Toggle inspector panel</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+        <th>Attributes</th>
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>turnOn</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">boolean</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>Whether to make panel visible</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line397">line 397</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        console.log('opening inspector panel');
+        return g.toggleInspector(true);
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".togglePanel"><span class="type-signature">(static) </span>togglePanel<span class="signature">(panel<span class="signature-attributes">opt</span>, turnOn<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Toggle a leftside panel</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+        <th>Attributes</th>
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>panel</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">string</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>Name of panel: filters, exclusions, scene, labels, layout</p></td>
+        </tr>
+
+
+
+        <tr>
+
+                <td class="name"><code>turnOn</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">boolean</span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+                    &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>Whether to make panel visible, or turn all off</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line363">line 363</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>GraphistryJS(document.getElementById('viz'))
+    .flatMap(function (g) {
+        window.g = g;
+        console.log('opening filters');
+        return g.togglePanel('filters', true);
+    })
+    .subscribe();</code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".toogleToolbar"><span class="type-signature">(static) </span>toogleToolbar<span class="signature">(show)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Hide or Show Toolbar UI</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>show</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">boolean</span>
+
+
+
+            </td>
+
+
+
+
+
+            <td class="description last"><p>Set to true to show toolbar, and false to hide toolbar.</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line578">line 578</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+    <h5>Example</h5>
+
+    <pre class="prettyprint"><code>&lt;button onclick="window.graphistry.toggleToolbar(false)">Hide toolbar&lt;/button>
+&lt;button onclick="window.graphistry.toggleToolbar(true)">Show toolbar&lt;/button></code></pre>
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".updateSetting"><span class="type-signature">(static) </span>updateSetting<span class="signature">(name, val)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Modify a settings value in the visualization</p>
+<table>
+<thead>
+<tr>
+<th>Available Settings</th>
+<th>Value Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>showToolbar</code></td>
+<td><code>boolean</code></td>
+</tr>
+<tr>
+<td><code>pruneOrphans</code></td>
+<td><code>boolean</code></td>
+</tr>
+<tr>
+<td><code>showArrows</code></td>
+<td><code>boolean</code></td>
+</tr>
+<tr>
+<td><code>background</code></td>
+<td>color as hex or rgba <code>string</code></td>
+</tr>
+<tr>
+<td><code>edgeOpacity</code></td>
+<td><code>number</code> (0 to 1)</td>
+</tr>
+<tr>
+<td><code>edgeSize</code></td>
+<td><code>number</code> (0.1 to 10)</td>
+</tr>
+<tr>
+<td><code>pointOpacity</code></td>
+<td><code>number</code> (0 to 1)</td>
+</tr>
+<tr>
+<td><code>pointSize</code></td>
+<td><code>number</code> (0.1 to 10)</td>
+</tr>
+<tr>
+<td><code>zoom</code></td>
+<td><code>uint</code></td>
+</tr>
+<tr>
+<td><code>center</code></td>
+<td><code>const 0</code></td>
+</tr>
+<tr>
+<td><code>labelOpacity</code></td>
+<td><code>boolean</code></td>
+</tr>
+<tr>
+<td><code>labelEnabled</code></td>
+<td><code>boolean</code></td>
+</tr>
+<tr>
+<td><code>labelPOI</code></td>
+<td><code>boolean</code></td>
+</tr>
+<tr>
+<td><code>labelHighlightEnabled</code></td>
+<td><code>boolean</code></td>
+</tr>
+<tr>
+<td><code>labelColor</code></td>
+<td>color as hex or rgba <code>string</code></td>
+</tr>
+<tr>
+<td><code>labelBackground</code></td>
+<td>color as hex or rgba <code>string</code></td>
+</tr>
+<tr>
+<td><code>precisionVsSpeed</code></td>
+<td><code>int</code> (-5 to +5)</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>name</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">string</span>
+
+
+
+            </td>
+
+
+
+
+
+            <td class="description last"><p>the name of the setting to change</p></td>
+        </tr>
+
+
+
+        <tr>
+
+                <td class="name"><code>val</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">string</span>
+
+
+
+            </td>
+
+
+
+
+
+            <td class="description last"><p>the value to set the setting to.</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line655">line 655</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+    <h4 class="name" id=".updateZoom"><span class="type-signature">(static) </span>updateZoom<span class="signature">(level, val)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Update the camera zoom level</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>level</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">number</span>
+
+
+
+            </td>
+
+
+
+
+
+            <td class="description last"><p>Controls how far to zoom in or out.</p></td>
+        </tr>
+
+
+
+        <tr>
+
+                <td class="name"><code>val</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">string</span>
+
+
+
+            </td>
+
+
+
+
+
+            <td class="description last"><p>the value to set the setting to.</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line730">line 730</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Graphistry.html">Graphistry</a> A <a href="Graphistry.html">Graphistry</a> <a href="Observable.html">Observable</a> that emits the result of the operation</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+    <h4 class="name" id="subscribe"><span class="type-signature"></span>subscribe<span class="signature">(next<span class="signature-attributes">nullable</span>, error<span class="signature-attributes">nullable</span>, completed<span class="signature-attributes">nullable</span>)</span><span class="type-signature"> &rarr; {<a href="Subscription.html">Subscription</a>}</span></h4>
+
+
+
+
+
+<div class="description">
+    <p>The subscribe method triggers the execution of the <a href="Observable.html">Observable</a>, causing the values within to be pushed to a callback. An <a href="Observable.html">Observable</a> is like a pipe of water that is closed. When subscribe is called, we open the valve and the values within are pushed at us.  These values can be received using either callbacks or an Observer object.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+        <th>Attributes</th>
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>next</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type"><a href="Observable.html#~nextCallback">Observable~nextCallback</a></span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+
+
+                    &lt;nullable><br>
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>a callback that accepts the next value in the stream of values</p></td>
+        </tr>
+
+
+
+        <tr>
+
+                <td class="name"><code>error</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type"><a href="Observable.html#~errorCallback">Observable~errorCallback</a></span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+
+
+                    &lt;nullable><br>
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>a callback that accepts an error that occurred while evaluating the operation underlying the <a href="Observable.html">Observable</a> stream</p></td>
+        </tr>
+
+
+
+        <tr>
+
+                <td class="name"><code>completed</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type"><a href="Observable.html#~completeCallback">Observable~completeCallback</a></span>
+
+
+
+            </td>
+
+
+                <td class="attributes">
+
+
+
+                    &lt;nullable><br>
+
+
+
+                </td>
+
+
+
+
+            <td class="description last"><p>a callback that is invoked when the <a href="Observable.html">Observable</a> stream has ended, and the <a href="Observable.html#~nextCallback">Observable~nextCallback</a> will not receive any more values</p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="Observable.html#subscribe">Observable#subscribe</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line1071">line 1071</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+
+<span class="param-type"><a href="Subscription.html">Subscription</a></span>
+
+
+    </dd>
+</dl>
+
+
+
+
+
+
+
+
+
+
+    <h4 class="name" id="~lift"><span class="type-signature">(inner) </span>lift<span class="signature">(operator)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+<div class="description">
+    <p>Creates a new <a href="Observable.html">Observable</a> with this as the source, and the passed
+operator as the new Observable's operator.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+
+
+<table class="params">
+    <thead>
+    <tr>
+
+        <th>Name</th>
+
+
+        <th>Type</th>
+
+
+
+
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+        <tr>
+
+                <td class="name"><code>operator</code></td>
+
+
+            <td class="type">
+
+
+<span class="param-type">Operator</span>
+
+
+
+            </td>
+
+
+
+
+
+            <td class="description last"><p>the operator defining the operation to apply to the <a href="Observable.html">Observable</a></p></td>
+        </tr>
+
+
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line67">line 67</a>
+    </li></ul></dd>
+
+
+
+
+
+
+
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+
+<div class="param-desc">
+    <p><a href="Observable.html">Observable</a> a new <a href="Observable.html">Observable</a> with the operator applied</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Graphistry.html">Graphistry</a></li><li><a href="Observable.html">Observable</a></li><li><a href="Subscription.html">Subscription</a></li></ul><h3>Global</h3><ul><li><a href="global.html#GraphistryJS">GraphistryJS</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
