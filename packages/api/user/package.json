@@ -20,7 +20,7 @@
     "author": "@mykola",
     "license": "ISC",
     "dependencies": {
-        "@graphistry/db": "*",
+        "@graphistry/db": "1.0.0",
         "bcryptjs": "^2.4.3",
         "convict": "^4.0.1",
         "knex": "^0.13.0",
