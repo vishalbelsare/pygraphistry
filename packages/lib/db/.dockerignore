@@ -1,0 +1,8 @@
+**/*
+!seeds
+!config
+!migrations
+!index.js
+!config.js
+!knexfile.js
+!package.json
