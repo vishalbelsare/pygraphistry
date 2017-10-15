@@ -1,0 +1,16 @@
+FROM node:alpine
+RUN apk add --no-cache postgresql-client
+WORKDIR /api
+COPY .npmrc .
+ARG LERNA_JSON
+ARG PACKAGE_JSON
+ENV NODE_ENV=test
+RUN echo "$LERNA_JSON" >> ./lerna.json && \
+    echo "$PACKAGE_JSON" >> ./package.json && \
+    npm install
+
+COPY . .
+
+RUN npx lerna bootstrap --skip-git-check
+
+CMD ["sh", "-c", "echo hello new york city"]

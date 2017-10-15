@@ -1,13 +1,11 @@
 {
-  "name": "@graphistry/api-gateway",
-  "version": "1.0.0",
-  "description": "Graphistry Platform API service gateway",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "ptaylor",
-  "dependencies": {
-    "@graphistry/user-service": "2.12.0"
-  }
+    "name": "@graphistry/api-gateway",
+    "version": "1.0.0",
+    "description": "Graphistry Platform API service gateway",
+    "main": "index.js",
+    "author": "ptaylor",
+    "dependencies": {
+        "micro": "^8.0.4",
+        "@graphistry/user-service": "2.12.0"
+    }
 }
