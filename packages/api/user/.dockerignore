@@ -4,5 +4,6 @@
 !__tests__
 !migrations
 
+!config.js
 !knexfile.js
 !package.json
