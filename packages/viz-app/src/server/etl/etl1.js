@@ -85,13 +85,11 @@ function publish(vg, name) {
     var binData = VectorGraph.encode(vg).finish();
 
     function cacheLocally() {
-        // Wait a couple of seconds to make sure our cache has a
-        // more recent timestamp than S3
         var res = Q.defer();
         setTimeout(function() {
             logger.debug('Caching dataset locally');
             res.resolve(tmpCache.put(urllib.parse(name), binData));
-        }, 2000);
+        }, 0);
         return res.promise;
     }
 
