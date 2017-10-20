@@ -210,7 +210,7 @@ fi
 
 ### Run-time database load.
 
-docker exec $VIZAPP_BOX_NAME bash -c 'for f in /var/graphistry/node_modules/\@graphistry/central/assets/[A-Z]* ; do mv $f /tmp/graphistry/data_cache/$(basename $f).$(basename $f | tr -dc A-Za-z | shasum | cut -d " " -f 1) ; done'
+docker exec $VIZAPP_BOX_NAME bash -c 'for f in /var/graphistry/node_modules/\@graphistry/central/assets/[A-Za-z]* ; do mv $f /tmp/graphistry/data_cache/$(basename $f).$(basename $f | tr -dc A-Za-z | shasum | cut -d " " -f 1) ; done'
 
 echo SUCCESS.
 echo Graphistry has been launched, and should be up and running.
