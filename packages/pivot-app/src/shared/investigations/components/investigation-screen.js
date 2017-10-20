@@ -33,18 +33,14 @@ export default function InvestigationScreen({
     let showLoadingIndicator = true;
     const { graphistryHost = `` } = user;
     let loadingMessage = `Loading Visualization`;
-    const { status: uploadStatus } = activeInvestigation;
+    const { status: uploadStatus, eventTable: { hasResults } = {} } = activeInvestigation;
     const { axes, controls } = activeInvestigation;
     let { datasetName, datasetType } = activeInvestigation;
 
-    const eventTable = activeInvestigation.eventTable || null;
-    const table = eventTable ? eventTable.table : null;
-    const eventTableExistsButIsEmpty = table && table.length === 0;
-
-    if (eventTableExistsButIsEmpty) {
+    if (uploadStatus && uploadStatus.ok && hasResults === false) {
         showLoadingIndicator = false;
         datasetName = datasetType = ``;
-        loadingMessage = `Your current investigation settings didn't surface any events. Try adjusting dates or pivots.`;
+        loadingMessage = `Your current investigation settings didn't surface any events or needs to be run. Try running, or adjusting dates or pivot settings and re-running.`;
     } else if (uploadStatus && (uploadStatus.searching || uploadStatus.etling)) {
         datasetName = datasetType = ``;
         loadingMessage = uploadStatus.searching ? `Running Pivots` : `Uploading Results`;

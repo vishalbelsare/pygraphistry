@@ -1,6 +1,5 @@
 import { Observable } from 'rxjs';
 import { simpleflake } from 'simpleflakes';
-import { DataFrame } from 'dataframe-js';
 import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
@@ -334,59 +333,6 @@ const shapers = {
     weirdRandomSquare: x => x
 };
 
-function makeEventTable({ pivots }) {
-    function fieldSummary(mergedData, field) {
-        const distinct = mergedData.distinct(field).toArray();
-
-        const res = {
-            numDistinct: distinct.length
-        };
-
-        if (res.numDistinct <= 12) {
-            res.values = distinct;
-        }
-
-        return res;
-    }
-
-    const dataFrames = pivots
-        .filter(pivot => pivot.results && pivot.enabled)
-        .filter(pivot => pivot.df)
-        .map(pivot => pivot.df);
-
-    const fields = _.uniq(_.flatten(dataFrames.map(df => df.listColumns())));
-    log.debug('Union of all pivot fields', fields);
-
-    const zeroDf = new DataFrame([], fields);
-    const mergedData = dataFrames.reduce((a, b) => {
-        return a.union(new DataFrame(b, fields));
-    }, zeroDf);
-
-    const fieldSummaries = {};
-
-    fields.forEach(field => {
-        fieldSummaries[field] = fieldSummary(mergedData, field);
-    });
-
-    let table;
-    try {
-        table = mergedData
-            .groupBy('EventID')
-            .aggregate(group => group.toCollection()[0])
-            .toArray('aggregation');
-    } catch (e) {
-        if (e.name === 'NoSuchColumnError') {
-            table = [];
-        } else {
-            throw e;
-        }
-    }
-    return {
-        fieldSummaries: fieldSummaries,
-        table: table
-    };
-}
-
 export function uploadGraph({
     loadInvestigationsById,
     loadPivotsById,
@@ -406,7 +352,7 @@ export function uploadGraph({
                 ({ user }, { pivots, data }) => ({ user, pivots, data })
             )
                 .switchMap(({ user, data, pivots }) => {
-                    if (data.graph.length > 0) {
+                    if (data.graph.length + data.labels.length > 0) {
                         return upload(user.etlService, user.apiKey, data).map(dataset => ({
                             user,
                             dataset,
@@ -419,8 +365,10 @@ export function uploadGraph({
                     }
                 })
                 .do(({ user, dataset, data, pivots }) => {
-                    investigation.eventTable = makeEventTable({ data, pivots });
                     if (dataset) {
+                        investigation.eventTable = {
+                            hasResults: data.graph.length + data.labels.length > 0
+                        };
                         investigation.controls = layouts.find(
                             e => e.id === investigation.layout
                         ).controls;
