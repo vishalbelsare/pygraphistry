@@ -13,6 +13,8 @@ docker exec -t lerna \
     --include-filtered-dependencies \
     -- echo \${PWD##*/$GRAPHISTRY_NAMESPACE/} | tr -d '\r')"
 
+if [ -z $DEPENDENCIES ]; then exit 0; fi
+
 # Synthesize a custom .dockerignore file because Docker
 # doesn't do variable expansion in its COPY command :-(
 
@@ -20,6 +22,8 @@ DOCKER_INCLUDES=$(echo "$DEPENDENCIES" | awk \
     -v RS='' \
     -v OFS='\n!' \
     'NF { $1 = $1; print "!" $0 "\n" }')
+
+if [ -z $DOCKER_INCLUDES ]; then exit 0; fi
 
 if [ -f .dockerignore ]; then
     mv .dockerignore .dockerignore.backup
