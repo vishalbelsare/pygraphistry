@@ -1,7 +1,9 @@
 function overrides(o1, o2, fldMergeOverrides) {
-    const out = {};
+    if (!fldMergeOverrides) { return; }
+    let out = undefined;
     for (const i in fldMergeOverrides) {
         if (i in o1 || i in o2) {
+            out = out || {};
             out[i] = fldMergeOverrides[i](o1[i], o2[i]);
         }
     }
@@ -10,30 +12,27 @@ function overrides(o1, o2, fldMergeOverrides) {
 
 //[ {key, ...}, ... ]_n -> [ {key, ...}, ... ]_(k < n)
 // Combine array elements with equal 'key' field (as str); drop if missing/0-length
-export function mergeByKey(a, key, fldMergeOverrides = {}) {
-    //{key -> [{key, ...}]}
-    const groups = a.reduce((groups, o) => {
-        const id = o[key];
-        if (!(key in o) || id === undefined || !String(id).length) {
-            return groups;
-        }
-        const group = (groups[id] = groups[id] || []);
-        group.push(o);
-        return groups;
-    }, {});
+// NOTE: order preserving
+export function mergeByKey(arr, key, fldMergeOverrides) {
 
-    return Object.keys(groups).reduce(
-        (nodes, groupId) => [
-            ...nodes,
-            groups[groupId].reduce(
-                (node, node2) => ({
-                    ...node,
-                    ...node2,
-                    ...overrides(node, node2, fldMergeOverrides)
-                }),
-                {}
-            )
-        ],
-        []
-    );
+    const map = {};
+    const ordered = [];
+
+    arr.forEach((o) => {
+        
+        const id = o[key];
+        if (id === undefined) { return; }
+
+        const base = map[id];
+        if (!base) {
+            const copy = Object.assign({}, o);
+            map[id] = copy;
+            ordered.push(copy);
+        } else {
+            Object.assign(base, o, overrides(base, o, fldMergeOverrides));
+        }
+
+    });
+
+    return ordered;
 }

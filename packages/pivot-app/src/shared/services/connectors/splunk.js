@@ -128,14 +128,16 @@ class SplunkConnector extends Connector {
             },
             'Search job properties'
         );
-        this.log.trace(props, 'All job properties');
+        this.log.info(props, 'All job properties');
 
         const getResults = Observable.bindNodeCallback(job.results.bind(job));
         const timeLimitMsg = props.messages.find(msg =>
             msg.text.startsWith('Search auto-finalized after time limit')
         );
 
+        const t0 = Date.now();
         return getResults({ count: props.resultCount, output_mode: 'json_cols' })
+            .do(() => { this.log.info('Splunk result download time', Date.now() - t0, 'ms'); })
             .map(args => ({
                 results: args[0],
                 job: args[1],

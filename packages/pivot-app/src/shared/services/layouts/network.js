@@ -39,18 +39,11 @@ const directionToName = {
     [OUT_OUT]: 'outside'
 };
 
-//NOTE: Use edges instead of fields b/c normalization changes mac etc names
-export function decorateInsideness(graph) {
-    const events = graph.data.labels.filter(({ type }) => type === 'EventID');
-
-    const nodeIDs = {};
-    graph.data.labels.forEach(node => {
-        nodeIDs[node.node] = node;
-    });
-
-    //{EventID -> {[refType] -> [ {node, ...} ] }}
+// { edges: [{source,destination}], nodeIDs: {string->{node}} }
+// -> {EventID -> {[refType] -> [ {node, ...} ] }}
+function computeEventNeighborhood ({ edges, nodeIDs }) {
     const eventNeighborhood = {};
-    graph.data.graph.forEach(({ source, destination, refType }) => {
+    edges.forEach(({ source, destination, refType }) => {
         if (nodeIDs[source].type !== 'EventID') {
             return;
         }
@@ -67,18 +60,23 @@ export function decorateInsideness(graph) {
             }
         }
     });
+    return eventNeighborhood;
+}
 
-    // 1. Decorate nodes with IP-address names as either IN or OUT
-    //{nodeid -> flag}
+// [{node}] -> {node -> DIRECTION}
+function labelIPs(nodes) {
     const ip_io = {};
-    graph.data.labels.forEach(({ node: id }) => {
-        if (id && isIP(id)) {
+    nodes.forEach(({ node: id }) => {
+        if (isIP(id)) {
             ip_io[id] = isPrivateIP(id) ? IN : OUT;
         }
     });
+    return ip_io;
+}
 
-    // 2. Compute insideness of src* IPs (dst* IPs) and propagate to all src* entities (dst* entities)
-    //    There may be conflicts.
+// { ip_io: {node -> DIRECTION}. eventNeighborhood: {EventID -> {[refType] -> [ {node, ...} ] }} }
+// -> {node-> DIRECTION}
+function computeSrcDst ({ ip_io, eventNeighborhood }) {
     const srcdst_io = Object.assign({}, ip_io);
     Object.values(eventNeighborhood).forEach(({ src = [], dst = [] }) => {
         //TODO do all ref groups?
@@ -89,13 +87,13 @@ export function decorateInsideness(graph) {
             });
         });
     });
+    return srcdst_io;
+}
 
-    // 3. Compute the insideness of events, and every node without an insideness gets the insideness of the event.
-    //  This may be diff from 2. b/c merges on fields
-    //  Take care to track directionality
+function labelAll( { events, eventNeighborhood, srcdst_io }) {
     const all_io = {}; //misses non-hypernodes..
     events.forEach(e => {
-        const { src = [], dst = [], all } = eventNeighborhood[e.node];
+        const { src = [], dst = [], all } = eventNeighborhood[e.node] || {};
         const [srcLabel, dstLabel] = [src, dst].map(group => {
             const label = group.reduce(
                 (acc, { node }) => mergeLabels(acc, srcdst_io[node]),
@@ -116,8 +114,38 @@ export function decorateInsideness(graph) {
             });
         });
     });
+    return all_io;
+}
 
-    // 3. Decorate nodes in the graph accordingly.
+//NOTE: Use edges instead of fields b/c normalization changes mac etc names
+export function decorateInsideness(graph) {
+    const events = graph.data.labels.filter(({ type }) => type === 'EventID');
+
+    const nodeIDs = {};
+    graph.data.labels.forEach(node => {
+        nodeIDs[node.node] = node;
+    });
+
+    //{EventID -> {[refType] -> [ {node, ...} ] }}
+    const eventNeighborhood = computeEventNeighborhood({ 
+        edges: graph.data.graph,
+        nodeIDs 
+    });
+   
+    // 1. Decorate nodes with IP-address names as either IN or OUT
+    //{nodeid -> flag}
+    const ip_io = labelIPs(graph.data.labels);
+
+    // 2. Compute insideness of src* IPs (dst* IPs) and propagate to all src* entities (dst* entities)
+    //    There may be conflicts.
+    const srcdst_io = computeSrcDst({ ip_io, eventNeighborhood });
+
+    // 3. Compute the insideness of events, and every node without an insideness gets the insideness of the event.
+    //  This may be diff from 2. b/c merges on fields
+    //  Take care to track directionality
+    const all_io = labelAll( { events, eventNeighborhood, srcdst_io });
+
+    // 4. Decorate nodes in the graph accordingly.
     graph.data.labels.forEach(n => {
         const label = all_io[n.node];
         n.canonicalInsideness = directionToName[label] || 'mixed';

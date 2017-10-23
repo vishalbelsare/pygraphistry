@@ -129,19 +129,16 @@ export function createGraph(pivots) {
             !enabled
                 ? { nodes, edges }
                 : graphUnion(
+                      { nodes, edges },                      
                       {
                           nodes: labels.map(node => ({ Pivot: index, ...node })),
                           edges: graph.map(edge => ({ Pivot: index, ...edge }))
                       },
-                      { nodes, edges }, //don't clobber earlier Pivot #
                       bindings.idField,
                       bindings.idEdgeField
                   ),
         { nodes: [], edges: [] }
     );
-
-    sortNodesInplaceByPivotAndID(nodes);
-    sortEdgesInplaceByPivotAndID(edges);
 
     const missingNodes = synthesizeMissingNodes(edges, nodes, bindings);
 
