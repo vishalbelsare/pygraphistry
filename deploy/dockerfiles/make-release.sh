@@ -10,10 +10,11 @@ C7=graphistry/s3cmd-postgres:latest
 C8=graphistry/pivot-app:${PIVOT_VERSION}
 # C9=graphistry/user-service:${VIZ_VERSION}
 C10=graphistry/prometheus:${VIZ_VERSION}
+C11=openzipkin/zipkin:2
 BUCKET=s3://graphistry-releases/
-for i in    $C1 $C2 $C3 $C4 $C4a $C5 $C6 $C7 $C8 $C10; do (docker rmi $i || true) ; docker pull $i ; done
-docker save $C1 $C2 $C3 $C4 $C4a $C5 $C6 $C7 $C8 $C10| pigz -b500 > containers.lxc.gz
-for i in    $C1 $C2 $C3 $C4 $C4a $C5 $C6 $C7 $C8 $C10; do (docker rmi $i || true) ; done
+for i in    $C1 $C2 $C3 $C4 $C4a $C5 $C6 $C7 $C8 $C10 $C11; do (docker rmi $i || true) ; docker pull $i ; done
+docker save $C1 $C2 $C3 $C4 $C4a $C5 $C6 $C7 $C8 $C10 $C11| pigz -b500 > containers.lxc.gz
+for i in    $C1 $C2 $C3 $C4 $C4a $C5 $C6 $C7 $C8 $C10 $C11; do (docker rmi $i || true) ; done
 
 # if no argument is passed into this script, continue as normal
 # if an argument is passed, don't zip/upload - this is just for local dev.

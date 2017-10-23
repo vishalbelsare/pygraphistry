@@ -184,7 +184,18 @@ docker run -d \
     -web.console.libraries=/usr/share/prometheus/console_libraries \
     -web.console.templates=/usr/share/prometheus/consoles
 
-### 7. Nginx, maybe with ssl.
+### 7. Zipkin
+ZIPKIN_BOX_NAME=${GRAPHISTRY_NETWORK}-zipkin
+docker rm -f -v $ZIPKIN_BOX_NAME || true
+
+docker run -d \
+    -p 9411:9411 \
+    --net $GRAPHISTRY_NETWORK \
+    --name $ZIPKIN_BOX_NAME \
+    openzipkin/zipkin:2
+
+
+### 8. Nginx, maybe with ssl.
 
 NGINX_BOX_NAME=${GRAPHISTRY_NETWORK}-nginx
 NGINX_HTTP_PORT=${NGINX_HTTP_PORT:-80}
@@ -210,10 +221,12 @@ docker run \
     --link=${VIZAPP_BOX_NAME}:vizapp \
     --link=${PIVOTAPP_BOX_NAME}:pivotapp \
     --link=${PROMETHEUS_BOX_NAME}:prometheus \
+    --link=${ZIPKIN_BOX_NAME}:zipkin \
     -v ${PWD}/nginx:/var/log/nginx $SSL_MOUNT \
     graphistry/nginx-central-vizservers:1.4.0.32${NGINX_IMAGE_SUFFIX}
 
-### 8. Splunk.
+
+### 9. Splunk.
 
 SPLUNK_BOX_NAME=${GRAPHISTRY_NETWORK}-splunk
 
