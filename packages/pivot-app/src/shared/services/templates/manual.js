@@ -1,4 +1,3 @@
-import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
 
 import { shapeResults } from '../shapeResults.js';
@@ -52,17 +51,15 @@ export class ManualPivot extends PivotTemplate {
         });
 
         return a
-            .map(rows => new DataFrame(rows))
-            .map(df => ({
+            .map(rows => ({
                 app,
                 pivot: {
                     ...pivot,
-                    df: df,
-                    resultCount: df.count(), //really want shaped..
+                    resultCount: rows.length, //really want shaped..
                     template: this,
                     connections: nodes ? nodes.value : [],
                     attributes: attributes ? attributes.value : [],
-                    events: df.toCollection(),
+                    events: rows,
                     results: {
                         graph: [],
                         labels: []

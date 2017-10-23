@@ -1,5 +1,4 @@
 import { template } from '../../support/template';
-import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
 import { jqSafe } from '../../support/jq';
 import { VError } from 'verror';
@@ -9,7 +8,6 @@ import { flattenJson } from '../../support/flattenJson.js';
 import { PivotTemplate } from '../template.js';
 import { defaultHttpConnector } from '../../connectors/http';
 import logger from 'pivot-shared/logger';
-import { dfUnion } from '../../shape/df.js';
 import { graphUnion } from '../../shape/graph.js';
 
 const log = logger.createLogger(__filename);
@@ -93,7 +91,7 @@ function outputToResult(mode = 'table', pivot, eventCounter, data) {
             }
             return {
                 mode,
-                table: new DataFrame(rows)
+                table: rows
             };
         }
         case 'graph':
@@ -280,14 +278,14 @@ export class HttpPivot extends PivotTemplate {
                     .do(({ table, graph }) => {
                         log.debug('transformed output', { table, graph });
                         if (table) {
-                            eventCounter += table.count();
+                            eventCounter += table.length;
                         }
                     })
                     .catch(e => Observable.of({ e: e ? e : new Error('GenericHttpGetException') }));
             })
             .reduce(
                 (acc, { table, graph, e }) => ({
-                    table: dfUnion(acc.table, table),
+                    table: acc.table ? acc.table.concat(table||[]) : table,
                     graph: graphUnion(acc.graph, graph),
                     e: e ? acc.e.concat([e]) : acc.e
                 }),
@@ -316,11 +314,10 @@ export class HttpPivot extends PivotTemplate {
                         (attributes && attributes.value ? attributes.value : attributes) || [],
                     //really want shaped..
                     resultCount: table
-                        ? table.count()
+                        ? table.length
                         : graph ? (graph.nodes || []).length + (graph.edges || []).length : 0,
                     template: this,
-                    df: table || new DataFrame([[]]),
-                    events: table ? table.toCollection() : [],
+                    events: table || [],
                     graph: graph,
                     results: {
                         graph: [],

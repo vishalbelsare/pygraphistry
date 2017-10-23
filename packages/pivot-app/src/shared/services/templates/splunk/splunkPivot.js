@@ -47,8 +47,7 @@ export class SplunkPivot extends PivotTemplate {
         } else {
             return this.connector
                 .search(searchQuery, searchParams)
-                .do(({ resultCount, events, searchId, df, isPartial }) => {
-                    pivot.df = df;
+                .do(({ resultCount, events, searchId, isPartial }) => {
                     pivot.resultCount = resultCount;
                     pivot.events = events;
                     pivot.splunkSearchId = searchId;

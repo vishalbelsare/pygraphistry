@@ -14,9 +14,11 @@
             "msg",
             "fileName"
         ],
-        "http-search$$$endpoint": "http://localhost:3000/pivot/echo?x=1&x=2",
-        "http-search$$$jq": ". | [{\"ip\": .x[0]}, {\"ip\": .x[1]}]",
-        "http-search$$$nodes": ["ip"],
+        "http-search$$$endpoint": "http://localhost:3000/pivot/echo?x=1",
+        "http-search$$$jq": ". | [{\"ip\": .x}, {\"ip\": 2}]",
+        "http-search$$$nodes": [
+            "ip"
+        ],
         "http-search$$$method": "GET",
         "http-search$$$timeout": 10,
         "http-search$$$outputType": "table"

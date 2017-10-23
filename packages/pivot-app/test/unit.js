@@ -41,7 +41,6 @@ describe('Support', function() {
 });
 
 describe('Shaping', function() {
-    require('./services/shape/df');
     require('./services/shape/graph');
     require('./services/shape/normalizeGraph');
 });

@@ -1,4 +1,3 @@
-import { DataFrame } from 'dataframe-js';
 import { Observable } from 'rxjs';
 import _ from 'underscore';
 import splunkjs from 'splunk-sdk';
@@ -8,6 +7,29 @@ import logger from 'pivot-shared/logger';
 import { Connector } from './connector.js';
 
 const conf = global.__graphistry_convict_conf__;
+
+//{ fields: [ string ], columns: [ [ 'a] ] } -> [ {string -> 'a} ]
+// Splunk columns use null for na
+function columnsToRows ({fields, columns}) {
+    if (!columns.length || !columns[0].length) { 
+        return []; 
+    }
+
+    const rows = [];
+    const height = columns[0].length;
+    for (let row = 0; row < height; row++) {
+        const event = {};
+        fields.forEach((name, col) => {
+            const v = columns[col][row];
+            if (v !== null) {
+                event[name] = v;
+            }
+        });
+        rows.push(event);
+    }
+
+    return rows;
+}
 
 class SplunkConnector extends Connector {
     constructor(config) {
@@ -175,17 +197,10 @@ class SplunkConnector extends Connector {
         return this.getOrCreateJob(jobId, searchInfo)
             .switchMap(job => this.retrieveJobResults(job, searchInfo))
             .map(({ results, job, props }) => {
-                const columns = results.fields.reduce((result, field, index) => {
-                    result[field] = results.columns[index];
-                    return result;
-                }, {});
-                const df = new DataFrame(columns, results.fields);
-
                 return {
                     resultCount: props.resultCount,
                     isPartial: props.isPartial,
-                    events: df.toCollection(),
-                    df: df,
+                    events: columnsToRows(results),
                     searchId: job.sid
                 };
             });

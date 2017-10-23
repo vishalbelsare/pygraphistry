@@ -56,7 +56,6 @@
         "convict": "4.0.0",
         "cookie-parser": "1.4.3",
         "create-react-class": "15.6.2",
-        "dataframe-js": "1.2.4",
         "engine.io": "3.1.2",
         "engine.io-client": "3.1.2",
         "express": "4.16.0",

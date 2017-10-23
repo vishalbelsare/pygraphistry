@@ -1,6 +1,5 @@
 import { assert } from 'chai';
 import mkdirp from 'mkdirp';
-import { DataFrame } from 'dataframe-js';
 
 import { mergeByKey } from '../../../src/shared/services/support/mergeByKey';
 

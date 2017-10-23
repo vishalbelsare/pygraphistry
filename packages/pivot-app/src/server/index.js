@@ -54,7 +54,7 @@ app.use(authenticateMiddleware(convict), requestErrorHandler);
 
 //useful for testing
 app.get(`/echo`, function(req, res) {
-    logger.info('echo', { ...(req.query || {}) });
+    log.info('echo', { ...(req.query || {}) });
     res.status(200).json(req.query);
 });
 
