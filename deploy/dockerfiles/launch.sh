@@ -85,7 +85,7 @@ docker exec $MONGO_BOX_NAME bash -c "mongo --eval '2+2' -u $MONGO_USERNAME -p $M
 ### 4. User service
 ## UNCOMMENT WHEN WE WANT TO DEPLOY
 USER_SERVICE_BOX_NAME=${GRAPHISTRY_NETWORK}-user-service
-docker rm -f -v $USER_SERVICE_BOX_NAME || true
+# docker rm -f -v $USER_SERVICE_BOX_NAME || true
 # docker run \
 #     --net $GRAPHISTRY_NETWORK \
 #     --restart=unless-stopped \
@@ -168,7 +168,23 @@ docker run -d \
     --network=$GRAPHISTRY_NETWORK \
     graphistry/pivot-app:$2
 
-### 6. Nginx, maybe with ssl.
+### 6. Prometheus
+
+PROMETHEUS_BOX_NAME=${GRAPHISTRY_NETWORK}-prometheus
+docker rm -f -v $PROMETHEUS_BOX_NAME || true
+
+docker run -d \
+    --name ${PROMETHEUS_BOX_NAME} \
+    --restart=unless-stopped \
+    --network=${GRAPHISTRY_NETWORK} \
+    graphistry/prometheus:latest \
+    -config.file=/etc/prometheus/prometheus.yml \
+    -web.external-url=/mon \
+    -storage.local.path=/prometheus \
+    -web.console.libraries=/usr/share/prometheus/console_libraries \
+    -web.console.templates=/usr/share/prometheus/consoles
+
+### 7. Nginx, maybe with ssl.
 
 NGINX_BOX_NAME=${GRAPHISTRY_NETWORK}-nginx
 NGINX_HTTP_PORT=${NGINX_HTTP_PORT:-80}
@@ -193,10 +209,11 @@ docker run \
     -p $NGINX_HTTPS_PORT:443 \
     --link=${VIZAPP_BOX_NAME}:vizapp \
     --link=${PIVOTAPP_BOX_NAME}:pivotapp \
+    --link=${PROMETHEUS_BOX_NAME}:prometheus \
     -v ${PWD}/nginx:/var/log/nginx $SSL_MOUNT \
     graphistry/nginx-central-vizservers:1.4.0.32${NGINX_IMAGE_SUFFIX}
 
-### 7. Splunk.
+### 8. Splunk.
 
 SPLUNK_BOX_NAME=${GRAPHISTRY_NETWORK}-splunk
 
