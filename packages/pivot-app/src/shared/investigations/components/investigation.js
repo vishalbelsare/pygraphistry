@@ -102,7 +102,7 @@ export default function Investigation({
                     <strong>© Graphistry Inc. 2017</strong>
                 </div>
                 <div className={styles.copyrightDetail}>
-                    Build 1.0<br />
+                    v{__BUILDNUMBER__} <br />
                     <br />
                 </div>
             </div>
