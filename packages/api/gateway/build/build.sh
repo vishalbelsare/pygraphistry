@@ -6,12 +6,13 @@ cd "$ROOT_PATH" > /dev/null
 echo "name: $PACKAGE_NAME"
 
 DEPENDENCIES="$(
-docker exec -t lerna \
- lerna exec \
-    --loglevel=error \
-    --scope ${PACKAGE_NAME} \
-    --include-filtered-dependencies \
-    -- echo \${PWD##*/$GRAPHISTRY_NAMESPACE/} | tr -d '\r')"
+docker run --rm \
+    -v "${PWD}":/${GRAPHISTRY_NAMESPACE} lerna \
+    lerna exec \
+        --loglevel=error \
+        --scope ${PACKAGE_NAME} \
+        --include-filtered-dependencies \
+        -- echo \${PWD##*/$GRAPHISTRY_NAMESPACE/} | tr -d '\r')"
 
 if [ -z $DEPENDENCIES ]; then exit 0; fi
 
