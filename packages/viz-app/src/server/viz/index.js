@@ -68,6 +68,9 @@ function configureVizWorker(config, activeCB, io) {
     // Setup the public directory so that we can serve static assets.
     app.use(`/graph`, express.static(path.join(process.cwd(), './www/public')));
     app.use(`/public`, express.static(path.join(process.cwd(), './www/public')));
+    if (config.ENVIRONMENT === 'local') {
+        app.use(`/static/viz-app`, express.static(path.join(process.cwd(), './www/public')));
+    }
 
     // Register server-side rendering middleware
     const loadVGraphPipeline = configureVGraphPipeline(config, s3DatasetCache);

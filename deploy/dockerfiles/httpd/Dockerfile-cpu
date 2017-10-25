@@ -43,8 +43,11 @@ RUN curl $(/sbin/ip route | awk '/default/ {print $3}'):17290/github/id_rsa > /r
     git clone git@github.com:graphistry/datasets.git && \
     git clone git@github.com:graphistry/docs.git && \
     mkdir node_modules/@graphistry/central/assets/docs && \
+    mkdir node_modules/@graphistry/central/assets/datasets && \
     mv docs/* node_modules/@graphistry/central/assets/docs && \
-    mv datasets/preloaded/* node_modules/@graphistry/central/assets/ && \
+    mv datasets/preloaded/* node_modules/@graphistry/central/assets/datasets/ && \
+    mkdir -p node_modules/@graphistry/central/assets/static/viz-app && \
+    cp -v -r node_modules/@graphistry/viz-app/www/public/* node_modules/@graphistry/central/assets/static/viz-app/ && \
     rm -rf docs && \
     rm -rf datasets && \
     rm -r /tmp/* && \

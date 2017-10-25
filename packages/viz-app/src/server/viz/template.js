@@ -31,7 +31,7 @@ export default function template(
     <head>${iconsHTML
         // strip out 'public/' because favicons webpack plugin
         // doesn't have an option to set a publicPath
-        .map(str => str.replace(/public\//, ''))
+        .map(str => str.replace(/public\//, '/static/viz-app/'))
         .join('\n')}
         ${(base && `<base href="${base}">`) || ''}
         ${head.title.toString()}
@@ -41,11 +41,11 @@ export default function template(
         ${'' /*<link rel="stylesheet" type='text/css' href="https://opensource.keycdn.com/fontawesome/4.7.0/font-awesome.min.css" integrity="sha384-dNpIIXE8U05kAbPhy3G1cz+yZmTzA6CY8Vg/u2L9xRnHjJiAK76m2BIEaSEV+/aU" crossorigin="anonymous">*/}
         ${vendor && vendor.css
             ? `
-        <link rel='stylesheet' type='text/css' href='${`${vendor.css}`}'/>`
+        <link rel='stylesheet' type='text/css' href='/static/viz-app/${vendor.css}'/>`
             : ''}
         ${client && client.css
             ? `
-        <link rel='stylesheet' type='text/css' href='${`${client.css}`}'/>`
+        <link rel='stylesheet' type='text/css' href='/static/viz-app/${client.css}'/>`
             : ''}
     </head>
     <body class='graphistry-body table-container'>
@@ -64,15 +64,15 @@ export default function template(
 
         ${manifest && manifest.js
             ? `
-        <script type="text/javascript" src="${manifest.js}"></script>`
+        <script type="text/javascript" src="/static/viz-app/${manifest.js}"></script>`
             : ''}
         ${vendor && vendor.js
             ? `
-        <script type="text/javascript" src="${vendor.js}"></script>`
+        <script type="text/javascript" src="/static/viz-app/${vendor.js}"></script>`
             : ''}
         ${client && client.js
             ? `
-        <script type="text/javascript" src="${client.js}"></script>`
+        <script type="text/javascript" src="/static/viz-app/${client.js}"></script>`
             : ''}
         ${head.script.toString()}
     ${process.env.NODE_ENV !== 'production'
