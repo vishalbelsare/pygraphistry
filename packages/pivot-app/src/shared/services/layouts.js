@@ -16,13 +16,26 @@ export const layouts = [
     }
 ];
 
+const all = {};
+
 export const uiTweaks = {
-    atlasbarnes: {},
+    atlasbarnes: {
+        ...all,
+        pointSize: 0.4,
+        dissuadeHubs: true,
+        gravity: 8,
+        scalingRatio: 12
+    },
     insideout: {
+        ...all,
+        pointSize: 0.4,
         defaultShowArrows: false,
-        defaultShowPointsOfInterest: true
+        defaultShowPointsOfInterest: true,
+        dissuadeHubs: true
     },
     stackedBushyGraph: {
+        ...all,
+        pointSize: 0.6,
         defaultShowArrows: false,
         defaultShowPointsOfInterest: true,
         play: 0

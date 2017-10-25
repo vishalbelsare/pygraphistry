@@ -4,11 +4,13 @@ import { STROKE_WIDTH } from './enum';
 const hitmapScale = textures.hitmap.uniforms.textureScalingFactor;
 const hitmapDownScale = textures.pointHitmapDownsampled.uniforms.textureScalingFactor;
 
+const maxPointSize = { uniformType: '1f', defaultValues: [80.0] };
+
 const pointCulledUniforms = {
     pointOpacity: { uniformType: '1f', defaultValues: [0.8] },
     stroke: { uniformType: '1f', defaultValues: [-STROKE_WIDTH] },
     zoomScalingFactor: { uniformType: '1f', defaultValues: [1.0] },
-    maxPointSize: { uniformType: '1f', defaultValues: [50.0] },
+    maxPointSize,
     minPointSize: { uniformType: '1f', defaultValues: [8.0] }
 };
 
@@ -138,7 +140,7 @@ export const items = {
         uniforms: {
             edgeOpacity: { uniformType: '1f', defaultValues: [1.0] },
             zoomScalingFactor: { uniformType: '1f', defaultValues: [1.0] },
-            maxPointSize: { uniformType: '1f', defaultValues: [50.0] },
+            maxPointSize,
             maxScreenSize: { uniformType: '1f', defaultValues: [1.0] },
             maxCanvasSize: { uniformType: '1f', defaultValues: [1.0] }
         },
@@ -160,7 +162,7 @@ export const items = {
         uniforms: {
             edgeOpacity: { uniformType: '1f', defaultValues: [1.0] },
             zoomScalingFactor: { uniformType: '1f', defaultValues: [1.0] },
-            maxPointSize: { uniformType: '1f', defaultValues: [50.0] },
+            maxPointSize,
             maxScreenSize: { uniformType: '1f', defaultValues: [1.0] },
             maxCanvasSize: { uniformType: '1f', defaultValues: [1.0] }
         },
@@ -181,7 +183,7 @@ export const items = {
         },
         uniforms: {
             zoomScalingFactor: { uniformType: '1f', defaultValues: [1.0] },
-            maxPointSize: { uniformType: '1f', defaultValues: [50.0] },
+            maxPointSize,
             maxScreenSize: { uniformType: '1f', defaultValues: [1.0] },
             maxCanvasSize: { uniformType: '1f', defaultValues: [1.0] }
         },
@@ -310,7 +312,7 @@ export const items = {
             pointOpacity: { uniformType: '1f', defaultValues: [0.4] },
             stroke: { uniformType: '1f', defaultValues: [-STROKE_WIDTH] },
             zoomScalingFactor: { uniformType: '1f', defaultValues: [1.0] },
-            maxPointSize: { uniformType: '1f', defaultValues: [50.0] },
+            maxPointSize,
             minPointSize: { uniformType: '1f', defaultValues: [8.0] }
         },
         drawType: 'POINTS',
@@ -360,7 +362,7 @@ export const items = {
         uniforms: {
             zoomScalingFactor: { uniformType: '1f', defaultValues: [1.0] },
             textureScalingFactor: { uniformType: '1f', defaultValues: [hitmapScale] },
-            maxPointSize: { uniformType: '1f', defaultValues: [50.0] }
+            maxPointSize
         },
         drawType: 'POINTS',
         glOptions: pickingGlOpts,
@@ -378,7 +380,7 @@ export const items = {
         uniforms: {
             zoomScalingFactor: { uniformType: '1f', defaultValues: [1.0] },
             textureScalingFactor: { uniformType: '1f', defaultValues: [hitmapDownScale] },
-            maxPointSize: { uniformType: '1f', defaultValues: [50.0] }
+            maxPointSize
         },
         drawType: 'POINTS',
         glOptions: pickingGlOpts,

@@ -118,7 +118,7 @@ export class Label extends React.Component {
         const iconSize =
             type === 'edge'
                 ? 30
-                : Math.max(5, Math.min(scalingFactor * sizes[index], 50)) / pixelRatio;
+                : Math.max(5, Math.min(scalingFactor * sizes[index], 80)) / pixelRatio;
 
         background = showFull || pinned ? new Color(background).alpha(1).rgbaString() : background;
 
