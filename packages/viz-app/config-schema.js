@@ -113,5 +113,18 @@ module.exports = {
             arg: 'password-hash',
             env: 'PASSWORD_HASH'
         }
+    },
+    app: {
+        panels: {
+            histograms: {
+                numDefault: {
+                    doc: 'Default number of histograms on panel open',
+                    format: Number,
+                    default: 1,
+                    arg: 'num-histograms-default',
+                    env: 'NUM_HISTOGRAMS_DEFAULT'
+                }
+            }
+        }
     }
 };

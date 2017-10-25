@@ -46,7 +46,7 @@
         },
         "start:debug": {
             "command":
-                "node --inspect-brk ./index.js '{\"LOG_LEVEL\": \"DEBUG\" }' | ./node_modules/.bin/bunyan -o short",
+                "node --inspect ./index.js '{\"LOG_LEVEL\": \"DEBUG\" }' | ./node_modules/.bin/bunyan -o short",
             "env": {
                 "NODE_ENV": "production"
             }

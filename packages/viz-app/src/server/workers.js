@@ -67,9 +67,7 @@ function configureWorkers(config, convict, activeCB) {
     );
     appRouter.use((req, res, next) => {
         if (!workerRouter) {
-            logger.warn(
-                `Error trying to find the current worker router in 'workerStatus'. Ignoring request, and telling Express let the next maching middleware/route handle it.`
-            );
+            //Likely workerStatus
             return next();
         }
         workerRouter(req, res, next);

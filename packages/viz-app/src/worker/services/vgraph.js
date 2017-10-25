@@ -133,7 +133,9 @@ function createInitialHistograms(view, dataframe) {
 
     const binningInstance = new Binning(dataframe);
     const initialHistograms = binningInstance
-        .selectInitialColumnsForBinning(5)
+        .selectInitialColumnsForBinning(
+            global.__graphistry_convict_conf__.get('app.panels.histograms.numDefault')
+        )
         .map(({ type, dataType, attribute }) =>
             createHistogram({
                 name: attribute,

@@ -53,7 +53,15 @@ app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
 // Log all requests as the first action
 app.use(function(req, res, next) {
-    logger.info({ req, res }, 'HTTP request received by Express.js');
+    //Node inspector sessions spams this; suppress
+    if (req.originalUrl !== '/json' && req.originalUrl != '/json/version') {
+        logger.info('HTTP request received by Express.js', {
+            originalUrl: req.originalUrl,
+            url: req.url,
+            method: req.method
+        });
+    }
+
     next();
 });
 

@@ -618,63 +618,99 @@ Binning.prototype.computeBinningByColumnNames = function(
     // });
 };
 
+function computeScoredColumn({ dataframe, attributeName, type }) {
+    const CommonAttributeNamesSortedByInterestLevel =
+        dataframe.CommonAttributeNamesSortedByInterestLevel;
+    const scoreRange = CommonAttributeNamesSortedByInterestLevel.length;
+
+    const column = dataframe.getColumn(attributeName, type);
+    const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
+    const countDistinct = aggregations.getAggregationByType('countDistinct');
+    const fractionValid =
+        aggregations.getAggregationByType('countValid') /
+        aggregations.getAggregationByType('count');
+    let score = 0; // Lower is better.
+    // Develop a score for prioritizing the columns.
+    if (dataframe.isAttributeNamePrivate(attributeName)) {
+        // Avoid private columns if at all possible (usually just an internal target of an alias).
+        score += scoreRange;
+    }
+    if (fractionValid < 0.01) {
+        score += scoreRange;
+    }
+    // Prioritize user-provided data ahead of system data.
+    let sysIndex = CommonAttributeNamesSortedByInterestLevel.indexOf(attributeName);
+    // Double check whether this is an alias for system data.
+    if (sysIndex === -1 && column.name !== attributeName) {
+        sysIndex = CommonAttributeNamesSortedByInterestLevel.indexOf(column.name);
+    }
+    if (sysIndex === -1) {
+        // Prioritize user-provided data (crudely) by how small the _other bin is;
+        // mega-valued domains make poor histograms.
+        if (countDistinct < 2) {
+            score += scoreRange;
+        } else {
+            score -= scoreRange / Math.log(countDistinct);
+        }
+    } else {
+        score += sysIndex;
+    }
+    return {
+        type: type,
+        score: score,
+        dataType: column.type,
+        attribute: attributeName
+    };
+}
+
 /**
  * @param {Dataframe} dataframe
  * @param {Number?} maxInitialItems
  * @returns {ColumnName[]}
  */
 Binning.prototype.selectInitialColumnsForBinning = function(maxInitialItems = undefined) {
-    const scoredColumnNames = [];
     const attributeKeysByType = _.object(
         _.map(['point', 'edge'], type => [type, this.dataframe.getAttributeKeys(type)])
     );
-    const CommonAttributeNamesSortedByInterestLevel = this.dataframe
-        .CommonAttributeNamesSortedByInterestLevel;
-    const scoreRange = CommonAttributeNamesSortedByInterestLevel.length;
+
+    //Until scoring is not a pageload bottleneck,
+    //fastpath point:type/degree load one
+    if (maxInitialItems === 1) {
+        if (attributeKeysByType.point.indexOf('type') !== -1) {
+            return [
+                computeScoredColumn({
+                    dataframe: this.dataframe,
+                    type: 'point',
+                    attributeName: 'type'
+                })
+            ];
+        }
+        if (attributeKeysByType.point.indexOf('degree') !== -1) {
+            return [
+                computeScoredColumn({
+                    dataframe: this.dataframe,
+                    type: 'point',
+                    attributeName: 'degree'
+                })
+            ];
+        }
+    }
+
+    const scoredColumnNames = [];
     _.each(attributeKeysByType, (attributeKeys, type) => {
         _.each(attributeKeys, attributeName => {
-            const column = this.dataframe.getColumn(attributeName, type);
-            const aggregations = this.dataframe.getColumnAggregations(attributeName, type, true);
-            const countDistinct = aggregations.getAggregationByType('countDistinct');
-            const fractionValid =
-                aggregations.getAggregationByType('countValid') /
-                aggregations.getAggregationByType('count');
-            let score = 0; // Lower is better.
-            // Develop a score for prioritizing the columns.
-            if (this.dataframe.isAttributeNamePrivate(attributeName)) {
-                // Avoid private columns if at all possible (usually just an internal target of an alias).
-                score += scoreRange;
-            }
-            if (fractionValid < 0.01) {
-                score += scoreRange;
-            }
-            // Prioritize user-provided data ahead of system data.
-            let sysIndex = CommonAttributeNamesSortedByInterestLevel.indexOf(attributeName);
-            // Double check whether this is an alias for system data.
-            if (sysIndex === -1 && column.name !== attributeName) {
-                sysIndex = CommonAttributeNamesSortedByInterestLevel.indexOf(column.name);
-            }
-            if (sysIndex === -1) {
-                // Prioritize user-provided data (crudely) by how small the _other bin is;
-                // mega-valued domains make poor histograms.
-                if (countDistinct < 2) {
-                    score += scoreRange;
-                } else {
-                    score -= scoreRange / Math.log(countDistinct);
-                }
-            } else {
-                score += sysIndex;
-            }
-            scoredColumnNames.push({
-                type: type,
-                score: score,
-                dataType: column.type,
-                attribute: attributeName
-            });
+            scoredColumnNames.push(
+                computeScoredColumn({
+                    dataframe: this.dataframe,
+                    type,
+                    attributeName
+                })
+            );
         });
     });
     const sortedColumnNames = _.sortBy(scoredColumnNames, columnName => columnName.score);
-    return _.first(sortedColumnNames, maxInitialItems);
+    const out = _.first(sortedColumnNames, maxInitialItems);
+    return out instanceof Array ? out : [out]; //handle singletons
 };
 
 export default Binning;

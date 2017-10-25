@@ -84,44 +84,20 @@ function publish(vg, name) {
     var metadata = { name: name };
     var binData = VectorGraph.encode(vg).finish();
 
-    function cacheLocally() {
-        var res = Q.defer();
-        setTimeout(function() {
-            logger.debug('Caching dataset locally');
-            res.resolve(tmpCache.put(urllib.parse(name), binData));
-        }, 0);
-        return res.promise;
-    }
-
-    if (config.ENVIRONMENT === 'local') {
-        logger.debug('Attempting to upload dataset');
-        return s3Upload(binData, metadata)
-            .fail(function(err) {
-                logger.error(err, 'S3 Upload failed');
-            })
-            .then(cacheLocally, cacheLocally) // Cache locally regardless of result
-            .then(_.constant(name)); // We succeed iff cacheLocally succeeds
-    } else {
-        // On prod/staging ETL fails if upload fails
-        logger.debug('Uploading dataset');
-        return cacheLocally()
-            .then(
-                function() {
-                    return s3Upload(binData, metadata);
-                },
-                function() {
-                    return s3Upload(binData, metadata);
-                }
-            )
-            .then(_.constant(name))
-            .fail(function(err) {
-                logger.error(err, 'S3 Upload failed');
-            });
-    }
+    logger.debug('Uploading dataset');
+    return Q()
+        .then(() => tmpCache.put(urllib.parse(name), binData))
+        .then(() => s3Upload(binData, metadata))
+        .then(_.constant(name))
+        .fail(err => logger.error(err, 'S3 Upload failed'));
 }
 
 // Buffer * {name: String, ...} -> Promise
 function s3Upload(binaryBuffer, metadata) {
+    if (!config.S3_ACCESS || !config.S3_SECRET) {
+        logger.info('No S3 creds, skipping');
+        return Q();
+    }
     return s3.upload(config.S3, config.BUCKET, metadata, binaryBuffer, { ContentEncoding: 'gzip' });
 }
 
