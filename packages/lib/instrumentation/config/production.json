@@ -1,0 +1,8 @@
+{
+    "zipkin": {
+        "host": "http://zipkin"
+    },
+    "prometheus": {
+        "host": "http://prometheus"
+    }
+}

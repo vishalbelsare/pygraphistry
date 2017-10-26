@@ -1,0 +1,20 @@
+{
+    "name": "@graphistry/microserver",
+    "version": "1.0.0",
+    "description": "An instrumented, customized wrapper of zeit's `micro` server.",
+    "main": "src/index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@graphistry/instrumentation": "*",
+        "ix": "2.2.0",
+        "micro": "9.0.0",
+        "micro-cors": "0.0.4",
+        "micro-visualize": "3.0.1",
+        "rxjs": "5.5.1",
+        "zipkin": "0.9.0"
+    }
+}
