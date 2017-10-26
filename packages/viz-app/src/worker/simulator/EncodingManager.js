@@ -1,12 +1,40 @@
 //TODO workbook loading should fill this out (dataframe.encodingManager)
 
 import { Observable } from 'rxjs';
-const _ = require('underscore');
 
 //TODO make these cleaner
 export { resetEncodingOnNBody, applyEncodingOnNBody } from './encodings.js';
 import { resetEncodingOnNBody, applyEncodingOnNBody } from './encodings.js';
 import { multiplexedPalettes } from './palettes2.js';
+
+import { getHistogramForAttribute } from '../services/histograms.js';
+
+function encodingWithoutBinValues(encoding) {
+    if (!encoding) return encoding || null;
+    const { binning: { valueToBin, ...restBinning } = {}, ...restEncoding } = encoding;
+    return { binning: restBinning, ...restEncoding };
+}
+
+/*
+Sample icon encoding:
+{                    
+    encodingType: 'icon', 
+    graphType: 'point', 
+    attribute: 'degree',
+    mapping: {
+        categorical: {
+            fixed: {
+                0: 'fighter-jet',
+                1: 'github-alt',
+                2: 'resistance',
+                3: 'black-tie',
+                4: 'paperclip'
+            },
+            other: 'question'
+        }
+    }
+}
+*/
 
 //Encoding manager works at two levels:
 // 1. Takes & gives declarative encoding state
@@ -20,48 +48,86 @@ export default class EncodingManager {
             point: {},
             edge: {},
             time: {},
-            current: {
+            defaults: {
                 point: {
-                    color: null,
-                    opacity: null,
-                    size: null,
-                    weight: null,
-                    icon: null,
-                    axis: null
+                    /* color, opacity, size, weight, icons, axis, ... */
                 },
                 edge: {
-                    color: null,
-                    opacity: null,
-                    size: null,
-                    weight: null,
-                    icon: null
+                    /* color, opacity, size, weight, icon, ... */
+                }
+            },
+            current: {
+                point: {
+                    /* color, opacity, size, weight, icons, axis, ... */
+                },
+                edge: {
+                    /* color, opacity, size, weight, icon, ... */
                 }
             }
         };
     }
 
+    //Similar to setEncoding
+    //  Set/clear default encoding
+    //  If default encoding is on, trigger (re)set
+    setDefaultEncoding({ view, encoding }) {
+        const { graphType, encodingType, reset = false } = encoding;
+
+        const currentEncoding = this.tables.current[graphType][encodingType];
+        const isDefaultEncodingActive =
+            !Boolean(currentEncoding) || (currentEncoding && currentEncoding.isDefault);
+
+        this.tables.defaults[graphType][encodingType] = reset
+            ? null
+            : { ...encoding, isDefault: true, reset: false };
+
+        return isDefaultEncodingActive
+            ? this.setEncoding({ view, encoding: { ...encoding, reset, isDefault: true } })
+            : Observable.of(wrapEncodingType({ ...encoding, reset })); //same as resetEncodingOnNBody
+    }
+
+    getDefaultEncoding({ view, encoding }) {
+        const { graphType, encodingType } = encoding;
+        return this.tables.defaults[graphType][encodingType];
+    }
+
     //view: {dataframe, simulator}
-    //encoding: {graphType, encodingType, attribute, variant, ?reset, ...}}
+    //encoding: {graphType, encodingType, attribute, variant, ?reset, ?isDefault...}}
     // -> Observable {encoding, encodingSpec} or null
     //  (do not need current encoding if clearing, just graphType & encodingType)
+
     setEncoding({ view, encoding }) {
         const { graphType, encodingType, reset = false } = encoding;
-        const encodingWrapped = wrapEncodingType({ ...encoding, reset });
 
-        const applyOrResetEncoding = reset
-            ? resetEncodingOnNBody({ view, encoding: encodingWrapped })
-            : applyEncodingOnNBody({ view, encoding: encodingWrapped });
+        if (reset && this.tables.defaults[graphType][encodingType]) {
+            return this.setEncoding({
+                view,
+                encoding: this.tables.defaults[graphType][encodingType] //flags isDefault, disables reset
+            });
+        }
 
-        return applyOrResetEncoding.do(({ dirty, ...encodingSpec }) => {
-            const { nBody } = view;
-            const { interactions } = nBody;
-            const { tables: { current } } = this;
+        const maybeBinning = reset
+            ? Observable.of({})
+            : getHistogramForAttribute({ view, ...encoding });
 
-            current[graphType][encodingType] = reset ? null : { encoding, encodingSpec };
+        return maybeBinning.mergeMap((binning = {}) => {
+            const extendedEncoding = { ...encoding, binning };
+            const encodingWrapped = wrapEncodingType({ ...extendedEncoding, reset });
 
-            if (dirty && interactions) {
-                interactions.next({ play: true, layout: false });
-            }
+            const applyOrResetEncoding = reset
+                ? resetEncodingOnNBody({ view, encoding: encodingWrapped })
+                : applyEncodingOnNBody({ view, encoding: encodingWrapped });
+
+            return applyOrResetEncoding
+                .do(({ dirty, ...encodingSpec }) => {
+                    this.tables.current[graphType][encodingType] = reset
+                        ? null
+                        : { encoding: extendedEncoding, encodingSpec };
+                    if (dirty && view.nBody.interactions) {
+                        view.nBody.interactions.next({ play: true, layout: false });
+                    }
+                })
+                .map(o => (reset ? o : encodingWithoutBinValues(o)));
         });
     }
 
@@ -69,7 +135,13 @@ export default class EncodingManager {
     //encoding: {graphType, encodingType}
     // -> {encoding, encodingSpec} or null
     getEncoding({ view, encoding: { graphType, encodingType } }) {
-        return this.tables.current[graphType][encodingType];
+        const out = this.tables.current[graphType][encodingType];
+        return !out
+            ? null
+            : {
+                  encoding: encodingWithoutBinValues(out.encoding),
+                  encodingSpec: encodingWithoutBinValues(out.encodingSpec)
+              };
     }
 
     //TODO unify with simulator/encodings:inferColorScalingSpecFor() etc.
@@ -87,15 +159,17 @@ export default class EncodingManager {
 //simulator/encodings.js expects 'pointColor' instead of 'color'
 function wrapEncodingType(encoding) {
     const { graphType, encodingType } = encoding;
-    return _.extend({}, encoding, {
+    return {
+        ...encoding,
         encodingType: `${graphType}${encodingType[0].toUpperCase()}${encodingType.slice(1)}`
-    });
+    };
 }
 
 //simulator/encodings.js returns 'pointColor' instead of 'color'
 function unwrapEncodingType(encoding) {
     const { graphType, encodingType } = encoding;
-    return _.extend({}, encoding, {
+    return {
+        ...encoding,
         encodingType: encodingType.slice(graphType.length).toLowerCase()
-    });
+    };
 }

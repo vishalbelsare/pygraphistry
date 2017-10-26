@@ -1,44 +1,26 @@
-import { getHistogramForAttribute } from './histograms.js';
-
-function encodingWithoutBinValues(encoding) {
-    if (!encoding) return encoding || null;
-    const { binning: { valueToBin, ...restBinning } = {}, ...restEncoding } = encoding;
-    return { binning: restBinning, ...restEncoding };
-}
-
 //view: {nbody: {dataframe, simulator}}
 //encoding: {graphType, encodingType, attribute, variant, ?reset, ...}}
 // -> Observable encoding or null
 //  (do not need current encoding if clearing, just graphType & encodingType)
 export function setEncoding({ view, encoding }) {
-    const { nBody: { dataframe, simulator } = {} } = view;
-
-    const { reset } = encoding;
-
-    if (reset) {
-        return dataframe.encodingsManager.setEncoding({ view, encoding });
-    } else {
-        //TODO getHistogram not necessary for all encodings, e.g., icon
-        return getHistogramForAttribute({ view, ...encoding })
-            .mergeMap(binning =>
-                dataframe.encodingsManager.setEncoding({ view, encoding: { ...encoding, binning } })
-            )
-            .map(encodingWithoutBinValues);
-    }
+    return view.nBody.dataframe.encodingsManager.setEncoding({ view, encoding });
 }
 
 //view: {nbody: {dataframe, simulator}}    //view: {dataframe, simulator}
 //encoding: {graphType, encodingType}
 // -> {encoding, encodingSpec} or null
 export function getEncoding({ view, encoding }) {
-    const { nBody: { dataframe, simulator } = {} } = view;
-    const out = dataframe.encodingsManager.getEncoding({ view, encoding });
-    return !out
-        ? null
-        : {
-              encoding: encodingWithoutBinValues(out.encoding),
-              encodingSpec: encodingWithoutBinValues(out.encodingSpec)
-          };
+    return view.nBody.dataframe.encodingsManager.getEncoding({ view, encoding });
+}
+
+//like setEncoding, but for default encoding
+export function setDefaultEncoding({ view, encoding }) {
+    return view.nBody.dataframe.encodingsManager.setDefaultEncoding({ view, encoding });
+}
+
+//like getEncoding, but for default encoding
+export function getDefaultEncoding({ view, encoding }) {
+    return view.nBody.dataframe.encodingsManager.getDefaultEncoding({ view, encoding });
 }
 
 //view: {dataframe, simulator}

@@ -248,12 +248,28 @@ function getIconClass({ encodings, type, columns }) {
     }
 
     const colMaybe = columns.filter(({ key }) => key === encodings[type].icon.attribute);
-    const iconStr = colMaybe.length ? colMaybe[0].value : undefined;
-    if (!iconStr || !String(iconStr).match(/^[a-zA-Z0-9-]*$/)) {
+    const valStr = colMaybe.length ? String(colMaybe[0].value) : undefined;
+    if (valStr === undefined) {
         return undefined;
     }
 
-    return `fa-${iconStr}`;
+    if (encodings[type].icon.mapping) {
+        if (encodings[type].icon.mapping.categorical) {
+            const { fixed, other = undefined } = encodings[type].icon.mapping.categorical;
+            if (valStr in fixed) {
+                return `fa-${fixed[valStr]}`;
+            } else {
+                return other === undefined ? undefined : `fa-${other}`;
+            }
+        } else {
+            return undefined;
+        }
+    } else {
+        if (!valStr || !valStr.match(/^[a-zA-Z0-9-]*$/)) {
+            return undefined;
+        }
+        return `fa-${valStr}`;
+    }
 }
 
 function LabelTitle({
