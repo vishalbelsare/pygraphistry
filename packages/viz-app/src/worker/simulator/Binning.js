@@ -676,12 +676,12 @@ Binning.prototype.selectInitialColumnsForBinning = function(maxInitialItems = un
     //Until scoring is not a pageload bottleneck,
     //fastpath point:type/degree load one
     if (maxInitialItems === 1) {
-        if (attributeKeysByType.point.indexOf('type') !== -1) {
+        if (attributeKeysByType.point.indexOf('canonicalType') !== -1) {
             return [
                 computeScoredColumn({
                     dataframe: this.dataframe,
                     type: 'point',
-                    attributeName: 'type'
+                    attributeName: 'canonicalType'
                 })
             ];
         }

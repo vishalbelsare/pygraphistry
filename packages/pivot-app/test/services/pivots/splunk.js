@@ -7,16 +7,9 @@ import { pivots } from '../../../src/shared/services/templates/splunk/search';
 const searchSplunk = pivots.filter(o => o.id === 'search-splunk-plain')[0];
 import {
     colTypes,
-    typeColors,
     typeSizes,
-    typeIcons,
-    typesToSizes,
-    typesToIcons
+    typesToSizes
 } from '../../../src/shared/services/templates/splunk/settings';
-import {
-    colorShorthands,
-    typeColorsAliases
-} from '../../../src/shared/services/templates/splunk/colors';
 
 const timezoneV = 'America/Los_Angeles';
 const timezoneGuyanaV = 'America/Guyana';
@@ -145,15 +138,7 @@ describe('Splunk:Encodings', function() {
         assert.deepEqual(colTypes['dmac'], 'mac');
     });
 
-    it('combines colors', function() {
-        assert.deepEqual(typeColors['dmac'], colorShorthands[typeColorsAliases['mac']]);
-    });
-
     it('combines sizes', function() {
         assert.deepEqual(typeSizes['dmac'], typesToSizes['mac']);
-    });
-
-    it('combines icons', function() {
-        assert.deepEqual(typeIcons['dmac'], typesToIcons['mac']);
     });
 });

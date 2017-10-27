@@ -129,9 +129,9 @@ export class EncodingPicker extends React.Component {
                   ? this.props.encodings[graphType].color.name
                   : undefined;
         const { variant: variation, colors, label } = name
-            ? this.props.options[this.props.componentType].color.filter(
-                  ({ name: optName }) => name === optName
-              )[0]
+            ? this.props.options[this.props.componentType].color
+                  .filter(({ name: optName }) => name === optName)
+                  .concat([{ variation: 'categorical' }])[0]
             : {};
         const nameOpts = { reset: !name, name, variation, colors };
 

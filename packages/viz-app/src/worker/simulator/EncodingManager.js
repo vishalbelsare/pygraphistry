@@ -71,7 +71,8 @@ export default class EncodingManager {
     //  Set/clear default encoding
     //  If default encoding is on, trigger (re)set
     setDefaultEncoding({ view, encoding }) {
-        const { graphType, encodingType, reset = false } = encoding;
+        const { graphType, encodingType, attribute } = encoding;
+        const reset = encoding.reset || attribute === undefined;
 
         const currentEncoding = this.tables.current[graphType][encodingType];
         const isDefaultEncodingActive =
@@ -97,7 +98,8 @@ export default class EncodingManager {
     //  (do not need current encoding if clearing, just graphType & encodingType)
 
     setEncoding({ view, encoding }) {
-        const { graphType, encodingType, reset = false } = encoding;
+        const { graphType, encodingType, attribute } = encoding;
+        const reset = encoding.reset || attribute === undefined;
 
         if (reset && this.tables.defaults[graphType][encodingType]) {
             return this.setEncoding({

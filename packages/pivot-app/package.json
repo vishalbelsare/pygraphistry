@@ -32,8 +32,8 @@
         "url": "git+https://github.com/graphistry/pivot-app.git"
     },
     "dependencies": {
-        "@graphistry/client-api": "^2.14.0",
-        "@graphistry/client-api-react": "^2.14.0",
+        "@graphistry/client-api": "^2.15.2",
+        "@graphistry/client-api-react": "^2.15.2",
         "@graphistry/falcor": "^2.9.11",
         "@graphistry/falcor-json-graph": "^2.9.6",
         "@graphistry/falcor-model-rxjs": "^2.9.11",
@@ -96,7 +96,7 @@
         "redux": "3.7.2",
         "redux-observable": "0.16.0",
         "request": "2.83.0",
-        "rxjs": "5.4.3",
+        "rxjs": "5.4.2",
         "simpleflakes": "1.2.3",
         "socket.io": "2.0.3",
         "socket.io-client": "2.0.3",

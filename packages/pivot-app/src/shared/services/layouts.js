@@ -16,7 +16,71 @@ export const layouts = [
     }
 ];
 
-const all = {};
+export const pointIconEncoding = {
+    attribute: 'canonicalType',
+    mapping: {
+        categorical: {
+            fixed: {
+                alert: 'exclamation',
+                event: 'exclamation-circle',
+                file: 'file',
+                geo: 'flag',
+                hash: 'file-text',
+                id: 'barcode',
+                ip: 'desktop',
+                mac: 'desktop',
+                port: 'microchip',
+                tag: 'tag',
+                url: 'link',
+                user: 'user'
+            },
+            other: 'question'
+        }
+    }
+};
+
+//Tweak over the browser defaults
+const colorRemapping = {
+    blue: '#256599',
+    brown: '#5D7850',
+    gray: '#EDEDED',
+    orange: '#FF9D40',
+    lightblue: '#40A7FF',
+    lightgreen: '#6DB34B',
+    pink: '#C55288',
+    red: '#E75D51'
+};
+
+export const pointColorEncoding = {
+    attribute: 'canonicalType',
+    variation: 'categorical',
+    mapping: {
+        categorical: {
+            fixed: {
+                alert: colorRemapping['red'],
+                event: colorRemapping['orange'],
+                file: colorRemapping['pink'],
+                geo: colorRemapping['brown'],
+                hash: colorRemapping['pink'],
+                id: colorRemapping['gray'],
+                ip: colorRemapping['blue'],
+                mac: colorRemapping['lightblue'],
+                port: colorRemapping['gray'],
+                tag: colorRemapping['pink'],
+                url: colorRemapping['lightgreen'],
+                user: colorRemapping['blue']
+            },
+            other: colorRemapping['gray']
+        }
+    }
+};
+
+const all = {
+    pointIconEncoding,
+    pointIconEncodingDefault: pointIconEncoding,
+    pointColorEncoding,
+    pointColorEncodingDefault: pointColorEncoding
+};
 
 export const uiTweaks = {
     atlasbarnes: {

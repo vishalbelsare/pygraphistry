@@ -52,6 +52,11 @@ const withClientAPIRoutes = withSchema((QL, { get, set }, services) => {
                         encodings: {
                             [{keys: componentType}]: {
                                 ['icon', 'size', 'color', 'axis']: ${writeOnly}
+                            },
+                            defaults: {
+                                [{keys: componentType}]: {
+                                    ['icon', 'size', 'color', 'axis']: ${writeOnly}
+                                }
                             }
                         },
                         componentsByType: {

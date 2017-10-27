@@ -3,7 +3,14 @@ import { getHandler, setHandler } from 'viz-app/router';
 import { $atom, $value } from '@graphistry/falcor-json-graph';
 
 export function encodings(path, base) {
-    return function encodings({ loadViewsById, getEncodingOptions, setEncoding, getEncoding }) {
+    return function encodings({
+        loadViewsById,
+        getEncodingOptions,
+        setEncoding,
+        getEncoding,
+        setDefaultEncoding,
+        getDefaultEncoding
+    }) {
         //TODO set to server
         //TODO convenience route of encodings.attribute['point']['color'][{keys}]...
 
@@ -25,8 +32,20 @@ export function encodings(path, base) {
             {
                 // {variant} -> encodingSpec={variant, legend: [color]}
                 get: getEncodingRoute.bind(null, { loadViewsById, getEncoding }),
-                set: setEncodingRoute.bind(null, { loadViewsById, setEncoding }),
+                set: setEncodingRoute.bind(null, [], { loadViewsById, setEncoding }),
                 route: `${base}.encodings[{keys:graphTypes}][{keys:encodingTypes}]`
+            },
+            {
+                // {variant} -> encodingSpec={variant, legend: [color]}
+                get: getEncodingRoute.bind(null, {
+                    loadViewsById,
+                    getEncoding: getDefaultEncoding
+                }),
+                set: setEncodingRoute.bind(null, ['defaults'], {
+                    loadViewsById,
+                    setEncoding: setDefaultEncoding
+                }),
+                route: `${base}.encodings.defaults[{keys:graphTypes}][{keys:encodingTypes}]`
             }
         ];
 
@@ -87,7 +106,7 @@ export function encodings(path, base) {
         }
 
         //{variant, attribute} -> ()
-        function setEncodingRoute({ loadViewsById, setEncoding }, jsonGraphArg) {
+        function setEncodingRoute(subpath, { loadViewsById, setEncoding }, jsonGraphArg) {
             const workbookIds = Object.keys(jsonGraphArg.workbooksById);
             const viewIds = [].concat(
                 ...workbookIds.map(workbookId =>
@@ -101,10 +120,14 @@ export function encodings(path, base) {
             }).mergeMap(({ workbook, view }) => {
                 const { id: workbookId } = workbook;
                 const { id: viewId } = view;
-                const top = jsonGraphArg.workbooksById[workbookId].viewsById[viewId];
 
-                const nestedConfigs = Object.keys(top.encodings).map(graphType =>
-                    Object.keys(top.encodings[graphType]).map(encodingType => ({
+                let top = jsonGraphArg.workbooksById[workbookId].viewsById[viewId].encodings;
+                subpath.forEach(fld => {
+                    top = top[fld];
+                });
+
+                const nestedConfigs = Object.keys(top).map(graphType =>
+                    Object.keys(top[graphType]).map(encodingType => ({
                         encodingType,
                         graphType
                     }))
@@ -112,13 +135,14 @@ export function encodings(path, base) {
                 const configs = [].concat(...nestedConfigs);
 
                 const encodingSpecs = configs.map(({ graphType, encodingType }) => {
-                    const encoding = top.encodings[graphType][encodingType].value;
+                    const encoding = top[graphType][encodingType].value;
                     return setEncoding({
                         view,
                         encoding: { graphType, encodingType, ...encoding }
                     }).map(encodingSpec =>
                         $value(
                             ['workbooksById', workbookId, 'viewsById', viewId, 'encodings'].concat(
+                                subpath,
                                 graphType,
                                 encodingType
                             ),

@@ -49,7 +49,7 @@ function inferLoadedEncodingsFor(dataframe) {}
  * @param {BinningResult} binning
  * @returns {EncodingSpec}
  */
-function inferColorScalingSpecFor({ variation, binning, colors, reverse }) {
+function inferColorScalingSpecFor({ variation, binning, colors = [], mapping, reverse }) {
     function reverseArr(arr) {
         var arr2 = arr.slice();
         arr2.reverse();
@@ -59,11 +59,31 @@ function inferColorScalingSpecFor({ variation, binning, colors, reverse }) {
     const range = reverse ? reverseArr(colors) : colors;
 
     if (variation === 'categorical') {
-        return {
-            scalingType: 'ordinal',
-            domain: [0, binning.numBins || 1],
-            range: range
-        };
+        if (mapping && mapping.categorical) {
+            const orderedKeys = Object.keys(mapping.categorical.fixed);
+
+            return {
+                scalingType: 'ordinal',
+                domain: orderedKeys.map((_, bin) => bin),
+                range: orderedKeys.map(
+                    (_, bin) =>
+                        Object.entries(binning.valueToBin)
+                            .filter(([v, b]) => b === bin)
+                            .map(
+                                ([v, b]) =>
+                                    mapping.categorical.fixed[v] || mapping.categorical.other
+                            )
+                            .concat(mapping.categorical.other)[0]
+                ),
+                unknown: mapping.categorical.other
+            };
+        } else {
+            return {
+                scalingType: 'ordinal',
+                domain: [0, binning.numBins || 1],
+                range: range
+            };
+        }
     } else if (variation === 'continuous') {
         return {
             scalingType: 'linear',
@@ -115,7 +135,7 @@ function inferEncodingType(dataframe, type, attributeName) {
  * @param {EncodingSpec} scalingSpec
  * @returns {d3.scale}
  */
-function scalingFromSpec({ scalingType, domain, range, clamp }) {
+function scalingFromSpec({ scalingType, domain, range, clamp, unknown }) {
     let scaling =
         d3Scale[scalingType] !== undefined
             ? d3Scale[scalingType]()
@@ -131,6 +151,10 @@ function scalingFromSpec({ scalingType, domain, range, clamp }) {
 
     if (clamp !== undefined) {
         scaling = scaling.clamp(clamp);
+    }
+
+    if (unknown !== undefined) {
+        scaling = scaling.unknown(unknown);
     }
 
     return scaling;
@@ -158,6 +182,7 @@ function inferEncodingSpec({
     variation,
     binning,
     colors,
+    mapping,
     reverse
 }) {
     const summary = aggregations.getSummary();
@@ -195,7 +220,7 @@ function inferEncodingSpec({
         case 'color':
         case 'pointColor':
         case 'edgeColor':
-            return inferColorScalingSpecFor({ variation, binning, colors, reverse });
+            return inferColorScalingSpecFor({ variation, binning, colors, mapping, reverse });
 
         case 'title':
         case 'pointTitle':
@@ -237,6 +262,7 @@ function inferEncoding(
     variation,
     binning,
     colors,
+    mapping,
     reverse
 ) {
     const aggregations = dataframe.getColumnAggregations(attributeName, type, true);
@@ -248,6 +274,7 @@ function inferEncoding(
         variation,
         binning,
         colors,
+        mapping,
         reverse
     });
     const scaling = scalingFromSpec(encodingSpec);
@@ -360,11 +387,16 @@ function applyEncodingOnNBody_transform({ view, encoding }) {
         attribute: unnormalizedAttribute,
         variation,
         binning,
-        colors,
+        colors: colorsRaw,
+        mapping,
         timeBounds,
         reset,
         reverse
     } = encoding;
+
+    //Encoding picker may pass colors:array and old js api users mapping:array
+    const colors = colorsRaw || (mapping instanceof Array ? mapping : undefined);
+
     const ccManager = dataframe.computedColumnManager;
     let encodingMetadata = undefined;
     try {
@@ -401,6 +433,7 @@ function applyEncodingOnNBody_transform({ view, encoding }) {
             variation,
             binning,
             colors,
+            mapping,
             reverse
         );
     }
@@ -421,7 +454,7 @@ function applyEncodingOnNBody_transform({ view, encoding }) {
                 palettes.intToHex(palettes.bindings[sourceValue])
             );
         } else {
-            wrappedScaling = x => palettes.hexToABGR(encodingWrapper.scaling(x));
+            wrappedScaling = x => palettes.hexToABGR(Color(encodingWrapper.scaling(x)).hexString());
         }
     }
 

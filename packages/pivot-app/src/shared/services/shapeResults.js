@@ -3,6 +3,7 @@ import _ from 'underscore';
 import { categoryToColorInt, intToHex } from '../services/support/palette.js';
 import { dedupeHyperedges, inference } from './shape/inference.js';
 import { normalizeGraph } from './shape/normalizeGraph.js';
+import { pointIconEncoding, pointColorEncoding } from './layouts';
 import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
@@ -10,7 +11,7 @@ function summarizeOutput({ labels }) {
     //{ typeName -> int }
     const entityTypes = {};
     for (let i = 0; i < labels.length; i++) {
-        entityTypes[labels[i].type] = i;
+        entityTypes[labels[i].canonicalType] = i;
     }
 
     //{ typeName -> {count, example, name, color} }
@@ -19,8 +20,12 @@ function summarizeOutput({ labels }) {
             count: 0,
             example: example,
             name: entityType,
-            icon: labels[example].pointIcon,
-            color: intToHex(categoryToColorInt[labels[example].pointColor])
+            icon:
+                pointIconEncoding.mapping.categorical.fixed[labels[example].canonicalType] ||
+                pointIconEncoding.mapping.categorical.other,
+            color:
+                pointColorEncoding.mapping.categorical.fixed[labels[example].canonicalType] ||
+                pointColorEncoding.mapping.categorical.other
         };
     });
 
@@ -30,8 +35,8 @@ function summarizeOutput({ labels }) {
     });
 
     for (let i = 0; i < labels.length; i++) {
-        const summary = entitySummaries[labels[i].type];
-        const lookup = valLookups[labels[i].type];
+        const summary = entitySummaries[labels[i].canonicalType];
+        const lookup = valLookups[labels[i].canonicalType];
         const key = labels[i].node;
         if (!_.has(lookup, key)) {
             lookup[key] = 1;
