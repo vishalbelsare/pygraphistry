@@ -10,6 +10,7 @@ import configureFalcorRouter from 'pivot-app/router/falcor';
 import configureSocketListeners from 'pivot-app/server/socket';
 import configureFalcorModelFactory from 'pivot-app/router/model';
 import { HealthChecker, authenticateMiddleware } from './middleware';
+import bunyan from 'bunyan';
 
 const log = createLogger(__filename);
 const io = global.__graphistry_socket_io__;
@@ -61,7 +62,7 @@ app.get(`/echo`, function(req, res) {
 // Install client error-logger route
 app.post(`/error`, bodyParser.json({ extended: true, limit: '512kb' }), (req, res) => {
     const record = req.body;
-    logger[bunyan.nameFromLevel[record.level]](record, record.msg);
+    log[bunyan.nameFromLevel[record.level]](record, record.msg);
     res.status(204).send();
 });
 

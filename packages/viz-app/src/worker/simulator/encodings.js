@@ -40,6 +40,23 @@ const defaults = {
  */
 function inferLoadedEncodingsFor(dataframe) {}
 
+function categoricalMappingToScaleConfig({ binning, mapping, scalingType }) {
+    const orderedKeys = Object.keys(mapping.categorical.fixed);
+
+    return {
+        scalingType,
+        domain: orderedKeys.map((_, bin) => bin),
+        range: orderedKeys.map(
+            (_, bin) =>
+                Object.entries(binning.valueToBin)
+                    .filter(([v, b]) => b === bin)
+                    .map(([v, b]) => mapping.categorical.fixed[v] || mapping.categorical.other)
+                    .concat(mapping.categorical.other)[0]
+        ),
+        unknown: mapping.categorical.other
+    };
+}
+
 /**
  * @param {EncodingSpec} encodingSpec
  * @param {Aggregations} summary
@@ -59,31 +76,13 @@ function inferColorScalingSpecFor({ variation, binning, colors = [], mapping, re
     const range = reverse ? reverseArr(colors) : colors;
 
     if (variation === 'categorical') {
-        if (mapping && mapping.categorical) {
-            const orderedKeys = Object.keys(mapping.categorical.fixed);
-
-            return {
-                scalingType: 'ordinal',
-                domain: orderedKeys.map((_, bin) => bin),
-                range: orderedKeys.map(
-                    (_, bin) =>
-                        Object.entries(binning.valueToBin)
-                            .filter(([v, b]) => b === bin)
-                            .map(
-                                ([v, b]) =>
-                                    mapping.categorical.fixed[v] || mapping.categorical.other
-                            )
-                            .concat(mapping.categorical.other)[0]
-                ),
-                unknown: mapping.categorical.other
-            };
-        } else {
-            return {
-                scalingType: 'ordinal',
-                domain: [0, binning.numBins || 1],
-                range: range
-            };
-        }
+        return mapping && mapping.categorical
+            ? categoricalMappingToScaleConfig({ binning, mapping, scalingType: 'ordinal' })
+            : {
+                  scalingType: 'ordinal',
+                  domain: [0, binning.numBins || 1],
+                  range: range
+              };
     } else if (variation === 'continuous') {
         return {
             scalingType: 'linear',
@@ -192,6 +191,14 @@ function inferEncodingSpec({
     switch (encodingType) {
         case 'size':
         case 'pointSize':
+            if (mapping && mapping.categorical) {
+                return categoricalMappingToScaleConfig({
+                    binning,
+                    mapping,
+                    scalingType: 'ordinal'
+                });
+            }
+
             // Square root because point size/radius yields a point area:
             scalingType = 'scaleSqrt';
             domain = [0, (binning.numBins || 1) - 1];
@@ -236,7 +243,7 @@ function inferEncodingSpec({
             throw new Error('No encoding found for: ' + encodingType);
     }
     return _.defaults(encoding || {}, {
-        scalingType: scalingType,
+        scalingType,
         domain: domain,
         range: range,
         clamp: clamp
@@ -541,7 +548,12 @@ function getEncodingMetadata(dataframe, encodingType, unnormalizedType, unnormal
     const normalization = dataframe.normalizeAttributeName(unnormalizedAttribute, unnormalizedType);
 
     if (normalization === undefined) {
-        throw new Error('getEncodingMetadata normalization undefined');
+        throw new Error({
+            msg: 'getEncodingMetadata normalization undefined',
+            encodingType,
+            unnormalizedType,
+            unnormalizedAttribute
+        });
     }
 
     const { attribute: attributeName, type } = normalization;

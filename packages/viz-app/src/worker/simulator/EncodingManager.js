@@ -24,8 +24,8 @@ Sample icon encoding:
     mapping: {
         categorical: {
             fixed: {
-                0: 'fighter-jet',
-                1: 'github-alt',
+                ip: 'fighter-jet',   // -> 'red', or '#fff', or '2.0'
+                event: 'github-alt',
                 2: 'resistance',
                 3: 'black-tie',
                 4: 'paperclip'

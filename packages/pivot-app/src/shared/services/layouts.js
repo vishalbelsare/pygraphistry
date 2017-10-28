@@ -75,31 +75,62 @@ export const pointColorEncoding = {
     }
 };
 
+const sizeVals = {
+    big: 100,
+    medium: 80,
+    small: 40
+};
+
+export const pointSizeEncoding = {
+    attribute: 'canonicalType',
+    mapping: {
+        categorical: {
+            fixed: {
+                alert: sizeVals.big,
+                ip: sizeVals.big,
+                mac: sizeVals.big,
+                user: sizeVals.big,
+                file: sizeVals.medium,
+                geo: sizeVals.medium,
+                hash: sizeVals.medium,
+                id: sizeVals.medium,
+                port: sizeVals.medium,
+                tag: sizeVals.medium,
+                url: sizeVals.medium,
+                event: sizeVals.small
+            },
+            other: sizeVals.small
+        }
+    }
+};
+
 const all = {
     pointIconEncoding,
     pointIconEncodingDefault: pointIconEncoding,
     pointColorEncoding,
-    pointColorEncodingDefault: pointColorEncoding
+    pointColorEncodingDefault: pointColorEncoding,
+    pointSizeEncoding,
+    pointSizeEncodingDefault: pointSizeEncoding
 };
 
 export const uiTweaks = {
     atlasbarnes: {
         ...all,
-        pointSize: 0.4,
+        pointSize: 1,
         dissuadeHubs: true,
         gravity: 8,
         scalingRatio: 12
     },
     insideout: {
         ...all,
-        pointSize: 0.4,
+        pointSize: 1,
         defaultShowArrows: false,
         defaultShowPointsOfInterest: true,
         dissuadeHubs: true
     },
     stackedBushyGraph: {
         ...all,
-        pointSize: 0.6,
+        pointSize: 2,
         defaultShowArrows: false,
         defaultShowPointsOfInterest: true,
         play: 0
