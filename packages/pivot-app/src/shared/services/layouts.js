@@ -57,20 +57,20 @@ export const pointColorEncoding = {
     mapping: {
         categorical: {
             fixed: {
-                alert: colorRemapping['red'],
-                event: colorRemapping['orange'],
-                file: colorRemapping['pink'],
-                geo: colorRemapping['brown'],
-                hash: colorRemapping['pink'],
-                id: colorRemapping['gray'],
-                ip: colorRemapping['blue'],
-                mac: colorRemapping['lightblue'],
-                port: colorRemapping['gray'],
-                tag: colorRemapping['pink'],
-                url: colorRemapping['lightgreen'],
-                user: colorRemapping['blue']
+                alert: colorRemapping.red,
+                event: colorRemapping.orange,
+                file: colorRemapping.pink,
+                geo: colorRemapping.brown,
+                hash: colorRemapping.pink,
+                id: colorRemapping.gray,
+                ip: colorRemapping.blue,
+                mac: colorRemapping.lightblue,
+                port: colorRemapping.gray,
+                tag: colorRemapping.pink,
+                url: colorRemapping.lightgreen,
+                user: colorRemapping.blue
             },
-            other: colorRemapping['gray']
+            other: colorRemapping.gray
         }
     }
 };

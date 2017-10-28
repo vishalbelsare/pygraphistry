@@ -137,8 +137,4 @@ describe('Splunk:Encodings', function() {
     it('combines types', function() {
         assert.deepEqual(colTypes['dmac'], 'mac');
     });
-
-    it('combines sizes', function() {
-        assert.deepEqual(typeSizes['dmac'], typesToSizes['mac']);
-    });
 });

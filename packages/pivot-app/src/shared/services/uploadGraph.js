@@ -8,12 +8,7 @@ import { layouts } from './layouts.js';
 import { decorateInsideness, network } from './layouts/network';
 
 const conf = global.__graphistry_convict_conf__;
-import {
-    graphUnion,
-    bindings,
-    sortNodesInplaceByPivotAndID,
-    sortEdgesInplaceByPivotAndID
-} from './shape/graph.js';
+import { graphUnion, bindings } from './shape/graph.js';
 import { decorateGraphLabelsWithXY, generateEdgeOpacity } from './shape/normalizeGraph';
 
 import logger from 'pivot-shared/logger';
@@ -129,7 +124,7 @@ export function createGraph(pivots) {
             !enabled
                 ? { nodes, edges }
                 : graphUnion(
-                      { nodes, edges },                      
+                      { nodes, edges },
                       {
                           nodes: labels.map(node => ({ Pivot: index, ...node })),
                           edges: graph.map(edge => ({ Pivot: index, ...edge }))
@@ -361,7 +356,7 @@ export function uploadGraph({
                         return Observable.of({ user, data, pivots });
                     }
                 })
-                .do(({ user, dataset, data, pivots }) => {
+                .do(({ user, dataset, data }) => {
                     if (dataset) {
                         investigation.eventTable = {
                             hasResults: data.graph.length + data.labels.length > 0

@@ -100,8 +100,8 @@ export function inference({ nodes = [], edges = [], encodings } = {}) {
     const newEdges = inferenceEdges(edges);
 
     if (encodings && encodings.edge) {
-        newEdges.map(edge =>
-            Object.keys(encodings.edge).map(key => {
+        newEdges.forEach(edge =>
+            Object.keys(encodings.edge).forEach(key => {
                 // eslint-disable-line array-callback-return
                 encodings.edge[key](edge);
             })

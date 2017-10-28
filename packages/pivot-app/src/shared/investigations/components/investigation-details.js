@@ -43,7 +43,7 @@ const withInvalidationLogic = mapPropsStream(propsStream => {
     return propsStream.switchMap(props => {
         return rangeChanges
             .distinctUntilChanged(shallowEqual)
-            .switchMap(range =>
+            .switchMap(() =>
                 props.$falcor.withoutDataSource().set(
                     $value('status', {
                         msgStyle: 'warning',

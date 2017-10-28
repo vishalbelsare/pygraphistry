@@ -1,6 +1,5 @@
 import { simpleflake } from 'simpleflakes';
 import _ from 'underscore';
-import { categoryToColorInt, intToHex } from '../services/support/palette.js';
 import { dedupeHyperedges, inference } from './shape/inference.js';
 import { normalizeGraph } from './shape/normalizeGraph.js';
 import { pointIconEncoding, pointColorEncoding } from './layouts';
@@ -52,20 +51,17 @@ function encodeGraph({ app, pivot }) {
     const { encodings } = pivot.template;
     const { nodes, edges } = pivot.results;
 
-    //TODO make node, edge encoding calls functional
     if (encodings && encodings.point) {
-        nodes.map(node =>
-            Object.keys(encodings.point).map(key => {
-                // eslint-disable-line array-callback-return
+        nodes.forEach(node =>
+            Object.keys(encodings.point).forEach(key => {
                 encodings.point[key](node);
             })
         );
     }
 
     if (encodings && encodings.edge) {
-        edges.map(edge =>
-            Object.keys(encodings.edge).map(key => {
-                // eslint-disable-line array-callback-return
+        edges.forEach(edge =>
+            Object.keys(encodings.edge).forEach(key => {
                 encodings.edge[key](edge);
             })
         );
