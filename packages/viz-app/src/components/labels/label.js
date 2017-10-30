@@ -374,11 +374,16 @@ function LabelTitle({
 }
 
 function LabelContents({ columns = [], importantColumns = [], title = '', ...props }) {
+    const isInPivotapp =
+        window.parent === window
+            ? false
+            : Boolean((document.referrer || '').match('/pivot/investigation/'));
+
     return (
         <div onMouseDown={stopPropagation} className={styles['label-contents']}>
             <table>
                 <tbody>
-                    {importantColumns.length
+                    {isInPivotapp && importantColumns.length
                         ? importantColumns.map(({ key, ...column }, index) => (
                               <LabelRow
                                   key={`${index}-${title}-important`}
