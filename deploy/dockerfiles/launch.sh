@@ -192,6 +192,7 @@ docker run -d \
     -p 9411:9411 \
     --net $GRAPHISTRY_NETWORK \
     --name $ZIPKIN_BOX_NAME \
+    --restart=unless-stopped \
     openzipkin/zipkin:2
 
 
