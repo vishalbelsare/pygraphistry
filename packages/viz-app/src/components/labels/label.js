@@ -373,12 +373,19 @@ function LabelTitle({
     );
 }
 
-function LabelContents({ columns = [], importantColumns = [], title = '', ...props }) {
-    const isInPivotapp =
-        window.parent === window
+const isInPivotapp = (function() {
+    try {
+        return typeof window !== 'undefined' &&
+            typeof document !== 'undefined' &&
+            window.parent === window
             ? false
             : Boolean((document.referrer || '').match('/pivot/investigation/'));
+    } catch (e) {
+        return false;
+    }
+})();
 
+function LabelContents({ columns = [], importantColumns = [], title = '', ...props }) {
     return (
         <div onMouseDown={stopPropagation} className={styles['label-contents']}>
             <table>
