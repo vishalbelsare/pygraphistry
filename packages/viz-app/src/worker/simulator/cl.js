@@ -162,7 +162,7 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
 
     // Try device specified in config first
     const { GPU_OPTIONS: { device: desiredDevice } = {}, VIZ_LISTEN_PORT } = config;
-    const startingDeviceIdx = VIZ_LISTEN_PORT % devices.length;
+    const startingDeviceIdx = (VIZ_LISTEN_PORT - 1) % devices.length;
     if (desiredDevice) {
         devices.sort((a, b) => {
             if (a.name.indexOf(desiredDevice) !== -1) {
@@ -175,6 +175,9 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
         });
     } else {
         devices = devices.slice(startingDeviceIdx).concat(devices.slice(0, startingDeviceIdx));
+        if (devices.some(d => d.deviceType === 'GPU')) {
+            devices = devices.filter(d => d.deviceType === 'GPU');
+        }
     }
 
     var deviceWrapper = null,
