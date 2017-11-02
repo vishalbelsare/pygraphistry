@@ -110,40 +110,26 @@ function uploadJSON(obj, key) {
 // [String+Buffer] * String * Object -> Q(String)
 function uploadAndCache(data, key, opts) {
     function s3Upload(data, key, cache) {
+        if (!config.S3_ACCESS || !config.S3_SECRET) {
+            logger.info('No S3 creds, skipping');
+            return Q();
+        }
         return s3.upload(config.S3, config.BUCKET, { name: key }, data, opts).then(function() {
             return sprintf('s3://%s/%s', config.BUCKET, key);
         });
     }
 
     function cacheLocally(data, key) {
-        // Wait a couple of seconds to make sure our cache has a
-        // more recent timestamp than S3
-        var res = Q.defer();
-        setTimeout(function() {
-            logger.debug('Caching dataset locally');
-            var url = sprintf('s3://%s/%s', config.BUCKET, key);
-            var qSaved = tmpCache.put(urllib.parse(url), data).then(_.constant(url));
-            res.resolve(qSaved);
-        }, 2000);
-        return res.promise;
+        logger.debug('Caching dataset locally');
+        var url = sprintf('s3://%s/%s', config.BUCKET, key);
+        return tmpCache.put(urllib.parse(url), data).then(_.constant(url));
     }
 
-    if (config.ENVIRONMENT === 'local') {
-        logger.debug('Attempting to upload dataset');
-        return s3Upload(data, key, opts)
-            .fail(function(err) {
-                logger.error(err, 'S3 Upload failed');
-            })
-            .then(cacheLocally.bind(null, data, key), cacheLocally.bind(null, data, key)); // Cache locally regardless of result
-    } else {
-        // On prod/staging ETL fails if upload fails
-        logger.debug('Uploading dataset');
-        return s3Upload(data, key, opts)
-            .then(cacheLocally.bind(null, data, key))
-            .fail(function(err) {
-                logger.error(err, 'S3 Upload failed');
-            });
-    }
+    logger.debug('Uploading dataset');
+    return Q()
+        .then(() => s3Upload(data, key, opts))
+        .then(() => cacheLocally(data, key))
+        .fail(err => logger.error(err, 'S3 Upload failed'));
 }
 
 export function processRequest(req, params) {
