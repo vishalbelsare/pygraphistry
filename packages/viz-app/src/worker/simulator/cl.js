@@ -162,7 +162,6 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
 
     // Try device specified in config first
     const { GPU_OPTIONS: { device: desiredDevice } = {}, VIZ_LISTEN_PORT } = config;
-    const startingDeviceIdx = VIZ_LISTEN_PORT % devices.length;
     if (desiredDevice) {
         devices.sort((a, b) => {
             if (a.name.indexOf(desiredDevice) !== -1) {
@@ -174,6 +173,10 @@ function createCLContextNode(renderer, DEVICE_TYPE, vendor) {
             }
         });
     } else {
+        if (devices.some(d => d.deviceType === 'GPU')) {
+            devices = devices.filter(d => d.deviceType === 'GPU');
+        }
+        const startingDeviceIdx = (VIZ_LISTEN_PORT - devices.length % 2) % devices.length;
         devices = devices.slice(startingDeviceIdx).concat(devices.slice(0, startingDeviceIdx));
     }
 
