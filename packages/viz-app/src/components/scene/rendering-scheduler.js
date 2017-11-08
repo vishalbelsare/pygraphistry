@@ -4,6 +4,9 @@ const _ = require('underscore');
 const debug = require('debug')('graphistry:StreamGL:graphVizApp:canvas');
 
 import { Observable, Subscription, Subject } from 'rxjs';
+import Color from 'color';
+
+import { isDark } from '../labels/label';
 
 RenderingScheduler.prototype = Object.create(Subscription.prototype);
 
@@ -1489,15 +1492,19 @@ RenderingScheduler.prototype.renderMouseoverEffects = function(task) {
     renderer.render(renderState, renderTrigger, renderTrigger);
 };
 
-RenderingScheduler.prototype.loadRadialAxes = function loadRadialAxes(axes) {
+RenderingScheduler.prototype.loadRadialAxes = function loadRadialAxes(axes, background) {
+    const subradialColor = isDark(Color(background.color).rgb())
+        ? { r: 255 / 256, g: 255 / 256, b: 255 / 256, a: 0.3 }
+        : { r: 0, g: 0, b: 0, a: 0.1 };
+
     let { renderer, renderState } = this,
         { camera } = renderState;
     let radialAxes = (axes || []).filter(({ r }) => typeof r === 'number');
     const axisStyles = {
         internal: { r: 89 / 256, g: 162 / 256, b: 255 / 256, a: 0.999 },
         external: { r: 255 / 256, g: 128 / 256, b: 64 / 256, a: 0.999 },
-        minor: { r: 0, g: 0, b: 0, a: 0.1 },
-        space: { r: 0, g: 0, b: 0, a: 0.125 }
+        minor: subradialColor,
+        space: subradialColor
     };
     let x = 0,
         y = 0,

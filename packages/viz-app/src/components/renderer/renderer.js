@@ -217,6 +217,7 @@ class Renderer extends React.Component {
 
         const {
             axis: currAxes,
+            background: currBackground,
             edges: currEdges = {},
             camera: currCamera = {},
             points: currPoints = {},
@@ -230,6 +231,7 @@ class Renderer extends React.Component {
 
         const {
             axis: nextAxes,
+            background: nextBackground = currBackground,
             edges: nextEdges = currEdges,
             camera: nextCamera = currCamera,
             points: nextPoints = currPoints,
@@ -252,6 +254,8 @@ class Renderer extends React.Component {
         const updateArg = {
             currAxes,
             nextAxes,
+            currBackground,
+            nextBackground,
             currEdges,
             currPoints,
             nextEdges,
@@ -326,9 +330,16 @@ class Renderer extends React.Component {
     updateSceneDimensions({ currSimWidth, currSimHeight, nextSimWidth, nextSimHeight }) {
         return currSimWidth !== nextSimWidth || currSimHeight !== nextSimHeight;
     }
-    updateRadialAxes({ currAxes, nextAxes, renderState, renderingScheduler }) {
-        if (!shallowEqual(currAxes, nextAxes)) {
-            renderingScheduler.loadRadialAxes(nextAxes);
+    updateRadialAxes({
+        currBackground,
+        nextBackground,
+        currAxes,
+        nextAxes,
+        renderState,
+        renderingScheduler
+    }) {
+        if (!shallowEqual(currAxes, nextAxes) || !shallowEqual(currBackground, nextBackground)) {
+            renderingScheduler.loadRadialAxes(nextAxes, nextBackground);
             return true;
         }
         return false;
