@@ -41,7 +41,7 @@ const directionToName = {
 
 // { edges: [{source,destination}], nodeIDs: {string->{node}} }
 // -> {EventID -> {[refType] -> [ {node, ...} ] }}
-function computeEventNeighborhood ({ edges, nodeIDs }) {
+function computeEventNeighborhood({ edges, nodeIDs }) {
     const eventNeighborhood = {};
     edges.forEach(({ source, destination, refType }) => {
         if (nodeIDs[source].type !== 'EventID') {
@@ -76,7 +76,7 @@ function labelIPs(nodes) {
 
 // { ip_io: {node -> DIRECTION}. eventNeighborhood: {EventID -> {[refType] -> [ {node, ...} ] }} }
 // -> {node-> DIRECTION}
-function computeSrcDst ({ ip_io, eventNeighborhood }) {
+function computeSrcDst({ ip_io, eventNeighborhood }) {
     const srcdst_io = Object.assign({}, ip_io);
     Object.values(eventNeighborhood).forEach(({ src = [], dst = [] }) => {
         //TODO do all ref groups?
@@ -90,7 +90,7 @@ function computeSrcDst ({ ip_io, eventNeighborhood }) {
     return srcdst_io;
 }
 
-function labelAll( { events, eventNeighborhood, srcdst_io }) {
+function labelAll({ events, eventNeighborhood, srcdst_io }) {
     const all_io = {}; //misses non-hypernodes..
     events.forEach(e => {
         const { src = [], dst = [], all } = eventNeighborhood[e.node] || {};
@@ -127,11 +127,11 @@ export function decorateInsideness(graph) {
     });
 
     //{EventID -> {[refType] -> [ {node, ...} ] }}
-    const eventNeighborhood = computeEventNeighborhood({ 
+    const eventNeighborhood = computeEventNeighborhood({
         edges: graph.data.graph,
-        nodeIDs 
+        nodeIDs
     });
-   
+
     // 1. Decorate nodes with IP-address names as either IN or OUT
     //{nodeid -> flag}
     const ip_io = labelIPs(graph.data.labels);
@@ -143,7 +143,7 @@ export function decorateInsideness(graph) {
     // 3. Compute the insideness of events, and every node without an insideness gets the insideness of the event.
     //  This may be diff from 2. b/c merges on fields
     //  Take care to track directionality
-    const all_io = labelAll( { events, eventNeighborhood, srcdst_io });
+    const all_io = labelAll({ events, eventNeighborhood, srcdst_io });
 
     // 4. Decorate nodes in the graph accordingly.
     graph.data.labels.forEach(n => {
@@ -153,11 +153,21 @@ export function decorateInsideness(graph) {
     return graph;
 }
 
+const allOrderedZones = ['inside', 'inside->outside', 'mixed', '', 'outside->inside', 'outside'];
+const alwaysOnZones = ['inside', 'mixed', 'outside'];
+const insideOrder = ['mac', 'ip', 'user', 'event', 'alert', 'hash', 'filepath', 'file'];
+const outsideOrder = ['mac', 'ip', 'user', 'alert', 'event', 'hash', 'filepath', 'file'];
+const mixedOrder = ['alert', 'event', 'hash', 'file', 'filepath'];
+const spacerSeparator = 400;
+const typeSeparator = 200;
+const spacerNode = {};
+
 // V0.
 // For all nodes n, set a ternary to labels[n[bindings.idField]].typeField ~ /Internal/ | /External/.
 // Internal is 1xx level, External is 5xx level, Neither is 3xx.
 // For each ternary t, for each type, r = t.level + typeidx * 100 / |types|; for each node, ϕ = nodeidx * 360 / |nodes|.
 export function network(graph) {
+    //{canonicalInsideness -> nodetype -> [ node ] }
     const zoneTypenodes = {};
     const idField = bindings.idField;
     const canonicalTypeField = 'canonicalType';
@@ -176,24 +186,18 @@ export function network(graph) {
         zoneType.push(n);
     });
 
+    //force-fill empty zones
+    allOrderedZones.forEach(zone => {
+        if (!zoneTypenodes[zone] && alwaysOnZones.indexOf(zone) > -1) {
+            zoneTypenodes[zone] = { ip: [spacerNode] };
+        }
+    });
+
     const xys = {};
     const subaxes = {};
-    const allOrderedZones = [
-        'inside',
-        'inside->outside',
-        'mixed',
-        '',
-        'outside->inside',
-        'outside'
-    ];
-    const insideOrder = ['mac', 'ip', 'user', 'event', 'alert', 'hash', 'filepath', 'file'];
-    const outsideOrder = ['mac', 'ip', 'user', 'alert', 'event', 'hash', 'filepath', 'file'];
-    const mixedOrder = ['alert', 'event', 'hash', 'file', 'filepath'];
     let currentRadius = 0;
     let insideLatch = false;
     let outsideLatch = false;
-    const spacerSeparator = 400;
-    const typeSeparator = 200;
 
     allOrderedZones.forEach((zone, zoneIdx) => {
         if (!zoneTypenodes[zone]) {
@@ -233,7 +237,9 @@ export function network(graph) {
             zoneTypenodes[zone][type].forEach((node, nodeIdx) => {
                 const r = currentRadius;
                 const ϕ = nodeIdx * Math.PI * 2 / zoneTypenodes[zone][type].length;
-                xys[node[idField]] = { x: r * Math.cos(ϕ), y: r * Math.sin(ϕ) };
+                if (node !== spacerNode) {
+                    xys[node[idField]] = { x: r * Math.cos(ϕ), y: r * Math.sin(ϕ) };
+                }
                 subaxes[r] = { r };
             });
         });

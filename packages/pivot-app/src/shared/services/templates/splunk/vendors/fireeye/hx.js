@@ -55,7 +55,7 @@ export const refTypes = {
 export const product = 'FireEye HX';
 export const productIdentifier = {
     product: 'HX',
-    vendor: 'fireeye'
+    vendor: 'FireEye'
 };
 export const fieldsBlacklist = [];
 export const attributesBlacklist = _.range(0, 150).map(v => `field${v}`);

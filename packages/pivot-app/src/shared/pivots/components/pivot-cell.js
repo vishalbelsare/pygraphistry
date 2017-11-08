@@ -78,7 +78,7 @@ const setPivotComboAttributes = createPivotCellOnChangeContainer(
 
 const componentsByInputType = {
     label: Label,
-    bool: BoolCell,
+    bool: setPivotCellAttributes(BoolCell),
     daterange: DateRange,
     text: setPivotCellAttributes(TextCell),
     number: setPivotCellAttributes(TextCell),
@@ -214,7 +214,7 @@ function BoolCell({ id, paramKey, paramValue, paramUI, onChange }) {
             controlId={`pivot-bool-param-${id}-${paramKey}`}>
             <Col {...cellFullCols}>
                 <RcSwitch
-                    onChange={onChange}
+                    onChange={ (value) => onChange({target: { value } }) }
                     defaultChecked={paramValue}
                     checkedChildren={paramUI.label}
                     unCheckedChildren={paramUI.label}

@@ -10,9 +10,9 @@ const conf = global.__graphistry_convict_conf__;
 
 //{ fields: [ string ], columns: [ [ 'a] ] } -> [ {string -> 'a} ]
 // Splunk columns use null for na
-function columnsToRows ({fields, columns}) {
-    if (!columns.length || !columns[0].length) { 
-        return []; 
+function columnsToRows({ fields, columns }) {
+    if (!columns.length || !columns[0].length) {
+        return [];
     }
 
     const rows = [];
@@ -139,7 +139,7 @@ class SplunkConnector extends Connector {
     retrieveJobResults(job, searchInfo) {
         const props = job.properties();
 
-        this.log.debug(
+        this.log.info(
             {
                 sid: job.sid,
                 eventCount: props.eventCount,
@@ -153,13 +153,15 @@ class SplunkConnector extends Connector {
         this.log.info(props, 'All job properties');
 
         const getResults = Observable.bindNodeCallback(job.results.bind(job));
-        const timeLimitMsg = props.messages.find(msg =>
+        const timeLimitMsg = (props.messages || []).find(msg =>
             msg.text.startsWith('Search auto-finalized after time limit')
         );
 
         const t0 = Date.now();
         return getResults({ count: props.resultCount, output_mode: 'json_cols' })
-            .do(() => { this.log.info('Splunk result download time', Date.now() - t0, 'ms'); })
+            .do(() => {
+                this.log.info('Splunk result download time', Date.now() - t0, 'ms');
+            })
             .map(args => ({
                 results: args[0],
                 job: args[1],

@@ -28,11 +28,14 @@ export const pointIconEncoding = {
                 hash: 'file-text',
                 id: 'barcode',
                 ip: 'desktop',
+                log: 'database',
                 mac: 'desktop',
                 port: 'microchip',
+                product: 'window-maximize',
                 tag: 'tag',
                 url: 'link',
-                user: 'user'
+                user: 'user',
+                vendor: 'window-maximize'
             },
             other: 'question'
         }
@@ -51,6 +54,8 @@ const colorRemapping = {
     red: '#E75D51'
 };
 
+// alert, event, file, id, ip, mac
+// port, product, url, log, user, vendor
 export const pointColorEncoding = {
     attribute: 'canonicalType',
     variation: 'categorical',
@@ -64,11 +69,14 @@ export const pointColorEncoding = {
                 hash: colorRemapping.pink,
                 id: colorRemapping.gray,
                 ip: colorRemapping.blue,
+                log: colorRemapping.gray,
                 mac: colorRemapping.lightblue,
                 port: colorRemapping.gray,
+                product: colorRemapping.gray,
                 tag: colorRemapping.pink,
                 url: colorRemapping.lightgreen,
-                user: colorRemapping.blue
+                user: colorRemapping.blue,
+                vendor: colorRemapping.gray
             },
             other: colorRemapping.gray
         }
@@ -81,23 +89,28 @@ const sizeVals = {
     small: 40
 };
 
+// alert, event, file, id, ip, mac
+// port, product, url, log, user, vendor
 export const pointSizeEncoding = {
     attribute: 'canonicalType',
     mapping: {
         categorical: {
             fixed: {
                 alert: sizeVals.big,
-                ip: sizeVals.big,
-                mac: sizeVals.big,
-                user: sizeVals.big,
+                event: sizeVals.small,
                 file: sizeVals.medium,
                 geo: sizeVals.medium,
                 hash: sizeVals.medium,
                 id: sizeVals.medium,
+                ip: sizeVals.big,
+                mac: sizeVals.big,
                 port: sizeVals.medium,
-                tag: sizeVals.medium,
+                product: sizeVals.medium,
+                log: sizeVals.medium,
                 url: sizeVals.medium,
-                event: sizeVals.small
+                user: sizeVals.big,
+                tag: sizeVals.medium,
+                vendor: sizeVals.medium
             },
             other: sizeVals.small
         }

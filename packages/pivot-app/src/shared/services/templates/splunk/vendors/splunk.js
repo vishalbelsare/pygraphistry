@@ -59,7 +59,9 @@ export const defaultFields = [
     'protocol',
     'punct',
     'raw',
+    'source',
     'sequence_number',
+    'search_name',
     'severity',
     'signature',
     'source',
@@ -128,6 +130,7 @@ export const desiredAttributes = [
     'protocol',
     'punct',
     'raw',
+    'search_name',
     'sequence_number',
     'severity',
     'signature',
@@ -193,8 +196,12 @@ export const colTypes = {
     file: 'file',
     filename: 'file',
     host: 'url',
+    index: 'log',
     msg: 'alert',
+    product: 'product',
+    search_name: 'log',
     sequence_number: 'id',
+    source: 'log',
     smac: 'mac',
     src: 'ip',
     src_host: 'url',
@@ -203,9 +210,11 @@ export const colTypes = {
     src_location: 'url',
     src_mac: 'mac',
     src_port: 'port',
-    src_user: 'user'
+    src_user: 'user',
+    vendor: 'vendor'
 };
 
+//dst, event, payload, session, src
 export const refTypes = {
     dhost: 'dst',
     dmac: 'dst',
@@ -220,16 +229,21 @@ export const refTypes = {
     file: 'payload',
     filename: 'payload',
     host: 'session',
+    index: 'session',
     msg: 'payload',
+    product: 'session',
+    search_name: 'session',
     sequence_number: 'session',
     smac: 'src',
+    source: 'session',
     src: 'src',
     src_host: 'src',
     src_hostname: 'src',
     src_ip: 'src',
     src_mac: 'src',
     src_port: 'src',
-    src_user: 'src'
+    src_user: 'src',
+    vendor: 'session'
 };
 
 export const fieldsBlacklist = defaultFields.filter(

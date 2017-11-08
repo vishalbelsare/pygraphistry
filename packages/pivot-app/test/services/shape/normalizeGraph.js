@@ -31,10 +31,10 @@ describe('normalizeGraph', function() {
         const g2 = {
             data: {
                 labels: [
-                    { node: 'aa-aa-aa-bb-bb-bb', canonicalType: 'mac' },
-                    { node: 'aa-aa-aa-cc-cc-cc', canonicalType: 'mac' }
+                    { node: 'aa:aa:aa:bb:bb:bb', canonicalType: 'mac' },
+                    { node: 'aa:aa:aa:cc:cc:cc', canonicalType: 'mac' }
                 ],
-                graph: [{ source: 'aa-aa-aa-bb-bb-bb', destination: 'aa-aa-aa-cc-cc-cc' }]
+                graph: [{ source: 'aa:aa:aa:bb:bb:bb', destination: 'aa:aa:aa:cc:cc:cc' }]
             }
         };
 
@@ -65,8 +65,8 @@ describe('normalizeGraph', function() {
 
         const g2 = {
             data: {
-                labels: [{ node: 'aa-aa-aa-bb-bb-bb', canonicalType: 'mac' }],
-                graph: [{ source: 'aa-aa-aa-bb-bb-bb', destination: 'aa-aa-aa-bb-bb-bb' }]
+                labels: [{ node: 'aa:aa:aa:bb:bb:bb', canonicalType: 'mac' }],
+                graph: [{ source: 'aa:aa:aa:bb:bb:bb', destination: 'aa:aa:aa:bb:bb:bb' }]
             }
         };
 
@@ -80,22 +80,22 @@ describe('normalizeGraph', function() {
 
 describe('normalizeMac', function() {
     it('handles valid xx-xx-xx-xx-xx-xx', done => {
-        assert.deepEqual(normalizeMac('12-00-55-aa-4b-c3'), '12-00-55-aa-4b-c3');
+        assert.deepEqual(normalizeMac('12-00-55-aa-4b-c3'), '12:00:55:aa:4b:c3');
         done();
     });
 
     it('handles valid xx:xx:xx:xx:xx:xx', done => {
-        assert.deepEqual(normalizeMac('12:00:55:aa:4b:c3'), '12-00-55-aa-4b-c3');
+        assert.deepEqual(normalizeMac('12:00:55:aa:4b:c3'), '12:00:55:aa:4b:c3');
         done();
     });
 
     it('handles valid xxxx.xxxx.xxxx', done => {
-        assert.deepEqual(normalizeMac('1200.55aa.4bc3'), '12-00-55-aa-4b-c3');
+        assert.deepEqual(normalizeMac('1200.55aa.4bc3'), '12:00:55:aa:4b:c3');
         done();
     });
 
     it('handles invalid xx.xx.xx.xx.xx.xx', done => {
-        assert.deepEqual(normalizeMac('12.00.55.aa.4b.c3'), '12-00-55-aa-4b-c3');
+        assert.deepEqual(normalizeMac('12.00.55.aa.4b.c3'), '12:00:55:aa:4b:c3');
         done();
     });
 });

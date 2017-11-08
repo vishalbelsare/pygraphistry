@@ -6,7 +6,7 @@ import { SplunkPivot } from './splunkPivot.js';
 import { encodings } from './settings.js';
 import { products } from './vendors';
 
-//remove line breaks and escape double quotes
+//remove line breaks and escape double quotes, slashes
 // a -> str
 function clean(vRaw) {
     if (vRaw === undefined || vRaw === null) {
@@ -15,6 +15,7 @@ function clean(vRaw) {
     return String(vRaw)
         .replace(/([\r\n])/gm, '')
         .replace(/"/g, '\\"')
+        .replace(/\\/g, '\\\\')
         .trim();
 }
 

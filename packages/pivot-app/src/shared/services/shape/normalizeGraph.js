@@ -24,7 +24,7 @@ export function normalizeMac(weirdMac) {
         .replace(/[^0-9a-f]/g, '')
         .split(/(..)/)
         .filter(v => v.length)
-        .join('-');
+        .join(':');
 }
 
 // {data: {labels: [ node ]}} * {id -> id} -> ()

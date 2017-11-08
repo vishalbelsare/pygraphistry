@@ -18,7 +18,7 @@ for (let i = 0; i < 30; i++) {
 }
 const attributesBlacklist = splunkAttributesBlacklist.concat(badFields);
 
-const FIELDS = [`EventID`, `fileHash`, `dest_hostname`, `src_ip`, `dst_ip`, `msg`];
+const FIELDS = [`EventID`, `fileHash`, `dest_hostname`, `src_ip`, `dst_ip`, `dest_ip`, `msg`];
 
 //===================
 
@@ -30,11 +30,20 @@ const renames = `
     | rename "Message" -> msg
 `;
 
+const extraSearch = {
+    'FIREEYE': '| eval dest_ip="66.96.146.129"'
+};
+
+const extraExpand = {
+    'FIREEYE': '| eval dest_ip="66.96.146.129"'
+}
+
+
 function makeSearchIndex(indexName) {
     return function(args, pivotCache, { time } = {}) {
         const query = `search EventID=${args.event} ${splunkIndices[
             indexName
-        ]} ${this.constructFieldString()} ${renames}`;
+        ]} ${this.constructFieldString()} ${renames} ${extraSearch[indexName]||''}`;
 
         return {
             searchQuery: query,
@@ -53,7 +62,7 @@ function makeExpandIndex(indexName) {
             rawSearch,
             pivotCache,
             false
-        )} ${this.constructFieldString()} ${renames}`;
+        )} ${this.constructFieldString()} ${renames} ${extraExpand[indexName]||''}`;
 
         return {
             searchQuery: query,

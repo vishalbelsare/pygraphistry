@@ -83,7 +83,7 @@ export const refTypes = {
 
 export const product = 'PAN';
 export const productIdentifier = {
-    vendor_product: 'Palo Alto Networks Firewall',
+    product: 'Firewall',
     vendor: 'Palo Alto Networks'
 };
 
