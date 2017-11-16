@@ -4,8 +4,12 @@ import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
 import VError from 'verror';
-import { layouts } from './layouts.js';
+import * as querystring from 'querystring';
+import { layouts, uiTweaks } from './layouts.js';
 import { decorateInsideness, network } from './layouts/network';
+
+import { fromEdgeList } from './vgraph/vgraph';
+import { VectorGraph } from '@graphistry/vgraph-to-mapd/lib/cjs/vgraph';
 
 const conf = global.__graphistry_convict_conf__;
 import { graphUnion, bindings } from './shape/graph.js';
@@ -14,39 +18,53 @@ import { decorateGraphLabelsWithXY, generateEdgeOpacity } from './shape/normaliz
 import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
-function upload(etlService, apiKey, data) {
-    const gzipObservable = Observable.bindNodeCallback(zlib.gzip.bind(zlib));
-    const upload0Wrapped = Observable.bindNodeCallback(upload0.bind(null));
-
+function upload(etlService, apiKey, data, investigation) {
     if (data.graph.length === 0) {
         return Observable.throw(new Error('No edges to upload!'));
     }
-
     log.trace(data, 'Content to be ETLed');
-    const gzipped = gzipObservable(new Buffer(JSON.stringify(data), { level: 1 }));
-    return gzipped.switchMap(buffer =>
-        upload0Wrapped(etlService, apiKey, buffer)
-            .do(res => log.debug({ res }, 'ETL success'))
-            .map(() => data.name)
-            .catch(err => Observable.throw(new VError(err, 'ETL upload error')))
-    );
+    return upload0(etlService, apiKey, data, investigation)
+        .do(res => log.debug({ res }, 'ETL success'))
+        .map(() => data.name)
+        .catch(err => Observable.throw(new VError(err, 'ETL upload error')));
 }
 
-//jsonGraph * (err? -> ())? -> ()
-function upload0(etlService, apiKey, data, _cb) {
-    // When called with Observable.bindNodeCallback, cb will be defined and the following
-    // default function will not be used.
-    const cb =
-        _cb ||
-        function(err, res) {
-            if (err) {
-                return new VError(err, 'ETL upload error');
-            } else {
-                return log.debug(res, 'ETL success');
-            }
-        };
-
-    const headers = { 'Content-Encoding': 'gzip', 'Content-Type': 'application/json' };
+function upload1(etlService, apiKey, data, investigation) {
+    const { vg, sortedLabels, unsortedEdges } = vgraph.fromEdgeList(
+        data.graph,
+        data.labels,
+        data.bindings.sourceField,
+        data.bindings.destinationField,
+        data.bindings.idField,
+        data.name
+    );
+    const vgBuffer = VectorGraph.encode(vg).finish();
+    const encodings = [
+        'pointIconEncoding',
+        'pointSizeEncoding',
+        'pointColorEncoding'
+    ].reduce((encodings, encodingName) => {
+        const nameWithoutSuffix = encodingName.slice(0, encodingName.indexOf('Encoding'));
+        encodings[nameWithoutSuffix] = uiTweaks[investigation.layout][encodingName];
+        return encodings;
+    }, {});
+    const metadata = {
+        name: data.name,
+        edges: [{ count: vg.edgeCount }],
+        nodes: [{ count: vg.vertexCount, encodings }],
+        datasources: [{ type: 'vgraph', url: 'data0' }]
+    };
+    const gzipObservable = Observable.bindNodeCallback(zlib.gzip.bind(zlib));
+    const gzipped = gzipObservable(new Buffer(JSON.stringify(data), { level: 1 }));
+    const headers = { 'Content-Encoding': 'gzip', 'Content-Type': 'multipart/form-data' };
+    return gzipped.flatMap(buffer =>
+        Observable.ajax({
+            method: 'post',
+            headers: headers,
+            body: buffer,
+            url: `${etlService}?${querystring.encode(getQuery(apiKey))}`
+        })
+    );
     return request.post({
         uri: etlService,
         qs: getQuery(apiKey),
@@ -75,6 +93,21 @@ function upload0(etlService, apiKey, data, _cb) {
             }
         }
     });
+}
+
+//jsonGraph * (err? -> ())? -> ()
+function upload0(etlService, apiKey, data) {
+    const gzipObservable = Observable.bindNodeCallback(zlib.gzip.bind(zlib));
+    const gzipped = gzipObservable(new Buffer(JSON.stringify(data), { level: 1 }));
+    const headers = { 'Content-Encoding': 'gzip', 'Content-Type': 'application/json' };
+    return gzipped.flatMap(buffer =>
+        Observable.ajax({
+            method: 'post',
+            headers: headers,
+            body: buffer,
+            url: `${etlService}?${querystring.encode(getQuery(apiKey))}`
+        })
+    );
 }
 
 function getQuery(key) {
@@ -345,7 +378,12 @@ export function uploadGraph({
             )
                 .switchMap(({ user, data, pivots }) => {
                     if (data.graph.length + data.labels.length > 0) {
-                        return upload(user.etlService, user.apiKey, data).map(dataset => ({
+                        return upload(
+                            user.etlService,
+                            user.apiKey,
+                            data,
+                            investigation
+                        ).map(dataset => ({
                             user,
                             dataset,
                             data,
