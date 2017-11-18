@@ -5,8 +5,8 @@ var path = require('path');
 var _ = require('underscore');
 var sprintf = require('sprintf-js').sprintf;
 
-var Log = require('@graphistry/common').logger;
-var logger = Log.createLogger('etlworker:vgraph');
+import Log from 'pivot-shared/logger';
+const logger = Log.createLogger(__filename);
 
 //TODO: Lines 60-261 instances of console should be changed to pipe output to client
 
