@@ -116,7 +116,7 @@ export function getAttributes1(vg, metadata = {}, updateClient) {
             const typeMetadata =
                 (metadata &&
                     metadata[typeAccessor] &&
-                    _.find(metadata[typeAccessor], ({ attributes }) =>
+                    _.find(metadata[typeAccessor], ({ attributes = {} }) =>
                         attributes.hasOwnProperty(name)
                     )) ||
                 undefined;

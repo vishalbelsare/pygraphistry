@@ -20,25 +20,31 @@ const propTypes = {
     options: PropTypes.object
 };
 
+function ColorsList({ barWidth = 50, colors = [] }) {
+    return (
+        <span className={styles['encoding-icon-container']}>
+            {(colors || []).map((color, idx, all) => (
+                <span
+                    key={`${idx}-${color}`}
+                    style={{
+                        backgroundColor: color,
+                        width: `${barWidth / all.length}px`
+                    }}
+                />
+            ))}
+        </span>
+    );
+}
+
 function makeOptionLists(options) {
-    const WIDTH = 50;
     return {
         point: {
             color: options.point.color.map(({ name, variant, colors, label }) => ({
+                name,
                 value: name,
                 label: (
                     <div style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
-                        <span className={styles['encoding-icon-container']}>
-                            {colors.map((color, idx, all) => (
-                                <span
-                                    key={color}
-                                    style={{
-                                        backgroundColor: color,
-                                        width: `${WIDTH / all.length}px`
-                                    }}
-                                />
-                            ))}
-                        </span>
+                        <ColorsList colors={colors} />
                         <label>{label}</label>
                     </div>
                 )
@@ -46,20 +52,11 @@ function makeOptionLists(options) {
         },
         edge: {
             color: options.edge.color.map(({ name, variant, colors, label }) => ({
+                name,
                 value: name,
                 label: (
                     <div style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
-                        <span className={styles['encoding-icon-container']}>
-                            {colors.map((color, idx, all) => (
-                                <span
-                                    key={color}
-                                    style={{
-                                        backgroundColor: color,
-                                        width: `${WIDTH / all.length}px`
-                                    }}
-                                />
-                            ))}
-                        </span>
+                        <ColorsList colors={colors} />
                         <label>{label}</label>
                     </div>
                 )
@@ -77,6 +74,13 @@ export function isEncoded(encodings, column, encodingType) {
         encodings[column.componentType][encodingType] &&
         encodings[column.componentType][encodingType].attribute === column.attribute
     );
+}
+
+export function isEncodedAndNotDefault(encodings, column, encodingType) {
+    if (isEncoded(encodings, column, encodingType)) {
+        return !encodings[column.componentType][encodingType].isDefault;
+    }
+    return false;
 }
 
 export class EncodingPicker extends React.Component {
@@ -206,6 +210,35 @@ export class EncodingPicker extends React.Component {
             return <div />;
         }
 
+        let colorEncodingValue = {};
+        let showReverseColorPaletteSwitch = false;
+        let showEncodeSizesSwitch =
+            !isEncoded(encodings, props, 'size') ||
+            isEncodedAndNotDefault(encodings, props, 'size');
+        let showEncodeIconsSwitch =
+            !isEncoded(encodings, props, 'icon') ||
+            isEncodedAndNotDefault(encodings, props, 'icon');
+
+        if (isEncoded(encodings, props, 'color')) {
+            showReverseColorPaletteSwitch = true;
+            const colorEncoding = encodings[componentType].color;
+            colorEncodingValue = options[componentType].color.find(
+                ({ name }) => name === colorEncoding.name
+            );
+            if (!colorEncodingValue && colorEncoding.legend && colorEncoding.legend.length) {
+                showReverseColorPaletteSwitch = false;
+                colorEncodingValue = {
+                    value: 'Default',
+                    label: (
+                        <div style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
+                            <ColorsList colors={colorEncoding.legend} />
+                            <label>Default</label>
+                        </div>
+                    )
+                };
+            }
+        }
+
         return (
             <div id={props.id} name={props.name || props.id} style={{ display: 'inline-block' }}>
                 <OverlayTrigger
@@ -240,43 +273,44 @@ export class EncodingPicker extends React.Component {
                         <Select
                             simpleValue
                             disabled={false}
-                            value={
-                                isEncoded(encodings, props, 'color')
-                                    ? options[componentType].color.filter(
-                                          ({ value }) =>
-                                              value === encodings[componentType].color.name
-                                      )[0]
-                                    : {}
-                            }
+                            value={colorEncodingValue}
                             placeholder="Pick how to visualize"
                             options={options[componentType].color}
                             id={`${props.id}_select`}
                             name={`${props.name || props.id}_select`}
                             optionRenderer={({ value, label }) => label}
                             onChange={this.handleSelectColorChange}
+                            clearable={showReverseColorPaletteSwitch}
                         />
-                        <h5>Reverse color palette order</h5>
-                        <RcSwitch
-                            checked={
-                                isEncoded(encodings, props, 'color')
-                                    ? encodings[componentType].color.reverse
-                                    : false
-                            }
-                            checkedChildren={'On'}
-                            unCheckedChildren={'Off'}
-                            onChange={this.handleReverseColorChange}
-                        />
-                        {componentType === 'point' ? (
+                        {(showReverseColorPaletteSwitch && (
                             <div>
-                                <h5>Show using size</h5>
+                                <h5>Reverse color palette order</h5>
                                 <RcSwitch
-                                    checked={isEncoded(encodings, props, 'size')}
+                                    checked={
+                                        isEncoded(encodings, props, 'color')
+                                            ? encodings[componentType].color.reverse
+                                            : false
+                                    }
                                     checkedChildren={'On'}
                                     unCheckedChildren={'Off'}
-                                    onChange={this.handleSelectSizeChange}
+                                    onChange={this.handleReverseColorChange}
                                 />
                             </div>
-                        ) : null}
+                        )) ||
+                            undefined}
+                        {(showEncodeSizesSwitch &&
+                            componentType === 'point' && (
+                                <div>
+                                    <h5>Show using size</h5>
+                                    <RcSwitch
+                                        checked={isEncoded(encodings, props, 'size')}
+                                        checkedChildren={'On'}
+                                        unCheckedChildren={'Off'}
+                                        onChange={this.handleSelectSizeChange}
+                                    />
+                                </div>
+                            )) ||
+                            undefined}
                         <h5>Histogram Y-Axis scaling</h5>
                         <Select
                             simpleValue
@@ -291,18 +325,23 @@ export class EncodingPicker extends React.Component {
                             id={`${props.id}_yaxis`}
                             onChange={this.handleSelectYAxisChange}
                         />
-                        <h5>Show using icon</h5>
-                        <RcSwitch
-                            checked={isEncoded(encodings, props, 'icon')}
-                            checkedChildren={'On'}
-                            unCheckedChildren={'Off'}
-                            onChange={this.handleSelectIconChange}
-                        />
-                        <p>
-                            Pick icons by setting field values that are{' '}
-                            <a href="http://fontawesome.io/icons/">Font Awesome</a> icon names.
-                            Example: <q>laptop</q>
-                        </p>
+                        {(showEncodeIconsSwitch && (
+                            <div>
+                                <h5>Show using icon</h5>
+                                <RcSwitch
+                                    checked={isEncoded(encodings, props, 'icon')}
+                                    checkedChildren={'On'}
+                                    unCheckedChildren={'Off'}
+                                    onChange={this.handleSelectIconChange}
+                                />
+                                <p>
+                                    Pick icons by setting field values that are{' '}
+                                    <a href="http://fontawesome.io/icons/">Font Awesome</a> icon
+                                    names. Example: <q>laptop</q>
+                                </p>
+                            </div>
+                        )) ||
+                            undefined}
                     </Modal.Body>
                     <Modal.Footer>
                         <Button onClick={this.close}>Close</Button>

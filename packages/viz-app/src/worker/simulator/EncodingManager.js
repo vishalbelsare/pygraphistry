@@ -17,9 +17,9 @@ function encodingWithoutBinValues(encoding) {
 
 /*
 Sample icon encoding:
-{                    
-    encodingType: 'icon', 
-    graphType: 'point', 
+{
+    encodingType: 'icon',
+    graphType: 'point',
     attribute: 'degree',
     mapping: {
         categorical: {
@@ -112,8 +112,8 @@ export default class EncodingManager {
             ? Observable.of({})
             : getHistogramForAttribute({ view, ...encoding });
 
-        return maybeBinning.mergeMap((binning = {}) => {
-            const extendedEncoding = { ...encoding, binning };
+        return maybeBinning.mergeMap(binning => {
+            const extendedEncoding = { ...encoding, binning: binning || {} };
             const encodingWrapped = wrapEncodingType({ ...extendedEncoding, reset });
 
             const applyOrResetEncoding = reset

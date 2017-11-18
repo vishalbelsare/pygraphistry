@@ -195,6 +195,7 @@ function sendPostVGraphLoadedUpdate(sendUpdate, updateSession) {
                 const viewPath = `workbooksById['${workbook.id}'].viewsById['${view.id}']`;
                 return sendUpdate({
                     invalidated: [
+                        `${viewPath}.encodings`,
                         `${viewPath}.columns.length`,
                         `${viewPath}.inspector.rows`,
                         `${viewPath}['labelsByType', 'componentsByType']`
