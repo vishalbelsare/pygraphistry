@@ -9,7 +9,7 @@ import { layouts, encodingsByLayoutId } from './layouts.js';
 import { decorateInsideness, network } from './layouts/network';
 
 import * as vgraph from './vgraph/vgraph';
-import { VectorGraph } from '@graphistry/vgraph-to-mapd/lib/cjs/vgraph';
+import { VectorGraph } from './vgraph/proto';
 
 const conf = global.__graphistry_convict_conf__;
 import { graphUnion, bindings } from './shape/graph.js';

@@ -10,7 +10,7 @@ var logger = Log.createLogger('etlworker:vgraph');
 
 //TODO: Lines 60-261 instances of console should be changed to pipe output to client
 
-import { VectorGraph } from '@graphistry/vgraph-to-mapd/lib/cjs/vgraph';
+import { VectorGraph } from './proto';
 import { _isSafeNumber } from '@graphistry/falcor-path-utils/lib/toPaths.js';
 
 var defaults = {

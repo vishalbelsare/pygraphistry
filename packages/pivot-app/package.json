@@ -46,7 +46,6 @@
         "@graphistry/falcor-router-saddle": "^2.9.11",
         "@graphistry/falcor-socket-datasource": "^2.9.11",
         "@graphistry/react-split-pane": "^0.1.63",
-        "@graphistry/vgraph-to-mapd": "1.1.2",
         "bcrypt": "1.0.3",
         "better-react-spinkit": "2.0.0-4",
         "bootstrap": "3.3.7",
