@@ -5,10 +5,10 @@ import zlib from 'zlib';
 import request from 'request';
 import VError from 'verror';
 import * as querystring from 'querystring';
-import { layouts, uiTweaks } from './layouts.js';
+import { layouts, encodingsByLayoutId } from './layouts.js';
 import { decorateInsideness, network } from './layouts/network';
 
-import { fromEdgeList } from './vgraph/vgraph';
+import * as vgraph from './vgraph/vgraph';
 import { VectorGraph } from '@graphistry/vgraph-to-mapd/lib/cjs/vgraph';
 
 const conf = global.__graphistry_convict_conf__;
@@ -23,14 +23,7 @@ function upload(etlService, apiKey, data, investigation) {
         return Observable.throw(new Error('No edges to upload!'));
     }
     log.trace(data, 'Content to be ETLed');
-    return upload0(etlService, apiKey, data, investigation)
-        .do(res => log.debug({ res }, 'ETL success'))
-        .map(() => data.name)
-        .catch(err => Observable.throw(new VError(err, 'ETL upload error')));
-}
-
-function upload1(etlService, apiKey, data, investigation) {
-    const { vg, sortedLabels, unsortedEdges } = vgraph.fromEdgeList(
+    const { vg } = vgraph.fromEdgeList(
         data.graph,
         data.labels,
         data.bindings.sourceField,
@@ -39,74 +32,106 @@ function upload1(etlService, apiKey, data, investigation) {
         data.name
     );
     const vgBuffer = VectorGraph.encode(vg).finish();
-    const encodings = [
-        'pointIconEncoding',
-        'pointSizeEncoding',
-        'pointColorEncoding'
-    ].reduce((encodings, encodingName) => {
-        const nameWithoutSuffix = encodingName.slice(0, encodingName.indexOf('Encoding'));
-        encodings[nameWithoutSuffix] = uiTweaks[investigation.layout][encodingName];
-        return encodings;
-    }, {});
     const metadata = {
         name: data.name,
-        edges: [{ count: vg.edgeCount }],
-        nodes: [{ count: vg.vertexCount, encodings }],
-        datasources: [{ type: 'vgraph', url: 'data0' }]
-    };
-    const gzipObservable = Observable.bindNodeCallback(zlib.gzip.bind(zlib));
-    const gzipped = gzipObservable(new Buffer(JSON.stringify(data), { level: 1 }));
-    const headers = { 'Content-Encoding': 'gzip', 'Content-Type': 'multipart/form-data' };
-    return gzipped.flatMap(buffer =>
-        Observable.ajax({
-            method: 'post',
-            headers: headers,
-            body: buffer,
-            url: `${etlService}?${querystring.encode(getQuery(apiKey))}`
-        })
-    );
-    return request.post({
-        uri: etlService,
-        qs: getQuery(apiKey),
-        headers: headers,
-        body: data,
-        callback: function(err, res, body) {
-            if (err) {
-                return cb(err);
-            }
-            log.debug('Response status', res.statusCode, res.statusMessage);
-            if (res.statusCode >= 400) {
-                return cb(
-                    new Error(`ETL service responded with ${res.statusCode} (${res.statusMessage})`)
-                );
-            }
-            try {
-                log.debug('Trying to parse response body', body);
-                const json = JSON.parse(body);
-                if (!json.success) {
-                    log.debug({ body: body }, 'Server Response');
-                    return cb(new Error(`Server responded with success=false: ${json.msg}`));
+        datasources: [{ type: 'vgraph', url: 'data0' }],
+        edges: [
+            {
+                count: vg.edgeCount,
+                complexEncodings: {
+                    current: partitionEncodings(encodingsByLayoutId[investigation.layout], 'edge', [
+                        'edgeColorEncoding'
+                    ]),
+                    default: partitionEncodings(encodingsByLayoutId[investigation.layout], 'edge', [
+                        'edgeColorEncodingDefault'
+                    ])
                 }
-                return cb(undefined, json);
-            } catch (e) {
-                return cb(e);
             }
-        }
-    });
+        ],
+        nodes: [
+            {
+                count: vg.vertexCount,
+                complexEncodings: {
+                    current: partitionEncodings(
+                        encodingsByLayoutId[investigation.layout],
+                        'point',
+                        ['pointIconEncoding', 'pointSizeEncoding', 'pointColorEncoding']
+                    ),
+                    default: partitionEncodings(
+                        encodingsByLayoutId[investigation.layout],
+                        'point',
+                        [
+                            'pointIconEncodingDefault',
+                            'pointSizeEncodingDefault',
+                            'pointColorEncodingDefault'
+                        ]
+                    )
+                }
+            }
+        ]
+    };
+    return Observable.create(observer => {
+        const form = request
+            .post({
+                uri: etlService,
+                qs: getQuery(apiKey),
+                callback(err, res, body) {
+                    if (err) {
+                        return observer.error(err);
+                    }
+                    log.debug('Response status', res.statusCode, res.statusMessage);
+                    if (res.statusCode >= 400) {
+                        return observer.error(
+                            new Error(
+                                `ETL service responded with ${res.statusCode} (${res.statusMessage})`
+                            )
+                        );
+                    }
+                    try {
+                        log.debug('Trying to parse response body', body);
+                        const json = JSON.parse(body);
+                        if (!json.success) {
+                            log.debug({ body: body }, 'Server Response');
+                            return observer.error(
+                                new Error(`Server responded with success=false: ${json.msg}`)
+                            );
+                        }
+                        observer.next(json);
+                        observer.complete();
+                    } catch (e) {
+                        return observer.error(e);
+                    }
+                }
+            })
+            .form();
+        form.append('data0', vgBuffer, {
+            filename: 'data0',
+            contentType: 'application/octet-stream'
+        });
+        form.append('metadata', JSON.stringify(metadata), {
+            filename: 'metadata',
+            contentType: 'application/json'
+        });
+    })
+        .do(res => log.debug({ res }, 'ETL success'))
+        .map(({ dataset }) => dataset)
+        .catch(err => Observable.throw(new VError(err, 'ETL upload error')));
 }
 
-//jsonGraph * (err? -> ())? -> ()
-function upload0(etlService, apiKey, data) {
-    const gzipObservable = Observable.bindNodeCallback(zlib.gzip.bind(zlib));
-    const gzipped = gzipObservable(new Buffer(JSON.stringify(data), { level: 1 }));
-    const headers = { 'Content-Encoding': 'gzip', 'Content-Type': 'application/json' };
-    return gzipped.flatMap(buffer =>
-        Observable.ajax({
-            method: 'post',
-            headers: headers,
-            body: buffer,
-            url: `${etlService}?${querystring.encode(getQuery(apiKey))}`
-        })
+function partitionEncodings(allEncodings, graphType, encodingTypes) {
+    return encodingTypes.filter(encodingName => !!allEncodings[encodingName]).reduce(
+        (encodings, encodingName) => ({
+            ...encodings,
+            [encodingName]: {
+                ...allEncodings[encodingName],
+                graphType,
+                // 'edgeSize' -> 'size', 'pointColorDefault' -> 'color' etc.
+                encodingType: encodingName
+                    .slice(graphType.length, encodingName.indexOf('Encoding'))
+                    .toLowerCase()
+            }
+        }),
+        {}
     );
 }
 
@@ -115,7 +140,7 @@ function getQuery(key) {
         key: key,
         agent: 'pivot-app',
         agentversion: '0.0.1',
-        apiversion: 1
+        apiversion: 2
     };
 }
 
@@ -404,7 +429,7 @@ export function uploadGraph({
                         ).controls;
                         investigation.url = `${user.vizService}&dataset=${dataset}&controls=${investigation.controls}`;
                         investigation.datasetName = dataset;
-                        investigation.datasetType = 'vgraph';
+                        investigation.datasetType = 'jsonMeta';
                         investigation.axes = data.axes;
                         investigation.edgeOpacity = data.edgeOpacity;
                         investigation.status = {

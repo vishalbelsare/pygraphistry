@@ -32,8 +32,8 @@
         "url": "git+https://github.com/graphistry/pivot-app.git"
     },
     "dependencies": {
-        "@graphistry/client-api": "^2.15.2",
-        "@graphistry/client-api-react": "^2.15.2",
+        "@graphistry/client-api": "^2.15.3",
+        "@graphistry/client-api-react": "^2.15.6",
         "@graphistry/falcor": "^2.9.11",
         "@graphistry/falcor-json-graph": "^2.9.6",
         "@graphistry/falcor-model-rxjs": "^2.9.11",
