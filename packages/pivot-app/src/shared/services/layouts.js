@@ -117,7 +117,7 @@ export const pointSizeEncoding = {
     }
 };
 
-const all = {
+const allEncodings = {
     pointIconEncoding,
     pointIconEncodingDefault: pointIconEncoding,
     pointColorEncoding,
@@ -126,23 +126,26 @@ const all = {
     pointSizeEncodingDefault: pointSizeEncoding
 };
 
+export const encodingsByLayoutId = {
+    atlasbarnes: { ...allEncodings },
+    insideout: { ...allEncodings },
+    stackedBushyGraph: { ...allEncodings }
+};
+
 export const uiTweaks = {
     atlasbarnes: {
-        ...all,
         pointSize: 1,
         dissuadeHubs: true,
         gravity: 8,
         scalingRatio: 12
     },
     insideout: {
-        ...all,
         pointSize: 1,
         defaultShowArrows: false,
         defaultShowPointsOfInterest: true,
         dissuadeHubs: true
     },
     stackedBushyGraph: {
-        ...all,
         pointSize: 2,
         defaultShowArrows: false,
         defaultShowPointsOfInterest: true,

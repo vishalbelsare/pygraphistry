@@ -2,7 +2,7 @@ import React from 'react';
 import styles from './styles.less';
 import classNames from 'classnames';
 import { Button, Glyphicon } from 'react-bootstrap';
-import { isEncoded, EncodingPicker } from './EncodingPicker';
+import { isEncodedAndNotDefault, EncodingPicker } from './EncodingPicker';
 import {
     SizeLegendIndicator,
     YAxisLegendIndicator,
@@ -40,7 +40,11 @@ export const Sparkline = ({
             <div className={styles['histogram-title']}>
                 <div className={styles['histogram-icons']}>
                     <SizeLegendIndicator
-                        sizeValue={isEncoded(encodings, { componentType, attribute: name }, 'size')}
+                        sizeValue={isEncodedAndNotDefault(
+                            encodings,
+                            { componentType, attribute: name },
+                            'size'
+                        )}
                         onClick={() =>
                             setEncoding &&
                             setEncoding({
@@ -56,7 +60,11 @@ export const Sparkline = ({
                         onClick={() => onYScaleChanged('none')}
                     />
                     <IconLegendIndicator
-                        iconValue={isEncoded(encodings, { componentType, attribute: name }, 'icon')}
+                        iconValue={isEncodedAndNotDefault(
+                            encodings,
+                            { componentType, attribute: name },
+                            'icon'
+                        )}
                         onClick={() =>
                             setEncoding &&
                             setEncoding({

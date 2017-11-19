@@ -42,6 +42,7 @@ function services({ config, s3WorkbookCache = {}, nBodiesById = {}, workbooksByI
     const saveWorkbook = saveWorkbookService(config, s3WorkbookCache);
 
     const loadViewsById = loadViews(loadDatasetNBody, loadWorkbooksById);
+    const loadVGraphImpl = loadVGraph(setEncoding, setDefaultEncoding);
     const moveSelectedNodesImpl = moveSelectedNodes(loadViewsById);
     const loadHistogramsById = loadHistograms(loadViewsById);
     const loadLabelsByIndexAndType = loadLabels(loadViewsById);
@@ -59,7 +60,7 @@ function services({ config, s3WorkbookCache = {}, nBodiesById = {}, workbooksByI
 
     return {
         loadConfig,
-        loadVGraph,
+        loadVGraph: loadVGraphImpl,
         loadViewsById,
         sendFalcorUpdate,
         loadWorkbooksById,

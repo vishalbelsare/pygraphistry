@@ -4,8 +4,12 @@ import _ from 'underscore';
 import zlib from 'zlib';
 import request from 'request';
 import VError from 'verror';
-import { layouts } from './layouts.js';
+import * as querystring from 'querystring';
+import { layouts, encodingsByLayoutId } from './layouts.js';
 import { decorateInsideness, network } from './layouts/network';
+
+import * as vgraph from './vgraph/vgraph';
+import { VectorGraph } from './vgraph/proto';
 
 const conf = global.__graphistry_convict_conf__;
 import { graphUnion, bindings } from './shape/graph.js';
@@ -14,67 +18,121 @@ import { decorateGraphLabelsWithXY, generateEdgeOpacity } from './shape/normaliz
 import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
-function upload(etlService, apiKey, data) {
-    const gzipObservable = Observable.bindNodeCallback(zlib.gzip.bind(zlib));
-    const upload0Wrapped = Observable.bindNodeCallback(upload0.bind(null));
-
+function upload(etlService, apiKey, data, investigation) {
     if (data.graph.length === 0) {
         return Observable.throw(new Error('No edges to upload!'));
     }
-
     log.trace(data, 'Content to be ETLed');
-    const gzipped = gzipObservable(new Buffer(JSON.stringify(data), { level: 1 }));
-    return gzipped.switchMap(buffer =>
-        upload0Wrapped(etlService, apiKey, buffer)
-            .do(res => log.debug({ res }, 'ETL success'))
-            .map(() => data.name)
-            .catch(err => Observable.throw(new VError(err, 'ETL upload error')))
+    const { vg } = vgraph.fromEdgeList(
+        data.graph,
+        data.labels,
+        data.bindings.sourceField,
+        data.bindings.destinationField,
+        data.bindings.idField,
+        data.name
     );
+    const vgBuffer = VectorGraph.encode(vg).finish();
+    const metadata = {
+        name: data.name,
+        datasources: [{ type: 'vgraph', url: 'data0' }],
+        edges: [
+            {
+                count: vg.edgeCount,
+                complexEncodings: {
+                    current: partitionEncodings(encodingsByLayoutId[investigation.layout], 'edge', [
+                        'edgeColorEncoding'
+                    ]),
+                    default: partitionEncodings(encodingsByLayoutId[investigation.layout], 'edge', [
+                        'edgeColorEncodingDefault'
+                    ])
+                }
+            }
+        ],
+        nodes: [
+            {
+                count: vg.vertexCount,
+                complexEncodings: {
+                    current: partitionEncodings(
+                        encodingsByLayoutId[investigation.layout],
+                        'point',
+                        ['pointIconEncoding', 'pointSizeEncoding', 'pointColorEncoding']
+                    ),
+                    default: partitionEncodings(
+                        encodingsByLayoutId[investigation.layout],
+                        'point',
+                        [
+                            'pointIconEncodingDefault',
+                            'pointSizeEncodingDefault',
+                            'pointColorEncodingDefault'
+                        ]
+                    )
+                }
+            }
+        ]
+    };
+    return Observable.create(observer => {
+        const form = request
+            .post({
+                uri: etlService,
+                qs: getQuery(apiKey),
+                callback(err, res, body) {
+                    if (err) {
+                        return observer.error(err);
+                    }
+                    log.debug('Response status', res.statusCode, res.statusMessage);
+                    if (res.statusCode >= 400) {
+                        return observer.error(
+                            new Error(
+                                `ETL service responded with ${res.statusCode} (${res.statusMessage})`
+                            )
+                        );
+                    }
+                    try {
+                        log.debug('Trying to parse response body', body);
+                        const json = JSON.parse(body);
+                        if (!json.success) {
+                            log.debug({ body: body }, 'Server Response');
+                            return observer.error(
+                                new Error(`Server responded with success=false: ${json.msg}`)
+                            );
+                        }
+                        observer.next(json);
+                        observer.complete();
+                    } catch (e) {
+                        return observer.error(e);
+                    }
+                }
+            })
+            .form();
+        form.append('data0', vgBuffer, {
+            filename: 'data0',
+            contentType: 'application/octet-stream'
+        });
+        form.append('metadata', JSON.stringify(metadata), {
+            filename: 'metadata',
+            contentType: 'application/json'
+        });
+    })
+        .do(res => log.debug({ res }, 'ETL success'))
+        .map(({ dataset }) => dataset)
+        .catch(err => Observable.throw(new VError(err, 'ETL upload error')));
 }
 
-//jsonGraph * (err? -> ())? -> ()
-function upload0(etlService, apiKey, data, _cb) {
-    // When called with Observable.bindNodeCallback, cb will be defined and the following
-    // default function will not be used.
-    const cb =
-        _cb ||
-        function(err, res) {
-            if (err) {
-                return new VError(err, 'ETL upload error');
-            } else {
-                return log.debug(res, 'ETL success');
+function partitionEncodings(allEncodings, graphType, encodingTypes) {
+    return encodingTypes.filter(encodingName => !!allEncodings[encodingName]).reduce(
+        (encodings, encodingName) => ({
+            ...encodings,
+            [encodingName]: {
+                ...allEncodings[encodingName],
+                graphType,
+                // 'edgeSize' -> 'size', 'pointColorDefault' -> 'color' etc.
+                encodingType: encodingName
+                    .slice(graphType.length, encodingName.indexOf('Encoding'))
+                    .toLowerCase()
             }
-        };
-
-    const headers = { 'Content-Encoding': 'gzip', 'Content-Type': 'application/json' };
-    return request.post({
-        uri: etlService,
-        qs: getQuery(apiKey),
-        headers: headers,
-        body: data,
-        callback: function(err, res, body) {
-            if (err) {
-                return cb(err);
-            }
-            log.debug('Response status', res.statusCode, res.statusMessage);
-            if (res.statusCode >= 400) {
-                return cb(
-                    new Error(`ETL service responded with ${res.statusCode} (${res.statusMessage})`)
-                );
-            }
-            try {
-                log.debug('Trying to parse response body', body);
-                const json = JSON.parse(body);
-                if (!json.success) {
-                    log.debug({ body: body }, 'Server Response');
-                    return cb(new Error(`Server responded with success=false: ${json.msg}`));
-                }
-                return cb(undefined, json);
-            } catch (e) {
-                return cb(e);
-            }
-        }
-    });
+        }),
+        {}
+    );
 }
 
 function getQuery(key) {
@@ -82,7 +140,7 @@ function getQuery(key) {
         key: key,
         agent: 'pivot-app',
         agentversion: '0.0.1',
-        apiversion: 1
+        apiversion: 2
     };
 }
 
@@ -345,7 +403,12 @@ export function uploadGraph({
             )
                 .switchMap(({ user, data, pivots }) => {
                     if (data.graph.length + data.labels.length > 0) {
-                        return upload(user.etlService, user.apiKey, data).map(dataset => ({
+                        return upload(
+                            user.etlService,
+                            user.apiKey,
+                            data,
+                            investigation
+                        ).map(dataset => ({
                             user,
                             dataset,
                             data,
@@ -366,7 +429,7 @@ export function uploadGraph({
                         ).controls;
                         investigation.url = `${user.vizService}&dataset=${dataset}&controls=${investigation.controls}`;
                         investigation.datasetName = dataset;
-                        investigation.datasetType = 'vgraph';
+                        investigation.datasetType = 'jsonMeta';
                         investigation.axes = data.axes;
                         investigation.edgeOpacity = data.edgeOpacity;
                         investigation.status = {

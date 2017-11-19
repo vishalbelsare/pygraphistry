@@ -15,11 +15,14 @@ const unpackers = {
     jsonMeta: loadVGraphJSON
 };
 
-export function loadVGraph(view, config, s3Cache, updateSession) {
-    return Observable.of({ view, loaded: false })
-        .expand(loadAndUnpackVGraph(config, s3Cache, updateSession))
-        .takeLast(1)
-        .mergeMap(loadDataFrameAndUpdateBuffers);
+export function loadVGraph(setEncoding, setDefaultEncoding) {
+    const loadDataFrame = loadDataFrameAndUpdateBuffers(setEncoding, setDefaultEncoding);
+    return function loadVGraph(view, config, s3Cache, updateSession) {
+        return Observable.of({ view, loaded: false })
+            .expand(loadAndUnpackVGraph(config, s3Cache, updateSession))
+            .takeLast(1)
+            .mergeMap(loadDataFrame);
+    };
 }
 
 function loadAndUnpackVGraph(config, s3Cache, updateSession) {
@@ -68,60 +71,98 @@ function loadVGraphJSON(nBody, { metadata: dataset, body: buffer }, config, s3Ca
     return Observable.of({ nBody, loaded: false });
 }
 
-function loadDataFrameAndUpdateBuffers({ view }) {
-    const { nBody, layout: { options } = {} } = view;
-    const { simulator, simulator: { dataframe, layoutAlgorithms } } = nBody;
-    // Load into dataframe data attributes that rely on the simulator existing.
-    const inDegrees = dataframe.getHostBuffer('backwardsEdges').degreesTyped;
-    const outDegrees = dataframe.getHostBuffer('forwardsEdges').degreesTyped;
-    const unsortedEdges = dataframe.getHostBuffer('unsortedEdges');
+function loadDataFrameAndUpdateBuffers(setEncoding, setDefaultEncoding) {
+    return function loadDataFrame({ view }) {
+        const { nBody, layout: { options } = {} } = view;
+        const { dataset, simulator, simulator: { dataframe, layoutAlgorithms } } = nBody;
+        // Load into dataframe data attributes that rely on the simulator existing.
+        const inDegrees = dataframe.getHostBuffer('backwardsEdges').degreesTyped;
+        const outDegrees = dataframe.getHostBuffer('forwardsEdges').degreesTyped;
+        const unsortedEdges = dataframe.getHostBuffer('unsortedEdges');
 
-    dataframe.loadDegrees(outDegrees, inDegrees);
-    dataframe.loadEdgeDestinations(unsortedEdges);
+        dataframe.loadDegrees(outDegrees, inDegrees);
+        dataframe.loadEdgeDestinations(unsortedEdges);
 
-    layoutAlgorithms.forEach(algo => {
-        const layoutAlgoName = algo.algoName.toLowerCase();
-        Array.from(
-            layoutAlgoName in options ? options[layoutAlgoName] : 'length' in options ? options : []
-        )
-            .filter(Boolean)
-            .forEach(control => {
-                const { id, value, props: { algoName } } = control;
-                nBody.updateSettings({
-                    simControls: {
-                        [algoName]: {
-                            [id]: value
+        layoutAlgorithms.forEach(algo => {
+            const layoutAlgoName = algo.algoName.toLowerCase();
+            Array.from(
+                layoutAlgoName in options
+                    ? options[layoutAlgoName]
+                    : 'length' in options ? options : []
+            )
+                .filter(Boolean)
+                .forEach(control => {
+                    const { id, value, props: { algoName } } = control;
+                    nBody.updateSettings({
+                        simControls: {
+                            [algoName]: {
+                                [id]: value
+                            }
                         }
-                    }
-                });
-            });
-    });
-
-    // Tell all layout algorithms to load buffers from dataframe, now that
-    // we're about to enable ticking
-    return Observable.merge(
-        ...layoutAlgorithms.map(algo =>
-            Observable.defer(() => algo.updateDataframeBuffers(simulator))
-        ),
-        Scheduler.async
-    )
-        .toArray()
-        .map(() => {
-            nBody.vgraphLoaded = true;
-            view = createInitialHistograms(view, dataframe);
-            view.scene = assignHintsToScene(view.scene, dataframe);
-            view.columns = createColumns(dataframe, dataframe.getColumnsByType(true));
-            if (dataframe.pointTypeIncludesEventID) {
-                view.inspector.openTab = 'event';
-                if (view.inspector.tabs[0].componentType !== 'event') {
-                    view.inspector.tabs.unshift({
-                        name: 'Events',
-                        componentType: 'event'
                     });
-                }
-            }
-            return view;
+                });
         });
+
+        // Tell all layout algorithms to load buffers from dataframe, now that
+        // we're about to enable ticking
+        return Observable.merge(
+            ...layoutAlgorithms.map(algo =>
+                Observable.defer(() => algo.updateDataframeBuffers(simulator))
+            ),
+            Scheduler.async
+        )
+            .toArray()
+            .do(() => (nBody.vgraphLoaded = true))
+            .flatMap(xs => {
+                const complexEdgeEncodings =
+                    (dataset &&
+                        dataset.edges &&
+                        dataset.edges[0] &&
+                        dataset.edges[0].complexEncodings) ||
+                    null;
+                const complexNodeEncodings =
+                    (dataset &&
+                        dataset.nodes &&
+                        dataset.nodes[0] &&
+                        dataset.nodes[0].complexEncodings) ||
+                    null;
+                const setEncodingObservables = [complexEdgeEncodings, complexNodeEncodings]
+                    .filter(Boolean)
+                    .reduce(
+                        (xs, encodings) => [
+                            ...xs,
+                            ...Object.keys(encodings.current || {}).map(encodingName =>
+                                setEncoding({ view, encoding: encodings.current[encodingName] })
+                            ),
+                            ...Object.keys(encodings.default || {}).map(encodingName =>
+                                setDefaultEncoding({
+                                    view,
+                                    encoding: encodings.default[encodingName]
+                                })
+                            )
+                        ],
+                        []
+                    );
+                return setEncodingObservables.length
+                    ? Observable.forkJoin(...setEncodingObservables)
+                    : Observable.of(xs);
+            })
+            .map(() => {
+                view = createInitialHistograms(view, dataframe);
+                view.scene = assignHintsToScene(view.scene, dataframe);
+                view.columns = createColumns(dataframe, dataframe.getColumnsByType(true));
+                if (dataframe.pointTypeIncludesEventID) {
+                    view.inspector.openTab = 'event';
+                    if (view.inspector.tabs[0].componentType !== 'event') {
+                        view.inspector.tabs.unshift({
+                            name: 'Events',
+                            componentType: 'event'
+                        });
+                    }
+                }
+                return view;
+            });
+    };
 }
 
 function createInitialHistograms(view, dataframe) {

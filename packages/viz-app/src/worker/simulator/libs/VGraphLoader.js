@@ -733,7 +733,10 @@ function decode0(graph, vg, metadata, updateSession) {
                     }, () => graph);
             });
         })
-        .catch(log.makeRxErrorHandler(logger, 'Failure in VGraphLoader decode0'));
+        .catch(e => {
+            log.error(e, 'Failure in VGraphLoader decode0');
+            return Observable.throw(e);
+        });
 }
 
 function computeInitialPositions(vertexCount, edges, dimensions) {
@@ -913,7 +916,11 @@ function checkMetadataAgainstVGraph(metadata, vg, vgAttributes) {
         !sameKeys(nodesMetadata.attributes, vgAttributes.nodes) ||
         !sameKeys(edgesMetadata.attributes, vgAttributes.edges)
     ) {
-        throw new Error('Discrepancies between metadata and VGraph attributes');
+        // throw new Error('Discrepancies between metadata and VGraph attributes');
+        return {
+            nodes: { ...nodesMetadata, attributes: vgAttributes.nodes },
+            edges: { ...edgesMetadata, attributes: vgAttributes.edges }
+        };
     }
     if (nodesMetadata.count !== vg.vertexCount || edgesMetadata.count !== vg.edgeCount) {
         throw new Error('Discrepancies in number of nodes/edges between metadata and VGraph');
@@ -1054,7 +1061,10 @@ function decode1(graph, vg, metadata, updateSession) {
                     }, () => graph);
             });
         })
-        .catch(log.makeRxErrorHandler(logger, 'Failure in VGraphLoader decode1'));
+        .catch(e => {
+            log.error(e, 'Failure in VGraphLoader decode1');
+            return Observable.throw(e);
+        });
 }
 
 function notifyClientOfSizesForAllocation(socket, edgeCount, vertexCount) {

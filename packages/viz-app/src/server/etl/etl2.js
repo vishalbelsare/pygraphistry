@@ -16,7 +16,7 @@ var Cache = require('@graphistry/common').cache;
 var logger = Log.createLogger('etlworker:etl2');
 var tmpCache = new Cache(config.LOCAL_DATASET_CACHE_DIR, config.LOCAL_DATASET_CACHE);
 
-var supportedAgents = ['pygraphistry'];
+var supportedAgents = ['pygraphistry', 'pivot-app'];
 
 // Request.files -> Object
 function parseParts(parts) {
@@ -132,6 +132,7 @@ function uploadAndCache(data, key, opts) {
         .fail(err => logger.error(err, 'S3 Upload failed'));
 }
 
+// Request * Response * Object -> Q(Object)
 export function processRequest(req, params) {
     return Observable.defer(() => {
         logger.info('ETL2: Got request, params:', params);
@@ -147,27 +148,5 @@ export function processRequest(req, params) {
         return Observable.from(etl(msg, params));
     }).do(info => {
         logger.info('ETL2 successful, dataset name is', info.name);
-    });
-}
-
-// Request * Response * Object -> Q(Object)
-export function process(req, res, params) {
-    logger.info('ETL2: Got request, params:', params);
-
-    if (!_.contains(supportedAgents, params.agent)) {
-        throw new Error('Unsupported agent: ' + params.agent);
-    }
-
-    var msg = parseParts(req.files);
-
-    logger.debug('Message parts', _.keys(msg));
-    logger.debug('Message metadata', msg.metadata);
-    return etl(msg, params).then(function(info) {
-        res.send({
-            success: true,
-            dataset: info.name,
-            viztoken: apiKey.makeVizToken(params.key, info.name)
-        });
-        return info;
     });
 }
