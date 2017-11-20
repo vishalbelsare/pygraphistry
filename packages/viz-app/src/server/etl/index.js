@@ -95,7 +95,11 @@ function etlRequestHandler(req, res, next) {
                       })
             })
         )
-        .mergeMap(info => notifySlackAndSplunk({ ...info, ...params }))
+        .do(info =>
+            notifySlackAndSplunk({ ...info, ...params }) //non-blocking
+                .toPromise()
+                .catch(e => log.error('Failed to notifySlackAndSplunk', e))
+        )
         .ignoreElements();
 
     return requestPipeline;
