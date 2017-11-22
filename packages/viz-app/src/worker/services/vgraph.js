@@ -6,7 +6,12 @@ import { cache as Cache } from '@graphistry/common';
 import { $ref } from '@graphistry/falcor-json-graph';
 import { load as _loadVGraph } from '../simulator/libs/VGraphLoader';
 import { columns as createColumns } from 'viz-app/models/columns';
-import { histogram as createHistogram } from 'viz-app/models/expressions';
+import {
+    histogram as createHistogram,
+    legendTypeHistogramColumn,
+    legendPivotHistogramColumn,
+    timebarHistogramColumn
+        } from 'viz-app/models/expressions';
 
 const unpackers = {
     null: _loadVGraph,
@@ -192,6 +197,10 @@ function createInitialHistograms(view, dataframe) {
         histograms[index] = $ref(`${view.absolutePath}
             .histogramsById['${histogram.id}']`);
     });
+
+    histogramsById.legendTypeHistogram = createHistogram({name: legendTypeHistogramColumn, dataType: 'string', componentType: 'point'}, 'legendTypeHistogram');
+    histogramsById.legendPivotHistogram = createHistogram({name: legendPivotHistogramColumn, dataType: 'number', componentType: 'point'}, 'legendPivotHistogram');
+    histogramsById.timebarHistogram = createHistogram({name: timebarHistogramColumn, dataType: 'string', componentType: 'point'}, 'timebarHistogram');
 
     return view;
 }

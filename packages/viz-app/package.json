@@ -138,6 +138,7 @@
         "@graphistry/node-pigz": "2.0.0",
         "@graphistry/rc-slider": "8.3.3",
         "@graphistry/react-split-pane": "0.1.67",
+        "@graphistry/timebar": "2.15.12",
         "@graphistry/vgraph-to-mapd": "1.1.2",
         "babel-core": "6.26.0",
         "babel-runtime": "6.26.0",

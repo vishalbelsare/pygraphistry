@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import { logger as log } from '@graphistry/common';
 import { routes as schema } from 'viz-app/schema';
 import FalcorRouter from '@graphistry/falcor-router';

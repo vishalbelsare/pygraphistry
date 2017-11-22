@@ -1,11 +1,18 @@
+import { ref as $ref, atom as $atom, pathValue as $value } from '@graphistry/falcor-json-graph';
+import { createLogger } from '@graphistry/common/logger';
+
 export function legend(view) {
     return {
         legend: {
-            title: '',
-            subtitle: '',
-            nodes: 0,
-            edges: 0,
-            open: false
+            visible: true,
+            controls: [
+                {
+                    selected: true,
+                    id: 'toggle-legend',
+                    name: 'Toggle Node Legend'
+                }
+            ],
+            legendHistogram: $ref(`${view}.histogramsById.legendHistogram`)
         }
     };
 }

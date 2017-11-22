@@ -7,6 +7,7 @@ import { scene } from './scene';
 import { labels } from './labels';
 import { axis } from './axis';
 import { layout } from './layout';
+import { legend } from './legend';
 import { camera } from './camera';
 import { toolbar } from './toolbar';
 import { session } from './session';
@@ -41,6 +42,7 @@ export function routes(services) {
                 camera(['workbook', 'view'], `${view}`)(services),
 
                 labels(['workbook', 'view'], `${view}`)(services),
+                legend(['workbook', 'view'], `${view}`)(services),
                 axis(['workbook', 'view'], `${view}`)(services),
                 layout(['workbook', 'view'], `${view}`)(services),
                 session(['workbook', 'view'], `${view}`)(services),

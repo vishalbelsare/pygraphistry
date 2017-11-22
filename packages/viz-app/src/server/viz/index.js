@@ -198,6 +198,7 @@ function sendPostVGraphLoadedUpdate(sendUpdate, updateSession) {
                         `${viewPath}.encodings`,
                         `${viewPath}.columns.length`,
                         `${viewPath}.inspector.rows`,
+                        `${viewPath}.histogramsById`,
                         `${viewPath}['labelsByType', 'componentsByType']`
                     ],
                     paths: [

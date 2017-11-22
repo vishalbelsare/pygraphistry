@@ -2,6 +2,7 @@ import { scene } from './scene';
 import { axis } from './axis';
 import { camera } from './camera';
 import { legend } from './legend';
+import { timebar } from './timebar';
 import { toolbar } from './toolbar';
 import { labels } from './labels';
 import { layout } from './layout';
@@ -43,6 +44,7 @@ export function view(workbookId, sceneID = 'default', viewId = simpleflake().toJ
         ...axis(view),
         ...layout(view),
         ...legend(view),
+        ...timebar(view),
         ...encodings(view),
         ...inspector(view),
         ...selection(view),

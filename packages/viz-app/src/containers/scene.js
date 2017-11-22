@@ -2,6 +2,9 @@ import { Row } from 'react-bootstrap';
 import { toProps } from '@graphistry/falcor';
 import { Labels } from 'viz-app/containers/labels';
 import { Axis } from 'viz-app/containers/axis';
+import { Histogram } from 'viz-app/containers/histograms';
+import { LegendContainer as Legend } from 'viz-app/containers/legend';
+import { TimebarContainer as Timebar } from 'viz-app/containers/timebar';
 import { Renderer } from 'viz-app/containers/renderer';
 import { container } from '@graphistry/falcor-react-redux';
 import { Selection } from 'viz-app/containers/selection';
@@ -41,10 +44,14 @@ let Scene = (
         simulating,
         labels = {},
         axis = {},
+        legend = {},
         release = {},
         renderer = {},
         selection = {},
         highlight = {},
+        legendTypeHisto = {},
+        legendPivotHisto = {},
+        timebarHisto = {},
         ...props
     } = {}
 ) => (
@@ -109,6 +116,13 @@ let Scene = (
             simulationHeight={simulationHeight}
             sceneSelectionType={selection.type}
         />
+        <Legend
+            cols={legendTypeHisto}
+            visible={legend.visible}
+            legendPivotHisto={legendPivotHisto}
+            encodings={labels && labels.encodings}
+        />
+        {/* <Timebar timebarHisto={timebarHisto} /> */}
     </SceneComponent>
 );
 
@@ -119,6 +133,10 @@ Scene = container({
         release: { tag, buildNumber },
         ... ${Settings.fragment(scene)},
         axis: ${Axis.fragment(scene.axis)},
+        legend: ${Legend.fragment(scene.legend)},
+        legendTypeHisto: ${Histogram.fragment(scene.legendTypeHisto)},
+        legendPivotHisto: ${Histogram.fragment(scene.legendPivotHisto)},
+        timebarHisto: ${Timebar.fragment(scene.timebarHisto)},
         labels: ${Labels.fragment(scene.labels)},
         labels: { settings: { 0: { 4: ${SceneOptionToggle.fragment()}}}},
         renderer: ${Renderer.fragment(scene.renderer)},

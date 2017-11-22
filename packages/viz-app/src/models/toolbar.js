@@ -52,9 +52,11 @@ export function toolbar(workbookId, viewId) {
                     id: 'inspect',
                     name: 'Inspect',
                     items: {
-                        length: 2,
+                        length: 3,
                         0: $ref(`${view}.histograms.controls[0]`),
-                        1: $ref(`${view}.inspector.controls[0]`)
+                        1: $ref(`${view}.inspector.controls[0]`),
+                        2: $ref(`${view}.legend.controls[0]`)
+                        //3: $ref(`${view}.timebar.controls[0]`),
                     }
                 },
                 5: {

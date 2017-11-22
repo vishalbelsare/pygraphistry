@@ -5,6 +5,9 @@ import { getDefaultQueryForDataType } from 'viz-app/models/expressions';
 
 const logger = createLogger('viz-app:models:histograms');
 
+export const legendTypeHistogramColumn = 'canonicalType';
+export const legendPivotHistogramColumn = 'Pivot';
+export const timebarHistogramColumn = 'firstFlow';
 export function histograms(view) {
     return {
         histogramsById: {},

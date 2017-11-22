@@ -25,6 +25,7 @@ const reducers = {
     'fullscreen-workbook': fullscreenWorkbook,
     'toggle-filters': toggleFilters,
     // 'toggle-timebar': toggleTimebar,
+    'toggle-legend': toggleLegend,
     'toggle-inspector': toggleInspector,
     'toggle-histograms': toggleHistograms,
     'toggle-exclusions': toggleExclusions,
@@ -150,6 +151,13 @@ function toggleFilters({ falcor, selected }) {
             $value(`panels.left`, $ref(falcor._path.concat(`filters`)))
         );
     }
+}
+
+function toggleLegend({ falcor, selected }) {
+    return falcor.set(
+        $value(`legend.visible`, !selected),
+        $value(`legend.controls[0].selected`, !selected)
+    );
 }
 
 function toggleExclusions({ falcor, selected }) {

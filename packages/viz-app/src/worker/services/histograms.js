@@ -231,6 +231,9 @@ function computeHistogram({
 
     const dataType = dataframe.getDataType(name, componentType);
     const aggregations = dataframe.getColumnAggregations(name, componentType, true);
+    if (undefined === aggregations) {
+        return Observable.empty();
+    }
     const countDistinct = aggregations.getAggregationByType('countDistinct');
     const isCountBy = countDistinct < maxBinCount;
 

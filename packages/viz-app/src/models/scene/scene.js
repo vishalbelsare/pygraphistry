@@ -11,9 +11,13 @@ export function scene(view, sceneID = 'default') {
             camera: $ref(`${view}.camera`),
             labels: $ref(`${view}.labels`),
             axis: $ref(`${view}.axis`),
+            legend: $ref(`${view}.legend`),
             release: $ref(`release.current`),
             highlight: $ref(`${view}.highlight`),
             selection: $ref(`${view}.selection`),
+            legendTypeHisto: $ref(`${view}.histogramsById.legendTypeHistogram`),
+            legendPivotHisto: $ref(`${view}.histogramsById.legendPivotHistogram`),
+            timebarHisto: $ref(`${view}.histogramsById.timebarHistogram`),
 
             renderer: {
                 id: sceneID,
