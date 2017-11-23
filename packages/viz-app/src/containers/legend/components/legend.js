@@ -33,7 +33,40 @@ function getMapping(encodings, binName, encodingType) {
     }
 }
 
-export const LegendBody = ({
+function LegendFooter({
+    bins,
+    iconEncodings,
+    iconsOn,
+    colorEncodings,
+    colorsOn,
+    sizeEncodings,
+    sizesOn
+}) {
+    function toRow(name, attr) {
+        return (
+            <div className={styles['encodingRow']}>
+                <span className={styles['encodingType']}>{name}</span>
+                <span className={styles['encodingSpacer']} />
+                <span className={styles['encodingAttr']}>{attr}</span>
+            </div>
+        );
+    }
+
+    return (
+        <div className={`${styles['footer']}`}>
+            {iconEncodings && !iconsOn ? toRow('Icons', iconEncodings.attribute) : undefined}
+            {colorEncodings && !colorsOn
+                ? toRow('Colors', colorEncodings.attribute)
+                : !colorEncodings ? toRow('Colors', <i>cluster</i>) : undefined}
+            {sizeEncodings && !sizesOn
+                ? toRow('Sizes', sizeEncodings.attribute)
+                : !sizeEncodings ? toRow('Sizes', 'degree') : undefined}
+        </div>
+    );
+}
+
+export const LegendBody = function({
+    name,
     bins,
     iconEncodings,
     iconsOn,
@@ -42,96 +75,116 @@ export const LegendBody = ({
     sizeEncodings,
     sizesOn,
     parentKey
-}) =>
-    bins === null ? (
-        <div key={`${parentKey}-body`}>No data.</div>
-    ) : (
-        <Table striped bordered condensed hover key={`${parentKey}-body-full`}>
-            <thead>
-                <tr>
-                    <th
-                        className={`${colorsOn || sizesOn ? '' : styles['columnEmpty']} ${styles[
-                            'colorCol'
-                        ]}`}>
-                        Color
-                    </th>
-                    <th className={styles['typeCol']}>Type</th>
-                    <th className={`${iconsOn ? '' : styles['columnEmpty']} ${styles['iconCol']}`}>
-                        Icon
-                    </th>
-                    <th className={styles['countCol']}>Count</th>
-                </tr>
-            </thead>
-            <tbody>
-                {bins.map(({ count, values }, i) => {
-                    const binName = values[0];
+}) {
+    const table =
+        bins === null ? (
+            undefined
+        ) : (
+            <Table striped condensed key={`${parentKey}-body-full`}>
+                <thead>
+                    <tr>
+                        <th
+                            className={`${colorsOn || sizesOn
+                                ? ''
+                                : styles['columnEmpty']} ${styles['colorCol']}`}>
+                            Color
+                        </th>
+                        <th className={styles['typeCol']}>{name}</th>
+                        <th
+                            className={`${iconsOn ? '' : styles['columnEmpty']} ${styles[
+                                'iconCol'
+                            ]}`}>
+                            Icon
+                        </th>
+                        <th className={styles['countCol']}>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {bins.map(({ count, values }, i) => {
+                        const binName = values[0];
 
-                    const specialIcon = iconsOn
-                        ? getMapping(iconEncodings, binName, 'icons')
-                        : undefined;
-                    const specialIconOn = iconsOn && specialIcon !== undefined;
+                        const specialIcon = iconsOn
+                            ? getMapping(iconEncodings, binName, 'icons')
+                            : undefined;
+                        const specialIconOn = iconsOn && specialIcon !== undefined;
 
-                    const specialSize = sizesOn
-                        ? getMapping(sizeEncodings, binName, 'sizes')
-                        : undefined;
-                    const specialSizeOn = sizesOn && specialSize !== undefined;
+                        const specialSize = sizesOn
+                            ? getMapping(sizeEncodings, binName, 'sizes')
+                            : undefined;
+                        const specialSizeOn = sizesOn && specialSize !== undefined;
 
-                    const specialColor = colorsOn
-                        ? getMapping(colorEncodings, binName, 'colors')
-                        : undefined;
-                    const specialColorOn = colorsOn && specialColor !== undefined;
+                        const specialColor = colorsOn
+                            ? getMapping(colorEncodings, binName, 'colors')
+                            : undefined;
+                        const specialColorOn = colorsOn && specialColor !== undefined;
 
-                    const renderedIcon = specialIconOn ? (
-                        <i className={`fa fa-fw fa-${specialIcon}`} />
-                    ) : (
-                        <span>&mdash;</span>
-                    );
-                    const renderedColorStyle = specialColorOn
-                        ? { backgroundColor: specialColor }
-                        : {};
-                    const renderedSizeStyle = specialSizeOn
-                        ? {
-                              height: `${1 * specialSize / 100}em`,
-                              width: `${1 * specialSize / 100}em`
-                          }
-                        : colorsOn ? { height: '2em', width: '2em' } : { height: '0', width: '0' };
-                    return (
-                        <tr key={`${parentKey}-body-full-row-${i}`}>
-                            <td
-                                className={`${colorsOn || sizesOn
-                                    ? ''
-                                    : styles['columnEmpty']} ${styles['colorCol']}`}>
-                                <div className={styles['dotContainer']}>
-                                    <div className={styles[specialSizeOn ? 'dot' : 'noDot']}>
-                                        <div
-                                            className={styles[specialColorOn ? '' : 'noColor']}
-                                            style={Object.assign(
-                                                { borderRadius: 'inherit' },
-                                                renderedColorStyle,
-                                                renderedSizeStyle
-                                            )}
-                                        />
+                        const renderedIcon = specialIconOn ? (
+                            <i className={`fa fa-fw fa-${specialIcon}`} />
+                        ) : (
+                            <span>&mdash;</span>
+                        );
+                        const renderedColorStyle = specialColorOn
+                            ? { backgroundColor: specialColor }
+                            : {};
+                        const renderedSizeStyle = specialSizeOn
+                            ? {
+                                  height: `${1 * specialSize / 100}em`,
+                                  width: `${1 * specialSize / 100}em`
+                              }
+                            : colorsOn
+                              ? { height: '2em', width: '2em' }
+                              : { height: '0', width: '0' };
+                        return (
+                            <tr key={`${parentKey}-body-full-row-${i}`}>
+                                <td
+                                    className={`${colorsOn || sizesOn
+                                        ? ''
+                                        : styles['columnEmpty']} ${styles['colorCol']}`}>
+                                    <div className={styles['dotContainer']}>
+                                        <div className={styles[specialSizeOn ? 'dot' : 'noDot']}>
+                                            <div
+                                                className={styles[specialColorOn ? '' : 'noColor']}
+                                                style={Object.assign(
+                                                    { borderRadius: 'inherit' },
+                                                    renderedColorStyle,
+                                                    renderedSizeStyle
+                                                )}
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td className={styles['typeCol']}>
-                                <span>{binName}</span>
-                            </td>
-                            <td
-                                className={`${iconsOn ? '' : styles['columnEmpty']} ${styles[
-                                    'iconCol'
-                                ]}`}>
-                                {renderedIcon}
-                            </td>
-                            <td className={styles['countCol']}>{count}</td>
-                        </tr>
-                    );
-                })}
-            </tbody>
-        </Table>
-    );
+                                </td>
+                                <td className={styles['typeCol']}>
+                                    <span>{binName}</span>
+                                </td>
+                                <td
+                                    className={`${iconsOn ? '' : styles['columnEmpty']} ${styles[
+                                        'iconCol'
+                                    ]}`}>
+                                    {renderedIcon}
+                                </td>
+                                <td className={styles['countCol']}>{count}</td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </Table>
+        );
 
-export const EmptyLegend = <div />;
+    return (
+        <div>
+            {table}
+            <LegendFooter
+                bins={bins}
+                iconEncodings={iconEncodings}
+                iconsOn={iconsOn}
+                sizeEncodings={sizeEncodings}
+                sizesOn={sizesOn}
+                colorEncodings={colorEncodings}
+                colorsOn={colorsOn}
+            />
+        </div>
+    );
+};
 
 export const Legend = ({ cols, visible, legendPivotHisto, encodings }) => {
     const pointIconEncodingAttribute =
@@ -153,9 +206,9 @@ export const Legend = ({ cols, visible, legendPivotHisto, encodings }) => {
 
     const canonicalTypeAttribute = 'canonicalType';
     const pivotAttribute = 'Pivot'; // maybe pull these from the histogram model?
-    const typeBins = cols.global && cols.global.bins ? cols.global.bins : null;
+    const typeBins = cols && cols.global && cols.global.bins ? cols.global.bins : null;
     const pivotBins =
-        legendPivotHisto.global && legendPivotHisto.global.bins
+        legendPivotHisto && legendPivotHisto.global && legendPivotHisto.global.bins
             ? legendPivotHisto.global.bins
             : null;
     const typeKey = [
@@ -170,14 +223,13 @@ export const Legend = ({ cols, visible, legendPivotHisto, encodings }) => {
     ];
     const parentTypeKey = `legend-type-${typeBins && typeBins.length}-${typeKey.join()}`;
     const parentPivotKey = `legend-pivot-${pivotBins && pivotBins.length}-${pivotKey}`;
-    return !visible ? null : typeBins === null && pivotBins === null ? (
-        EmptyLegend
-    ) : (
+    return !visible ? null : (
         <div className={styles['legendContainer']}>
-            <Tabs defaultActiveKey={typeBins ? 2 : 3} id="legend-tabset">
+            <Tabs defaultActiveKey={typeBins ? 2 : 3} id="legend-tabset" defaultActiveKey={2}>
                 <Tab eventKey={1} title="Node Legend" disabled />
-                <Tab eventKey={2} title="Type" disabled={typeBins === null}>
+                <Tab eventKey={2} title="Type">
                     <LegendBody
+                        name="Type"
                         bins={typeBins}
                         iconEncodings={pointIcon}
                         iconsOn={typeKey[0]}
@@ -191,6 +243,7 @@ export const Legend = ({ cols, visible, legendPivotHisto, encodings }) => {
                 </Tab>
                 <Tab eventKey={3} title="Pivot" disabled={pivotBins === null}>
                     <LegendBody
+                        name="Pivot"
                         bins={pivotBins}
                         iconEncodings={pointIcon}
                         iconsOn={pivotKey[0]}
