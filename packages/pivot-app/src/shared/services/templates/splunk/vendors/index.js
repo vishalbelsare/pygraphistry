@@ -4,8 +4,9 @@ import * as webmps from './fireeye/webmps.js';
 import * as hx from './fireeye/hx.js';
 import * as pan from './paloaltonetworks/pa.js';
 import * as windows from './microsoft/windows.js';
+import * as cylance from './cylance/protect.js';
 import * as splunk from './splunk.js';
-const encodings = [webmps, hx, pan, windows, splunk];
+const encodings = [webmps, hx, pan, windows, cylance, splunk];
 
 //{<name> -> {product, productIdentifier, ...}}
 export const products = encodings.reduce((acc, v) => ({ ...acc, [v.product]: v }), {});
