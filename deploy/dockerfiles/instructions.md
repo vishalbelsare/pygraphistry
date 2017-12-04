@@ -65,6 +65,7 @@ If the script runs through, your machine will have passed a test of using Docker
 
 ## 4 Override Default Passwords
 
+### Required: Visualization Service
 Launch the app with the environment variable `GRAPHISTRY_APP_CONFIG` including two unguessable strings for its `.API.CANARY` and its `.API.SECRET`, like so:
 
 ```
@@ -74,6 +75,26 @@ GRAPHISTRY_APP_CONFIG='{"API":{"CANARY":"123","SECRET":"456"}}' ./launch.sh
 An API key, created for a user-identifying string (often in practice an email address), is that string, salted with a global salt, and then encrypted with a global password. The salt is `.API.CANARY`, and the password is `.API.SECRET`.
 
 To avoid setting JSON configuration in the environment every time, write it to the file `httpd-config.json` in the parent directory of the release (so `echo '{"API":{"CANARY":"123","SECRET":"456"}}' > ../httpd-config.json`, for example).
+
+### Optional: Visual Analytics Playbooks (Required to use it)
+
+* Generate an API key: http://<my_graphistry_server>/api/encrypt?text=<my_playbook_account_name><CANARY>
+* ... `my_playbook_account_name` can be any string and will be used for audit logs
+* Setup connectors as `pivot-config.json` in your base folder (one above the release folder with `launch.sh`)
+ ```
+ {
+    "graphistry": {
+        "host": "http://<my_graphistry_server>",
+        "key": "<my_api_key_from_above>"
+    },
+    "splunk": {
+        "host": "<my.splunk.com>",
+        "user": "<my_splunk_username>",
+        "key": "<my_splunk_password>"
+    }
+
+}
+```
 
 ## 5 Start The Graphistry Services
 Once the containers are loaded and a new password has been written to config on disk, the app can be started (or restarted) with
