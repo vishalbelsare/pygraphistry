@@ -78,9 +78,10 @@ To avoid setting JSON configuration in the environment every time, write it to t
 
 ### Optional: Visual Analytics Playbooks (Required to use it)
 
-* Generate an API key: http://<my_graphistry_server>/api/encrypt?text=<my_playbook_account_name><CANARY>
-* ... `my_playbook_account_name` can be any string and will be used for audit logs
-* Setup connectors as `pivot-config.json` in your base folder (one above the release folder with `launch.sh`)
+* Generate an API key: `http://<my_graphistry_server>/api/encrypt?text=<my_playbook_account_name><MY_CANARY>`
+  * ... `my_playbook_account_name` can be any string and will be used for audit logs
+* Setup connectors as `pivot-config.json` in your base folder
+  * ... the base folder is one above the release folder with `launch.sh`, so you can reuse this config across releases
  ```
  {
     "graphistry": {
@@ -92,7 +93,6 @@ To avoid setting JSON configuration in the environment every time, write it to t
         "user": "<my_splunk_username>",
         "key": "<my_splunk_password>"
     }
-
 }
 ```
 
