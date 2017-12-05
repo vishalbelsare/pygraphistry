@@ -118,11 +118,8 @@ export const pointSizeEncoding = {
 };
 
 const allEncodings = {
-    pointIconEncoding,
     pointIconEncodingDefault: pointIconEncoding,
-    pointColorEncoding,
     pointColorEncodingDefault: pointColorEncoding,
-    pointSizeEncoding,
     pointSizeEncodingDefault: pointSizeEncoding
 };
 
