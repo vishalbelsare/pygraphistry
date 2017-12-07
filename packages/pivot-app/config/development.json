@@ -6,11 +6,13 @@
     "log": {
         "level": "debug"
     },
-    "graphistry": {
-        "host": "https://staging.graphistry.com"
+    "graphistry":
+    {"key": "e94a95fc409e8d39b71a08b4d944a30d4bb75acfb4e87e1bb7e1dd7065eb4d72c7a1247e4cf4c568a63a96ad06e29aa4"
+    ,"host": "https://staging.graphistry.com"
     },
-    "splunk": {
-        "jobCacheTimeout": 3600,
-        "searchMaxTime": 10
-    }
+    "authentication": {"passwordHash": "$2a$12$n2klsUwk7WkgQ437tNTLROdDC8r4hvy.6k2XRuanY3gk5XuK/pdfu"},
+    "splunk":
+    {"key": "graphtheplanet",
+        "user": "admin",
+        "host": "splunk.graphistry.com"}
 }
