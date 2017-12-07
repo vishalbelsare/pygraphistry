@@ -7,57 +7,11 @@ import { Connector } from './connector.js';
 
 const conf = global.__graphistry_convict_conf__;
 
-export function toGraph(records) {
-    const nodes = [];
-    const edges = [];
-    records.records.forEach(function(record) {
-        record.forEach(function(v) {
-            const item = {};
-
-            const maybeTitle = v.properties
-                ? 'name' in v.properties
-                  ? v.properties.name
-                  : 'title' in v.properties ? v.properties.title : undefined
-                : undefined;
-
-            if ('type' in v) {
-                item.type = v.type;
-            } else if (v.labels && v.labels.length) {
-                item.type = v.labels[0];
-            }
-            if (v.constructor.name === 'Node') {
-                item.node = v.identity.toString();
-                item.pointTitle = maybeTitle === undefined ? item.id : maybeTitle;
-                nodes.push(item);
-            } else {
-                item.source = v.start.toString();
-                item.destination = v.end.toString();
-                edges.push(item);
-            }
-            if (v.labels) {
-                v.labels.forEach(function(label) {
-                    item[label] = true;
-                });
-            }
-            if (v.properties) {
-                for (const i in v.properties) {
-                    if (v.properties[i] && v.properties[i].constructor.name === 'Integer') {
-                        item[i] = v.properties[i].toNumber();
-                    } else {
-                        item[i] = v.properties[i];
-                    }
-                }
-            }
-        });
-    });
-    return { nodes, edges };
-}
-
 class ElasticsearchConnector extends Connector {
     constructor(config) {
         super(config);
 
-        this.client = es_client({ host: config.host, log: config.logLevel });
+        this.client = es_client({ host: 'localhost:9200', log: config.logLevel });
 
         this.log = logger.createLogger(__filename).child(metadata);
     }
