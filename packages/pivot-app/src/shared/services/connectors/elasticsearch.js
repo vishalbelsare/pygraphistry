@@ -1,4 +1,4 @@
-import { v1 as neo4j } from 'neo4j-driver';
+import { Client as es_client } from 'elasticsearch';
 import { Observable } from 'rxjs';
 import VError from 'verror';
 
@@ -57,17 +57,16 @@ class ElasticsearchConnector extends Connector {
     constructor(config) {
         super(config);
 
-        this.driver = neo4j.driver(config.bolt, neo4j.auth.basic(config.user, config.password));
+        this.client = new es_client({ host: config.host, log: config.logLevel });
 
-        const metadata = { neo4jServer: config.bolt, neo4jUser: config.user };
         this.log = logger.createLogger(__filename).child(metadata);
     }
 
     healthCheck() {
         return Observable.of(1)
             .switchMap(() => {
-                const session = this.driver.session();
-                return Observable.fromPromise(session.run('match (n) return n limit 1'))
+                const session = this.client;
+                return Observable.fromPromise(session.ping({ requestTimeout: 5000 }))
                     .timeout(5000)
                     .finally(() => session.close());
             })
@@ -89,8 +88,8 @@ class ElasticsearchConnector extends Connector {
 
         return Observable.of(1)
             .switchMap(() => {
-                const session = this.driver.session();
-                return Observable.fromPromise(session.run(query))
+                const session = this.client;
+                return Observable.fromPromise(session.search(query))
                     .timeout(30000)
                     .finally(() => session.close());
             })
