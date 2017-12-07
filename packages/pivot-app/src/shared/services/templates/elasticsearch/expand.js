@@ -4,6 +4,8 @@ const log = logger.createLogger(__filename);
 import { ElasticsearchPivot } from './esPivot.js';
 import { encodings } from './settings.js';
 
+// Just pulled from neo4j as an example
+
 export const expandElasticsearch = new ElasticsearchPivot({
     id: 'expand-elasticsearch',
     name: 'Expand with Elasticsearch',
