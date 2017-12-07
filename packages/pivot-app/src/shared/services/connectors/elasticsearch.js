@@ -57,7 +57,7 @@ class ElasticsearchConnector extends Connector {
     constructor(config) {
         super(config);
 
-        this.client = new es_client({ host: config.host, log: config.logLevel });
+        this.client = es_client({ host: config.host, log: config.logLevel });
 
         this.log = logger.createLogger(__filename).child(metadata);
     }
@@ -65,10 +65,9 @@ class ElasticsearchConnector extends Connector {
     healthCheck() {
         return Observable.of(1)
             .switchMap(() => {
-                const session = this.client;
-                return Observable.fromPromise(session.ping({ requestTimeout: 5000 }))
-                    .timeout(5000)
-                    .finally(() => session.close());
+                const session = new this.client();
+                return Observable.fromPromise(session.ping({ requestTimeout: 5000 })).timeout(5000);
+                //.finally(() => session.close());
             })
             .map(() => 'Health checks passed')
             .catch(exn =>
@@ -88,10 +87,9 @@ class ElasticsearchConnector extends Connector {
 
         return Observable.of(1)
             .switchMap(() => {
-                const session = this.client;
-                return Observable.fromPromise(session.search(query))
-                    .timeout(30000)
-                    .finally(() => session.close());
+                const session = new this.client();
+                return Observable.fromPromise(session.search(query)).timeout(30000);
+                //.finally(() => session.close());
             })
             .map(records => {
                 const { nodes, edges } = toGraph(records);
