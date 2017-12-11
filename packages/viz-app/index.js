@@ -108,6 +108,9 @@ if (port) {
                     ].join('\n')
                 );
 
+                //toString() wipes sensitive=true
+                logger.info('Full config (non-sensitive)', convict.toString());
+
                 // if (config.ENVIRONMENT === 'local') {
                 //     // Open a browser window
                 //     require('./tools/openBrowser').default(port);

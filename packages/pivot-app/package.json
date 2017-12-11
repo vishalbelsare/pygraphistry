@@ -52,7 +52,7 @@
         "classnames": "2.2.5",
         "colorbrewer": "1.0.0",
         "compression": "1.7.1",
-        "convict": "4.0.0",
+        "convict": "4.0.2",
         "cookie-parser": "1.4.3",
         "create-react-class": "15.6.2",
         "engine.io": "3.1.2",

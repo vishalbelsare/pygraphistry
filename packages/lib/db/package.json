@@ -13,7 +13,7 @@
     "author": "@mykola",
     "license": "ISC",
     "dependencies": {
-        "convict": "^4.0.1",
+        "convict": "4.0.2",
         "knex": "^0.13.0",
         "pg": "^7.3.0"
     }
