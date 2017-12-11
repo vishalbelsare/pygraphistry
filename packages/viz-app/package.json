@@ -140,6 +140,7 @@
         "@graphistry/react-split-pane": "0.1.67",
         "@graphistry/timebar": "2.15.12",
         "@graphistry/vgraph-to-mapd": "1.1.2",
+        "archiver": "2.1.0",
         "babel-core": "6.26.0",
         "babel-runtime": "6.26.0",
         "bcrypt": "1.0.2",

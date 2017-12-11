@@ -22,6 +22,12 @@ import {
 export function Inspector(props) {
     return (
         <div style={props.style} className={styles.inspector}>
+            <div className={`${styles['csv-downloader']}`}>
+                <a href="graphistry.zip" download="graphistry.zip" target="_blank">
+                    <i className="fa fa-download" />
+                    export as csv
+                </a>
+            </div>
             <Tabs id="inspector-tabs" onSelect={props.onSelect} activeKey={props.openTab}>
                 {(props.tabs || []).map(({ name, componentType }) => (
                     <Tab key={`inspector-tab-${name}`} eventKey={componentType} title={name} />
