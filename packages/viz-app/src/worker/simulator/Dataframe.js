@@ -2062,8 +2062,13 @@ Dataframe.prototype.serializeColumns = function(target, options = {}) {
 Dataframe.prototype.formatAsCSV = function(type) {
     const compact = this.getRowsCompactUnfiltered(undefined, type === 'event' ? 'point' : type);
     const promiseStringify = Q.denodeify(csv.stringify);
+    const typeColIdx = compact.header.indexOf('type');
+    if (type === 'event' && typeColIdx === -1) {
+        return promiseStringify([[], []]);
+    }
+
     const structuredArrays = [compact.header].concat(
-        type === 'event' ? compact.values.filter(v => v.type === 'EventID') : compact.values
+        type === 'event' ? compact.values.filter(v => v[typeColIdx] === 'EventID') : compact.values
     );
 
     return promiseStringify(structuredArrays);
