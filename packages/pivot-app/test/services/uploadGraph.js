@@ -47,7 +47,7 @@ const undecoratedLabels = [
     { node: n7 }
 ];
 const decoratedLabels = [
-    { node: n1, x: 0, y: -2 },
+    { node: n1, x: 0, y: 0 },
     { node: n2, x: 0, y: 1 },
     { node: n3, x: 0, y: 12 },
     { node: n4, x: 0, y: 7 },
@@ -63,7 +63,7 @@ const fudgeX = 1;
 const fudgeY = 2;
 const spacerY = 1;
 const xys = {
-    [n1]: { x: 0, y: -2 },
+    [n1]: { x: 0, y: 0 },
     [n2]: { x: 0, y: 1 },
     [n3]: { x: 0, y: 12 },
     [n4]: { x: 0, y: 7 },

@@ -357,10 +357,7 @@ export function rowsToColumns(
 export function mergeRowsColumnsToXY(rows, columns, fudgeX, fudgeY, spacerY) {
     return _.mapObject(rows, (rowIdx, node) => ({
         x: fudgeX * columns[node],
-        y:
-            rowIdx > 0
-                ? (fudgeY + spacerY) * (rowIdx - (rowIdx & 1)) + spacerY * (rowIdx & 1)
-                : -2 * spacerY
+        y: (fudgeY + spacerY) * (rowIdx - (rowIdx & 1)) + spacerY * (rowIdx & 1)
     }));
 }
 
