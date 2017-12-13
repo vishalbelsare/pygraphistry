@@ -6,19 +6,36 @@ import { encodings } from './settings.js';
 
 export const searchES = new ElasticsearchPivot({
     id: 'search-es-plain',
-    name: 'Search Elasticsearch',
+    name: 'Elasticsearch: Search',
     tags: ['ElasticSearch'],
     parameters: [
+        {
+            name: 'index',
+            inputType: 'text',
+            label: 'Index:',
+            placeholder: 'fluentd-*',
+            defaultValue: 'fluentd-*'
+        },
+        {
+            name: 'type',
+            inputType: 'text',
+            label: 'Type:',
+            placeholder: '',
+            defaultValue: ''
+        },
         {
             name: 'query',
             inputType: 'textarea',
             label: 'Query:',
-            placeholder: 'error',
-            defaultValue: 'error'
+            placeholder: '{\n' + '  "query": {\n' + '    "match_all": {}\n' + '  }\n' + '}',
+            defaultValue: '{\n' + '  "query": {\n' + '    "match_all": {}\n' + '  }\n' + '}'
         }
     ],
     toES: function(args) {
-        return args.query || '';
+        return {
+            query: args.query || '',
+            index: args.index || ''
+        };
     },
     encodings
 });

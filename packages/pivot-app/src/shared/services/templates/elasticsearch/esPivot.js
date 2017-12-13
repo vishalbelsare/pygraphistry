@@ -21,8 +21,11 @@ export class ElasticsearchPivot extends PivotTemplate {
     searchAndShape({ app, pivot, pivotCache }) {
         const args = this.stripTemplateNamespace(pivot.pivotParameters);
         const query = this.toES(args, pivotCache);
+        log.trace('ES Response: ', query);
         log.trace({ pivotParameters: pivot.pivotParameters, args }, 'Pivot parameters');
         pivot.template = this;
+
+        log.trace(this.connector.search(query));
 
         if (!pivot.enabled) {
             pivot.resultSummary = {};

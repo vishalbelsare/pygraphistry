@@ -1,4 +1,5 @@
 import { pivots as splunkPivots } from './splunk/index.js';
+import { pivots as esPivots } from './elasticsearch/index.js';
 // export * from './neo4j/index.js'
 import { pivots as blazegraphPivots } from './blazegraph.js';
 import { pivots as httpPivots } from './http';
@@ -11,6 +12,7 @@ const log = logger.createLogger(__filename);
 export const pivots = []
     .concat(
         splunkPivots || [],
+        esPivots || [],
         blazegraphPivots || [],
         httpPivots || [],
         manualPivots || [],
