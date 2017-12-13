@@ -11,7 +11,7 @@ OUR_NGINX=${NGINX:-monolith-network-nginx}
 OUR_DOMAIN=${DOMAIN:-labs.graphistry.com}
 
 docker stop $OUR_NGINX || true
-docker run --rm -p 80:80 -p 443:443 -e DOMAIN=$OUR_DOMAIN -v $PWD/.le:/etc/letsencrypt alpine sh -c 'apk add --no-cache certbot && certbot certonly --agree-tos --email lsb@graphistry.com --standalone -t -n -d $DOMAIN && cd /etc/letsencrypt/live && (stat main || ln -s * main)'
+docker run --rm -p 80:80 -p 443:443 -e DOMAIN=$OUR_DOMAIN -v $PWD/.le:/etc/letsencrypt alpine:edge sh -c 'apk add --no-cache certbot && certbot certonly --agree-tos --email lsb@graphistry.com --standalone -t -n -d $DOMAIN && cd /etc/letsencrypt/live && (stat main || ln -s * main)'
 sudo cp .le/live/main/fullchain.pem /etc/graphistry/ssl/ssl_certificate.pem
 sudo cp .le/live/main/fullchain.pem /etc/graphistry/ssl/ssl_trusted_certificate.pem
 sudo cp .le/live/main/privkey.pem   /etc/graphistry/ssl/ssl_certificate_key.pem
