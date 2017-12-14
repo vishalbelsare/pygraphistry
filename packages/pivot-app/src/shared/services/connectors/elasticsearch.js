@@ -11,43 +11,24 @@ const conf = global.__graphistry_convict_conf__;
 export function toGraph(records) {
     const nodes = [];
     const edges = [];
-    records.hits.hits.forEach(function(v) {
+    records.hits.hits.forEach(function(record) {
         const item = {};
 
-        const maybeTitle = v._source
-            ? 'name' in v._source
-              ? v._source.name
-              : 'title' in v._source ? v._source.title : undefined
+        const maybeTitle = record._source
+            ? 'EventID' in record._source
+              ? record._source.EventID
+              : '_title' in record ? record._source._title : undefined
             : undefined;
 
-        if ('_type' in v) {
-            item.type = v._type;
-        } else if (v.labels && v.labels.length) {
-            item.type = v.labels[0];
-        }
-        if (v._source.source === 'stdout') {
-            item.Pivot = 0;
-            item.node = v._source.container_name;
-            item.pointTitle = v._source['@log_name'];
+        item.type = record._type;
+        if (record._type === 'node') {
+            item.node = record._id;
+            item.pointTitle = maybeTitle === undefined ? item._id : maybeTitle;
             nodes.push(item);
-
-            item.source = v._source.container_name;
-            item.destination = v._source.container_name;
+        } else {
+            item.source = record._source.Source;
+            item.destination = record._source.Destination;
             edges.push(item);
-        }
-        if (v.labels) {
-            v.labels.forEach(function(label) {
-                item[label] = true;
-            });
-        }
-        if (v._source) {
-            for (const i in v._source) {
-                if (v._source[i] && v._source[i].constructor.name === 'Integer') {
-                    item[i] = v._source[i].toNumber();
-                } else {
-                    item[i] = v._source[i];
-                }
-            }
         }
     });
     return { nodes, edges };
@@ -79,6 +60,7 @@ class ElasticsearchConnector extends Connector {
                 const { nodes, edges } = toGraph(records);
                 return {
                     resultCount: nodes.length + edges.length,
+                    events: records,
                     isPartial: false,
                     graph: { nodes, edges }
                 };

@@ -13,8 +13,8 @@ export const searchES = new ElasticsearchPivot({
             name: 'index',
             inputType: 'text',
             label: 'Index:',
-            placeholder: 'fluentd-*',
-            defaultValue: 'fluentd-*'
+            placeholder: 'nvda-*',
+            defaultValue: 'nvda-*'
         },
         {
             name: 'type',
@@ -27,8 +27,14 @@ export const searchES = new ElasticsearchPivot({
             name: 'query',
             inputType: 'textarea',
             label: 'Query:',
-            placeholder: '{\n' + '  "query": {\n' + '    "match_all": {}\n' + '  }\n' + '}',
-            defaultValue: '{\n' + '  "query": {\n' + '    "match_all": {}\n' + '  }\n' + '}'
+            placeholder:
+                '{\n' +
+                '  "query": {\n' +
+                '    "exists": { "field" : "EventID" }\n' +
+                '  }\n' +
+                '}',
+            defaultValue:
+                '{\n' + '  "query": {\n' + '    "exists": { "field" : "EventID" }\n' + '  }\n' + '}'
         }
     ],
     toES: function(args) {
