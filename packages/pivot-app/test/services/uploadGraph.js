@@ -30,12 +30,12 @@ const n5 = 'e';
 const n6 = 'f';
 const n7 = 'g';
 const edges = [
-    { Pivot: 0, [s]: n1, [d]: n2, edgeType: 'EventID->x' },
-    { Pivot: 2, [s]: n3, [d]: n4, edgeType: 'EventID->x' },
-    { Pivot: 1, [s]: n2, [d]: n6, edgeType: 'EventID->x' },
-    { Pivot: 1, [s]: n2, [d]: n7, edgeType: 'EventID->x' },
-    { Pivot: 1, [s]: n2, [d]: n4, edgeType: 'EventID->x' },
-    { Pivot: 3, [s]: n4, [d]: n5, edgeType: 'EventID->x' }
+    { Pivot: 1, [s]: n1, [d]: n2, edgeType: 'EventID->x' },
+    { Pivot: 3, [s]: n3, [d]: n4, edgeType: 'EventID->x' },
+    { Pivot: 2, [s]: n2, [d]: n6, edgeType: 'EventID->x' },
+    { Pivot: 2, [s]: n2, [d]: n7, edgeType: 'EventID->x' },
+    { Pivot: 2, [s]: n2, [d]: n4, edgeType: 'EventID->x' },
+    { Pivot: 4, [s]: n4, [d]: n5, edgeType: 'EventID->x' }
 ];
 const undecoratedLabels = [
     { node: n1 },
@@ -47,39 +47,39 @@ const undecoratedLabels = [
     { node: n7 }
 ];
 const decoratedLabels = [
-    { node: n1, x: 0, y: 0 },
-    { node: n2, x: 0, y: 1 },
-    { node: n3, x: 0, y: 12 },
-    { node: n4, x: 0, y: 7 },
-    { node: n5, x: 0, y: 19 },
-    { node: n6, x: 1, y: 7 },
-    { node: n7, x: 2, y: 7 }
+    { node: n1, x: 0, y: 6 },
+    { node: n2, x: 0, y: 7 },
+    { node: n3, x: 0, y: 18 },
+    { node: n4, x: 0, y: 13 },
+    { node: n5, x: 0, y: 25 },
+    { node: n6, x: 1, y: 13 },
+    { node: n7, x: 2, y: 13 }
 ];
-const rows = { [n1]: 0, [n2]: 1, [n3]: 4, [n4]: 3, [n5]: 7, [n6]: 3, [n7]: 3 };
+const rows = { [n1]: 2, [n2]: 3, [n3]: 6, [n4]: 5, [n5]: 9, [n6]: 5, [n7]: 5 };
 const degrees = { [n1]: 1, [n2]: 4, [n3]: 1, [n4]: 3, [n5]: 1, [n6]: 1, [n7]: 1 };
-const rowColumnCounts = { 0: 1, 1: 1, 3: 3, 4: 1, 7: 1 };
+const rowColumnCounts = { 2: 1, 3: 1, 5: 3, 6: 1, 9: 1 };
 const rowColumns = { [n1]: 0, [n2]: 0, [n3]: 0, [n4]: 0, [n5]: 0, [n6]: 1, [n7]: 2 };
 const fudgeX = 1;
 const fudgeY = 2;
 const spacerY = 1;
 const xys = {
-    [n1]: { x: 0, y: 0 },
-    [n2]: { x: 0, y: 1 },
-    [n3]: { x: 0, y: 12 },
-    [n4]: { x: 0, y: 7 },
-    [n5]: { x: 0, y: 19 },
-    [n6]: { x: 1, y: 7 },
-    [n7]: { x: 2, y: 7 }
+    [n1]: { x: 0, y: 6 },
+    [n2]: { x: 0, y: 7 },
+    [n3]: { x: 0, y: 18 },
+    [n4]: { x: 0, y: 13 },
+    [n5]: { x: 0, y: 25 },
+    [n6]: { x: 1, y: 13 },
+    [n7]: { x: 2, y: 13 }
 };
 const minLineLength = 10;
 const maxLineLength = 100;
 const pivotWrappedLineHeight = 0.5;
 const types = {};
 const axes = [
-    { label: 'Pivot 1', y: -fudgeY },
-    { label: 'Pivot 2', y: (fudgeY + spacerY) * 2 * (2 - 1) },
-    { label: 'Pivot 3', y: (fudgeY + spacerY) * 2 * (3 - 1) },
-    { label: 'Pivot 4', y: (fudgeY + spacerY) * 2 * (4 - 1) }
+    { label: 'Pivot 1', y: (fudgeY + spacerY) * 2 * 1 },
+    { label: 'Pivot 2', y: (fudgeY + spacerY) * 2 * 2 },
+    { label: 'Pivot 3', y: (fudgeY + spacerY) * 2 * 3 },
+    { label: 'Pivot 4', y: (fudgeY + spacerY) * 2 * 4 }
 ];
 const edgeOpacity = 2.0 / Math.log10(100 + Object.values(xys).length);
 const hugeDataStructure = { data: { graph: edges, labels: undecoratedLabels } };
@@ -175,14 +175,14 @@ const visiblePivotsSmall = [
 
 const idealGraphDataSmall = {
     graph: [
-        { source: 'a', destination: 'b', Pivot: 0, edge: 'edge_0_0' },
-        { source: 'a', destination: 'c', Pivot: 0, edge: 'edge_0_1' }
+        { source: 'a', destination: 'b', Pivot: 1, edge: 'edge_0_0' },
+        { source: 'a', destination: 'c', Pivot: 1, edge: 'edge_0_1' }
     ],
     labels: [
-        { node: 'a', Pivot: 0 },
-        { node: 'b', Pivot: 0 },
-        { node: 'c', Pivot: 0 },
-        { node: 'd', Pivot: 1 }
+        { node: 'a', Pivot: 1 },
+        { node: 'b', Pivot: 1 },
+        { node: 'c', Pivot: 1 },
+        { node: 'd', Pivot: 2 }
     ],
     name: null,
     type: 'edgelist',
