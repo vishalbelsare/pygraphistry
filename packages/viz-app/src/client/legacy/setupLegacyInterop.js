@@ -41,7 +41,7 @@ export function setupLegacyInterop(document, options) {
 
     const simCameraBounds = { top, left, right, bottom };
 
-    pixelRatio = pixelRatio || window.devicePixelRatio || 1;
+    pixelRatio = pixelRatio || 2;
 
     if (typeof opacity !== 'undefined' && !isNaN((opacity = Math.abs(parseFloat(opacity))))) {
         if (opacity > 1) {
