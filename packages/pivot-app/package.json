@@ -97,7 +97,6 @@
     "redux": "3.7.2",
     "redux-observable": "0.16.0",
     "request": "2.83.0",
-    "rx-elasticsearch": "0.2.5",
     "rxjs": "5.4.2",
     "simpleflakes": "1.2.3",
     "socket.io": "2.0.3",
