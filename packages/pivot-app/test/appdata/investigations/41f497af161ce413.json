@@ -1,12 +1,13 @@
 {
-    "name": "Copy of Untitled Investigation 12",
+    "name": "[ES] Jerry's BD",
     "id": "41f497af161ce413",
     "description": "",
     "tags": [],
-    "modifiedOn": 1513237718401,
+    "modifiedOn": 1513345093846,
     "layout": "stackedBushyGraph",
     "pivots": [
-        "41f497af15b8fe6e"
+        "41f497af15b8fe6e",
+        "41f78ee4ee62a02a"
     ],
     "time": {}
 }

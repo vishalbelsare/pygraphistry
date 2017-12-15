@@ -1,4 +1,4 @@
-import { Client as es_client } from 'elasticsearch';
+import { Client } from 'elasticsearch';
 import { Observable } from 'rxjs';
 import VError from 'verror';
 
@@ -8,61 +8,61 @@ const log = logger.createLogger(__filename);
 
 const conf = global.__graphistry_convict_conf__;
 
-export function toGraph(records) {
-    const nodes = [];
-    const edges = [];
-    records.hits.hits.forEach(function(record) {
-        const item = {};
+function processEsEvents(records) {
+    const events = [];
 
-        const maybeTitle = record._source
-            ? 'EventID' in record._source
-              ? record._source.EventID
-              : '_title' in record ? record._source._title : undefined
-            : undefined;
-
-        item.type = record._type;
-        if (record._type === 'node') {
-            item.node = record._id;
-            item.pointTitle = maybeTitle === undefined ? item._id : maybeTitle;
-            nodes.push(item);
-        } else {
-            item.source = record._source.Source;
-            item.destination = record._source.Destination;
-            edges.push(item);
-        }
+    records.hits.hits.forEach(event => {
+        events.push(event._source);
     });
-    return { nodes, edges };
+
+    return events;
+}
+
+function columnsToRows({ fields, columns }) {
+    if (!columns.length || !columns[0].length) {
+        return [];
+    }
+
+    const rows = [];
+    const height = columns[0].length;
+    for (let row = 0; row < height; row++) {
+        const event = {};
+        fields.forEach((name, col) => {
+            const v = columns[col][row];
+            if (v !== null) {
+                event[name] = v;
+            }
+        });
+        rows.push(event);
+    }
+
+    return rows;
 }
 
 class ElasticsearchConnector extends Connector {
     constructor(config) {
         super(config);
         const metadata = { host: config.host + ':' + config.port, log: config.logLevel };
-        this.client = new es_client(metadata);
+        this.client = new Client(metadata);
 
         this.log = logger.createLogger(__filename).child(this.metadata);
     }
 
-    search(args) {
-        const query = {
-            index: args.index,
-            body: JSON.parse(args.query)
-        };
-        this.log.info('Running Elasticsearch query', query);
-        this.log.info('Running Elasticsearch Index', args.index);
+    search(searchQuery, searchParams) {
+        this.log.info('Running Elasticsearch query', searchQuery);
 
         return Observable.of(1)
             .switchMap(() => {
                 const session = this.client;
-                return Observable.fromPromise(session.search(query)).timeout(30000);
+                return Observable.fromPromise(session.search(searchQuery)).timeout(30000);
             })
             .map(records => {
-                const { nodes, edges } = toGraph(records);
+                const r = processEsEvents(records);
+                console.log(r);
                 return {
-                    resultCount: nodes.length + edges.length,
-                    events: records,
-                    isPartial: false,
-                    graph: { nodes, edges }
+                    resultCount: r.length,
+                    events: r,
+                    isPartial: false
                 };
             });
     }

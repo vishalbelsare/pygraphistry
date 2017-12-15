@@ -2,9 +2,10 @@
     "id": "41f497af15b8fe6e",
     "enabled": true,
     "pivotParameters": {
-        "search-es-plain$$$index": "nvda-jerry*",
+        "search-es-plain$$$index": "grfy-*",
         "search-es-plain$$$type": "",
-        "search-es-plain$$$query": "{\n  \"query\": {\n    \"exists\": { \"field\" : \"EventID\" }\n  }\n}"
+        "search-es-plain$$$query": "{\n  \"query\": {\n      \"bool\" : {\n          \"must\" : {\n             \"term\" : { \"externalId\" : \"3727266\" }\n          }\n       }\n    }\n}",
+        "search-es-plain$$$fields": []
     },
     "pivotTemplate": "search-es-plain"
 }
