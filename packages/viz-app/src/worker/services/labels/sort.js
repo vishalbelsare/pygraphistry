@@ -6,7 +6,9 @@ export const mostImportantEntityKeys = [
     'Pivot',
     'canonicalType',
     'cols',
-    'refTypes'
+    'refTypes',
+    'index',
+    'searchLink'
 ];
 
 export const mostImportantEventKeys = [
@@ -31,12 +33,8 @@ export const mostImportantEventKeys = [
     'dest_user',
     'user',
 
-    'type',
-    'edgeType',
-    'cols',
-    'vendor',
-    'product',
-    'externalId',
+    'scanners',
+    'alerts',
 
     'msg',
     'fname',
@@ -44,7 +42,16 @@ export const mostImportantEventKeys = [
     'fileHash',
     'filePath',
     'link',
-    'url'
+    'url',
+
+    'type',
+    'edgeType',
+    'cols',
+    'vendor',
+    'product',
+    'index',
+    'searchLink',
+    'externalId'
 ];
 
 function sortKeys(cols, order) {

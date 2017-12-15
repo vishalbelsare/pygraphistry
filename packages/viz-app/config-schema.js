@@ -28,14 +28,16 @@ module.exports = {
             format: String,
             default: config.S3_ACCESS,
             arg: 's3-access',
-            env: 'S3_ACCESS'
+            env: 'S3_ACCESS',
+            sensitive: true
         },
         secret: {
             doc: 'The S3 access secret',
             format: String,
             default: config.S3_SECRET,
             arg: 's3-secret',
-            env: 'S3_SECRET'
+            env: 'S3_SECRET',
+            sensitive: true
         }
     },
     device: {
@@ -111,7 +113,8 @@ module.exports = {
             format: String,
             default: '',
             arg: 'password-hash',
-            env: 'PASSWORD_HASH'
+            env: 'PASSWORD_HASH',
+            sensitive: true
         }
     },
     app: {

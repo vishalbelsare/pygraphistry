@@ -18,6 +18,10 @@ import { decorateGraphLabelsWithXY, generateEdgeOpacity } from './shape/normaliz
 import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
+function pivotName({ index }) {
+    return 1 + index;
+}
+
 function upload(etlService, apiKey, data, investigation) {
     if (data.graph.length === 0) {
         return Observable.throw(new Error('No edges to upload!'));
@@ -184,8 +188,14 @@ export function createGraph(pivots) {
                 : graphUnion(
                       { nodes, edges },
                       {
-                          nodes: labels.map(node => ({ Pivot: index, ...node })),
-                          edges: graph.map(edge => ({ Pivot: index, ...edge }))
+                          nodes: labels.map(node => ({
+                              Pivot: pivotName({ enabled, results: { graph, labels }, index }),
+                              ...node
+                          })),
+                          edges: graph.map(edge => ({
+                              Pivot: pivotName({ enabled, results: { graph, labels }, index }),
+                              ...edge
+                          }))
                       },
                       bindings.idField,
                       bindings.idEdgeField
@@ -357,10 +367,7 @@ export function rowsToColumns(
 export function mergeRowsColumnsToXY(rows, columns, fudgeX, fudgeY, spacerY) {
     return _.mapObject(rows, (rowIdx, node) => ({
         x: fudgeX * columns[node],
-        y:
-            rowIdx > 0
-                ? (fudgeY + spacerY) * (rowIdx - (rowIdx & 1)) + spacerY * (rowIdx & 1)
-                : -2 * spacerY
+        y: (fudgeY + spacerY) * (rowIdx - (rowIdx & 1)) + spacerY * (rowIdx & 1)
     }));
 }
 
@@ -369,7 +376,7 @@ export function generateAxes(rows, fudgeY, spacerY) {
     const pivotRows = Object.values(rows); // This includes, because of rowsToColumns()'s line-splitting, real numbers.
     const uniquePivotIntegers = _.uniq(pivotRows.map(r => (r / 2) | 0)).sort((a, b) => a - b);
     const axes = uniquePivotIntegers.map(i => ({
-        label: `Pivot ${i + 1}`,
+        label: `Pivot ${i}`,
         y: i > 0 ? (fudgeY + spacerY) * i * 2 : -2 * spacerY
     }));
 

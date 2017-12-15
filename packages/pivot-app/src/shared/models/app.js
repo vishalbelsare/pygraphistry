@@ -3,7 +3,7 @@ import { simpleflake } from 'simpleflakes';
 import _ from 'underscore';
 
 export function makeTestUser(investigations, templates, connectors, apiKey, graphistryHost) {
-    const suffix = '/graph/graph.html?play=4000&bg=%23eeeeee&info=false&logo=false';
+    const suffix = '/graph/graph.html?play=12000&bg=%23eeeeee&info=false&logo=false';
 
     const investigationsRefs = investigations.map(investigation =>
         $ref(`investigationsById['${investigation.id}']`)

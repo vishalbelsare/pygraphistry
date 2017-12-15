@@ -63,7 +63,7 @@ function loadConfigFiles() {
 }
 
 loadConfigFiles();
-conf.validate({ strict: true });
+conf.validate({ allowed: 'strict' });
 
 module.exports = conf;
 module.exports.conf = conf;

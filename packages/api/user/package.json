@@ -20,7 +20,7 @@
     "dependencies": {
         "@graphistry/db": "1.0.0",
         "bcryptjs": "^2.4.3",
-        "convict": "^4.0.1",
+        "convict": "4.0.2",
         "knex": "^0.13.0",
         "micro": "^8.0.4",
         "micro-cookie-session": "^2.0.0-beta.1",

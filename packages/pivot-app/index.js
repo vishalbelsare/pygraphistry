@@ -98,6 +98,8 @@ if (port) {
         } else {
             const { port: _port, address: _host } = this.address();
             logger.info(`Started pivot-app:server at http://${_host}:${_port}`);
+
+            //toString() wipes sensitive=true
             logger.info(
                 {
                     host: _host,
@@ -113,6 +115,7 @@ if (port) {
                 },
                 'Environment constants'
             );
+            logger.info('Full config (non-sensitive)', convict.toString());
         }
     });
 } else {

@@ -30,7 +30,8 @@ const conf = convict({
             format: String,
             default: '',
             arg: 'password-hash',
-            env: 'PASSWORD_HASH'
+            env: 'PASSWORD_HASH',
+            sensitive: true
         },
         username: {
             doc: 'The username used to access this service',
@@ -103,7 +104,8 @@ const conf = convict({
             format: String,
             default: undefined,
             arg: 'graphistry-key',
-            env: 'GRAPHISTRY_KEY'
+            env: 'GRAPHISTRY_KEY',
+            sensitive: true
         },
         host: {
             doc: `The location of Graphistry's Server`,
@@ -133,7 +135,8 @@ const conf = convict({
             format: String,
             default: undefined,
             arg: 'neo4j-password',
-            env: 'NEO4j_PASSWORD'
+            env: 'NEO4j_PASSWORD',
+            sensitive: true
         }
     },
     elasticsearch: {
@@ -158,7 +161,8 @@ const conf = convict({
             format: String,
             default: undefined,
             arg: 'splunk-key',
-            env: 'SPLUNK_KEY'
+            env: 'SPLUNK_KEY',
+            sensitive: true
         },
         user: {
             doc: 'Splunk user name',
@@ -181,12 +185,26 @@ const conf = convict({
             arg: 'splunk-port',
             env: 'SPLUNK_PORT'
         },
+        uiPort: {
+            doc: 'Splunk web UI port',
+            format: Number,
+            default: 443,
+            arg: 'splunk-web-port',
+            env: 'SPLUNK_WEB_PORT'
+        },
         scheme: {
             doc: 'Splunk protocol',
             format: ['http', 'https'],
             default: 'https',
             arg: 'splunk-scheme',
             env: 'SPLUNK_SCHEME'
+        },
+        suffix: {
+            doc: 'Splunk url suffix, e.g., en-US in mysplunk.com/en-US/app/search',
+            format: String,
+            default: '/en-US',
+            arg: 'suffix',
+            env: 'SPLUNK_SUFFIX'
         },
         jobCacheTimeout: {
             doc:

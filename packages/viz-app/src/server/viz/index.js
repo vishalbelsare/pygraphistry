@@ -1,6 +1,7 @@
 import path from 'path';
 import express from 'express';
 import * as bodyParser from 'body-parser';
+import * as archiver from 'archiver';
 
 import configureRender from './render';
 import configureSocket from './socket';
@@ -81,6 +82,50 @@ function configureVizWorker(config, activeCB, io) {
         getDataSource(request, { streaming: true })
     );
 
+    //override on graph.html load
+    let zipHandler = undefined; // { dataframe }
+    app.get(`/graph/graphistry.zip`, (req, res) => {
+        if (!zipHandler) {
+            logger.error('Called /graph/graph.zip before initialized session');
+            return res.status(404).send({ error: 'No active session' });
+        }
+
+        //Races on dataframe read; aim for safety when we go to (immutable) arrows
+        Observable.of(zipHandler.dataframe)
+            .switchMap(dataframe =>
+                Observable.combineLatest(
+                    Observable.fromPromise(dataframe.formatAsCSV('point')),
+                    Observable.fromPromise(dataframe.formatAsCSV('event')),
+                    Observable.fromPromise(dataframe.formatAsCSV('edge'))
+                ).do(([nodes, events, edges]) => {
+                    const archive = archiver('zip');
+
+                    archive.on('error', function(err) {
+                        logger.error('error /graph/graph.zip', err);
+                        res.status(500).send({ error: 'Internal server error' });
+                    });
+
+                    archive.on('end', function() {
+                        logger.info('graphistry.zip archive wrote %d bytes', archive.pointer());
+                    });
+
+                    res.attachment('graphistry.zip');
+                    archive.pipe(res);
+                    archive.append(nodes, { name: 'nodes.csv' });
+                    archive.append(events, { name: 'events.csv' });
+                    archive.append(edges, { name: 'edges.csv' });
+                    archive.finalize();
+                })
+            )
+            .subscribe(
+                () => null,
+                e => {
+                    logger.error('/graph/graph.zip', e);
+                    return res.status(500).send({ error: 'Internal server error' });
+                }
+            );
+    });
+
     app.get(`/graph/graph.html`, (req, res) => {
         activeCB(null, true);
         maybeTagServer(req);
@@ -141,6 +186,7 @@ function configureVizWorker(config, activeCB, io) {
                         .let(sendPostVGraphLoadedUpdate(sendUpdate, updateSession))
                         .map(({ workbook, view, socket, vizServer }) => {
                             const { nBody } = view;
+                            zipHandler = { dataframe: nBody.dataframe };
                             nBody.server = vizServer;
                             const { interactions } = nBody;
                             vizServer.updateSession = sendSessionUpdate.bind(

@@ -214,7 +214,7 @@ function BoolCell({ id, paramKey, paramValue, paramUI, onChange }) {
             controlId={`pivot-bool-param-${id}-${paramKey}`}>
             <Col {...cellFullCols}>
                 <RcSwitch
-                    onChange={ (value) => onChange({target: { value } }) }
+                    onChange={value => onChange({ target: { value } })}
                     defaultChecked={paramValue}
                     checkedChildren={paramUI.label}
                     unCheckedChildren={paramUI.label}
@@ -262,7 +262,10 @@ function MultiCell({ id, paramKey, paramValue, paramUI, onChange }) {
     );
 }
 
-const dateRangeTimePickerProps = { className: styles['pivot-date-range-param'] };
+const dateRangeTimePickerProps = {
+    className: styles['pivot-date-range-param'],
+    placeholder: 'Investigation Default'
+};
 
 function DateRange({ $falcor, id, paramKey, paramValue }) {
     return (

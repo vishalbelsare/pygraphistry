@@ -8,9 +8,9 @@ import { Connector } from './connector.js';
 
 const conf = global.__graphistry_convict_conf__;
 
-//{ fields: [ string ], columns: [ [ 'a] ] } -> [ {string -> 'a} ]
+//{ fields: [ string ], columns: [ [ 'a] ] } * string -> [ {string -> 'a} ]
 // Splunk columns use null for na
-function columnsToRows({ fields, columns }) {
+function columnsToRows({ fields, columns }, searchLink) {
     if (!columns.length || !columns[0].length) {
         return [];
     }
@@ -18,7 +18,7 @@ function columnsToRows({ fields, columns }) {
     const rows = [];
     const height = columns[0].length;
     for (let row = 0; row < height; row++) {
-        const event = {};
+        const event = { searchLink };
         fields.forEach((name, col) => {
             const v = columns[col][row];
             if (v !== null) {
@@ -34,6 +34,10 @@ function columnsToRows({ fields, columns }) {
 class SplunkConnector extends Connector {
     constructor(config) {
         super(config);
+        this.host = config.host;
+        this.suffix = config.suffix;
+        this.protocol = config.scheme;
+        this.uiPort = config.uiPort;
 
         this.service = new splunkjs.Service({
             host: config.host,
@@ -186,7 +190,7 @@ class SplunkConnector extends Connector {
             conf.get('splunk.jobCacheTimeout') > 0
                 ? objectHash.MD5({ q: query, p: searchParamOverrides })
                 : Date.now();
-        const jobId = `pivotapp${hash}`;
+        const jobId = `graphistry_${hash}`;
 
         // Set the splunk search parameters
         const searchParams = {
@@ -196,13 +200,16 @@ class SplunkConnector extends Connector {
         };
         const searchInfo = { query, searchParams };
 
+        const searchLink = `<a href="${this.protocol}://${this.host}:${this.uiPort}${this
+            .suffix}/app/search/search?sid=${jobId}" target="_blank">Splunk ${jobId}</a>`;
+
         return this.getOrCreateJob(jobId, searchInfo)
             .switchMap(job => this.retrieveJobResults(job, searchInfo))
             .map(({ results, job, props }) => {
                 return {
                     resultCount: props.resultCount,
                     isPartial: props.isPartial,
-                    events: columnsToRows(results),
+                    events: columnsToRows(results, searchLink),
                     searchId: job.sid
                 };
             });
@@ -223,5 +230,7 @@ export const splunkConnector0 = new SplunkConnector({
     username: conf.get('splunk.user'),
     password: conf.get('splunk.key'),
     scheme: conf.get('splunk.scheme'),
-    port: conf.get('splunk.port')
+    port: conf.get('splunk.port'),
+    uiPort: conf.get('splunk.uiPort'),
+    suffix: conf.get('splunk.suffix')
 });

@@ -42,7 +42,7 @@ function columnsToRows({ fields, columns }) {
 class ElasticsearchConnector extends Connector {
     constructor(config) {
         super(config);
-        const metadata = { host: '35.199.32.175' + ':' + config.port, log: config.logLevel };
+        const metadata = { host: config.host + ':' + config.port, log: config.logLevel };
         this.client = new Client(metadata);
 
         this.log = logger.createLogger(__filename).child(this.metadata);

@@ -80,10 +80,10 @@ function extractAllNodes(connections) {
     return connections === undefined || connections.length === 0 || connections.indexOf('*') !== -1;
 }
 
-// Convert events into a hypergraph
+// Convert each event into a hypergraph
 //   -- hypernodes: generate EventID if none available
 //   -- if generic nodes/edges, merge in
-//   -- track which columns are used
+//   -- track which columns, search links, indices are used
 function shapeHyperGraph({ app, pivot }) {
     const {
         events = [],
@@ -104,6 +104,12 @@ function shapeHyperGraph({ app, pivot }) {
         const row = events[i];
         const eventID = row.EventID || simpleflake().toJSON();
 
+        const { index, searchLink } = row;
+        const provenance = {
+            ...(index !== undefined ? { index: [index] } : {}),
+            ...(searchLink !== undefined ? { searchLink: [searchLink] } : {})
+        };
+
         //TODO partially evaluate outside of loop
         const entityTypes = Object.keys(row)
             .filter(field => field !== 'EventID')
@@ -119,7 +125,11 @@ function shapeHyperGraph({ app, pivot }) {
             .filter(field => attributesBlacklist.indexOf(field) === -1);
 
         nodeLabels.push(
-            Object.assign({}, _.pick(row, attribs), { node: eventID, type: 'EventID' })
+            Object.assign({}, _.pick(row, attribs), {
+                node: eventID,
+                type: 'EventID',
+                ...provenance
+            })
         );
 
         for (let j = 0; j < entityTypes.length; j++) {
@@ -134,7 +144,13 @@ function shapeHyperGraph({ app, pivot }) {
             ) {
                 let entity = generatedEntities[row[field]];
                 if (!entity) {
-                    entity = { node: row[field], type: field, cols: [field] };
+                    entity = {
+                        node: row[field],
+                        type: field,
+                        cols: [field],
+                        ...provenance
+                    };
+
                     nodeLabels.push(entity);
                     generatedEntities[row[field]] = entity;
                 } else {
@@ -144,12 +160,23 @@ function shapeHyperGraph({ app, pivot }) {
                     if (entity.cols.indexOf(field) === -1) {
                         entity.cols.push(field);
                     }
+                    ['index', 'searchLink'].forEach(fld => {
+                        const val = row[fld];
+                        if (val !== undefined) {
+                            if (entity[fld] === undefined) {
+                                entity[fld] = [val];
+                            } else if (entity[fld].indexOf(val) === -1) {
+                                entity[fld].push(val);
+                            }
+                        }
+                    });
                 }
                 edges.push(
                     Object.assign({}, _.pick(row, attribs), {
                         destination: row[field],
                         source: eventID,
                         col: field,
+                        ...provenance,
                         edge: `${eventID}:${field}`,
                         edgeType: 'EventID->' + field,
                         edgeTitle: `${eventID}->${row[field]}`
