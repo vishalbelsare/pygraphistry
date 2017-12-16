@@ -155,8 +155,8 @@ export function decorateInsideness(graph) {
 
 const allOrderedZones = ['inside', 'inside->outside', 'mixed', '', 'outside->inside', 'outside'];
 const alwaysOnZones = ['inside', 'mixed', 'outside'];
-const insideOrder = ['mac', 'ip', 'user', 'event', 'alert', 'hash', 'filepath', 'file'];
-const outsideOrder = ['mac', 'ip', 'user', 'alert', 'event', 'hash', 'filepath', 'file'];
+const insideOrder = ['mac', 'ip', 'host', 'user', 'event', 'alert', 'hash', 'filepath', 'file'];
+const outsideOrder = ['mac', 'ip', 'host', 'user', 'alert', 'event', 'hash', 'filepath', 'file'];
 const mixedOrder = ['alert', 'event', 'hash', 'file', 'filepath'];
 const spacerSeparator = 400;
 const typeSeparator = 200;

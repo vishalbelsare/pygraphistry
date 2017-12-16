@@ -182,10 +182,10 @@ export const desiredEntities = [
 ];
 
 export const colTypes = {
-    dhost: 'url',
+    dhost: 'host',
     dmac: 'mac',
     dest: 'ip',
-    dest_hostname: 'url',
+    dest_hostname: 'host',
     dest_ip: 'ip',
     dest_location: 'url',
     dest_mac: 'mac',
@@ -204,8 +204,8 @@ export const colTypes = {
     source: 'log',
     smac: 'mac',
     src: 'ip',
-    src_host: 'url',
-    src_hostname: 'url',
+    src_host: 'host',
+    src_hostname: 'host',
     src_ip: 'ip',
     src_location: 'url',
     src_mac: 'mac',
