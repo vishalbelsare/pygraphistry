@@ -1064,27 +1064,6 @@ RenderingScheduler.prototype.renderSlowEffects = function() {
         end4 = Date.now();
 
         debug('Arrows generated in ', end3 - end2, '[ms], and loaded in', end4 - end3, '[ms]');
-    } else if (false && appSnapshot.vboUpdated) {
-        //EDGE BUNDLING
-        //TODO deprecate/integrate?
-        start = Date.now();
-
-        expanded = this.expandLogicalMidEdges(appSnapshot.buffers);
-        midSpringsPos = expanded.midSpringsPos;
-
-        renderer.loadBuffers(renderState, { midSpringsPos: midSpringsPos });
-        renderer.loadBuffers(renderState, { midSpringsStarts: expanded.midSpringsStarts });
-        renderer.loadBuffers(renderState, { midSpringsEnds: expanded.midSpringsEnds });
-        end1 = Date.now();
-        renderer.setNumElements(renderState, 'edgepicking', midSpringsPos.length / 2);
-        end2 = Date.now();
-        console.debug(
-            'Edges expanded in',
-            end1 - start,
-            '[ms], and loaded in',
-            end2 - end1,
-            '[ms]'
-        );
     }
 
     renderer.render(renderState, 'fullscene', 'renderSceneFull');
