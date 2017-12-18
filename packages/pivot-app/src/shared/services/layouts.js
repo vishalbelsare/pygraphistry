@@ -85,6 +85,41 @@ export const pointColorEncoding = {
     }
 };
 
+export const pointPivotColorEncoding = {
+    attribute: 'Pivot',
+    variation: 'categorical',
+    mapping: {
+        categorical: {
+            fixed: {
+                0: colorRemapping.pink,
+                1: colorRemapping.blue,
+                2: colorRemapping.orange,
+                3: colorRemapping.brown,
+                4: colorRemapping.lightgreen,
+                5: colorRemapping.lightblue
+            },
+            other: colorRemapping.gray
+        }
+    }
+};
+
+export const pointPivotIconEncoding = {
+    attribute: 'Pivot',
+    variation: 'categorical',
+    mapping: {
+        categorical: {
+            fixed: {
+                0: 'battery-0',
+                1: 'battery-1',
+                2: 'battery-2',
+                3: 'battery-3',
+                4: 'battery-4'
+            },
+            other: 'bolt'
+        }
+    }
+};
+
 const sizeVals = {
     big: 100,
     medium: 80,
@@ -121,6 +156,10 @@ export const pointSizeEncoding = {
 };
 
 const allEncodings = {
+    pointLegendTypeIconEncoding: pointIconEncoding,
+    pointLegendTypeColorEncoding: pointColorEncoding,
+    pointLegendTypeSizeEncoding: pointSizeEncoding,
+    pointLegendPivotColorEncoding: pointPivotColorEncoding,
     pointIconEncodingDefault: pointIconEncoding,
     pointColorEncodingDefault: pointColorEncoding,
     pointSizeEncodingDefault: pointSizeEncoding
