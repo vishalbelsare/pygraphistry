@@ -77,7 +77,6 @@ export const LegendBody = function({
     parentKey
 }) {
     const isPivot = name === 'Pivot';
-    console.log({ isPivot });
     const table =
         bins === null ? (
             undefined
