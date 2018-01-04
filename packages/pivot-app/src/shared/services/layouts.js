@@ -52,7 +52,16 @@ const colorRemapping = {
     lightblue: '#40A7FF',
     lightgreen: '#6DB34B',
     pink: '#C55288',
-    red: '#E75D51'
+    red: '#E75D51',
+    purple: '#A71AD3',
+    green: '#268D59',
+    darkorange: '#C67600',
+    magenta: '#B42852',
+    darkblue: '#1B3872',
+    darkred: '#760E0E',
+    darkgreen: '#1C5437',
+    mint: '#84DBAE',
+    lightpurple: '#6F45E2'
 };
 
 // alert, event, file, id, ip, mac
@@ -96,7 +105,17 @@ export const pointPivotColorEncoding = {
                 2: colorRemapping.orange,
                 3: colorRemapping.brown,
                 4: colorRemapping.lightgreen,
-                5: colorRemapping.lightblue
+                5: colorRemapping.lightblue,
+                6: colorRemapping.red,
+                7: colorRemapping.purple,
+                8: colorRemapping.green,
+                9: colorRemapping.darkorange,
+                10: colorRemapping.magenta,
+                11: colorRemapping.darkblue,
+                12: colorRemapping.darkred,
+                13: colorRemapping.darkgreen,
+                14: colorRemapping.mint,
+                15: colorRemapping.lightpurple
             },
             other: colorRemapping.gray
         }
