@@ -30,7 +30,7 @@ export const pointIconEncoding = {
                 id: 'barcode',
                 ip: 'desktop',
                 log: 'database',
-                mac: 'desktop',
+                mac: 'barcode',
                 port: 'microchip',
                 product: 'window-maximize',
                 tag: 'tag',
@@ -81,12 +81,12 @@ export const pointColorEncoding = {
                 id: colorRemapping.gray,
                 ip: colorRemapping.blue,
                 log: colorRemapping.gray,
-                mac: colorRemapping.lightblue,
+                mac: colorRemapping.blue,
                 port: colorRemapping.gray,
                 product: colorRemapping.gray,
                 tag: colorRemapping.pink,
                 url: colorRemapping.lightgreen,
-                user: colorRemapping.blue,
+                user: colorRemapping.lightblue,
                 vendor: colorRemapping.gray
             },
             other: colorRemapping.gray

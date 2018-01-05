@@ -490,6 +490,7 @@ function LabelRow({
                                 )}>
                                 <i
                                     className={classNames({
+                                        'label-item-action-icon': true,
                                         fa: true,
                                         'fa-ban': true
                                     })}
@@ -523,6 +524,7 @@ function LabelRow({
                                 )}>
                                 <i
                                     className={classNames({
+                                        'label-item-action-icon': true,
                                         fa: true,
                                         'fa-filter': true
                                     })}

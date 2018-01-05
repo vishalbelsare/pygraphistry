@@ -65,6 +65,26 @@ function LegendFooter({
     );
 }
 
+function formatLegendBins(isPivot, bins) {
+    if (bins === null || !isPivot || !bins.length) {
+        return bins;
+    }
+
+    //partial Falcor result
+    if (!bins.filter(o => o).length) {
+        return null;
+    }
+
+    const maxPivot = bins.reduce((acc, { values: [v] }, i) => Math.max(v, acc), bins[0].values[0]);
+
+    return Array.apply(null, { length: maxPivot })
+        .map(Function.call, Number)
+        .map((_, i) => {
+            const pivot = bins.filter(({ values: [pivot] }) => pivot === i + 1);
+            return pivot.length ? pivot[0] : { values: [i + 1], count: 0, exclude: false };
+        });
+}
+
 export const LegendBody = function({
     name,
     bins,
@@ -77,8 +97,11 @@ export const LegendBody = function({
     parentKey
 }) {
     const isPivot = name === 'Pivot';
+
+    const theBins = formatLegendBins(isPivot, bins);
+
     const table =
-        bins === null ? (
+        theBins === null ? (
             undefined
         ) : (
             <Table striped condensed key={`${parentKey}-body-full`}>
@@ -103,7 +126,7 @@ export const LegendBody = function({
                     </tr>
                 </thead>
                 <tbody>
-                    {bins.map(({ count, values }, i) => {
+                    {theBins.map(({ count, values }, i) => {
                         const binName = values[0];
 
                         const specialIcon = iconsOn
