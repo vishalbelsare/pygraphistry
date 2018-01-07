@@ -100,15 +100,18 @@ function shapeHyperGraph({ app, pivot }) {
 
     const generatedEntities = {};
 
+    const labelsToPropagate = ['index', 'product', 'vendor', 'searchLink'];
+
     for (let i = 0; i < events.length; i++) {
         const row = events[i];
         const eventID = row.EventID || simpleflake().toJSON();
 
-        const { index, searchLink } = row;
-        const provenance = {
-            ...(index !== undefined ? { index: [index] } : {}),
-            ...(searchLink !== undefined ? { searchLink: [searchLink] } : {})
-        };
+        const provenance = labelsToPropagate.reduce((acc, field) => {
+            if (row[field] !== undefined) {
+                acc[field] = [row[field]];
+            }
+            return acc;
+        }, {});
 
         //TODO partially evaluate outside of loop
         const entityTypes = Object.keys(row)
@@ -160,7 +163,7 @@ function shapeHyperGraph({ app, pivot }) {
                     if (entity.cols.indexOf(field) === -1) {
                         entity.cols.push(field);
                     }
-                    ['index', 'searchLink'].forEach(fld => {
+                    labelsToPropagate.forEach(fld => {
                         const val = row[fld];
                         if (val !== undefined) {
                             if (entity[fld] === undefined) {
