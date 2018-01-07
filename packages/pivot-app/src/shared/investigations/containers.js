@@ -21,7 +21,7 @@ import {
 
 export const investigationContainer = container({
     fragment: ({ pivots } = {}) => `{
-        id, name, status, datasetType, datasetName, eventTable, controls, modifiedOn, description, time, tags, url, layout, axes, edgeOpacity,
+        id, name, status, datasetType, datasetName, eventTable, controls, createdOn, modifiedOn, description, time, tags, url, layout, axes, edgeOpacity,
         pivots: ${Pivot.fragments(pivots)}
     }`,
     mapFragment: (

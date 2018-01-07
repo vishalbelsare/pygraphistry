@@ -27,7 +27,7 @@ export default withSchema((QL, { get, set }, services) => {
 
     return QL`{
         eventTable: ${readOnlyHandler},
-        ['id', 'name', 'tags', 'url', 'datasetName', 'datasetType', 'controls', 'status', 'description', 'time', 'modifiedOn', 'layout', 'axes', 'edgeOpacity']: ${readWriteHandler},
+        ['id', 'name', 'tags', 'url', 'datasetName', 'datasetType', 'controls', 'status', 'description', 'time', 'createdOn', 'modifiedOn', 'layout', 'axes', 'edgeOpacity']: ${readWriteHandler},
         pivots: {
             length: ${readOnlyHandler},
             [{ integers }]: ${readOnlyHandler}
