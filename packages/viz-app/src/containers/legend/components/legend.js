@@ -65,14 +65,19 @@ function LegendFooter({
     );
 }
 
-function formatLegendBins(isPivot, bins) {
+//bool * ?[ ?{ values: [ int ], count: int } ]
+// -> ?[ ?{ values: [ int ], count: int } ]
+// Some pivots may have no values because Falcor streaming or no results,
+//  so fill them in (or bail)
+function expandPivotBins(isPivot, bins) {
     if (bins === null || !isPivot || !bins.length) {
         return bins;
     }
 
-    //partial Falcor result
-    if (!bins.filter(o => o).length) {
-        return null;
+    for (let i = 0; i < bins.length; i++) {
+        if (!bins[i]) {
+            return null;
+        }
     }
 
     const maxPivot = bins.reduce((acc, { values: [v] }, i) => Math.max(v, acc), bins[0].values[0]);
@@ -87,7 +92,7 @@ function formatLegendBins(isPivot, bins) {
 
 export const LegendBody = function({
     name,
-    bins,
+    bins: binsWithNulls,
     iconEncodings,
     iconsOn,
     colorEncodings,
@@ -98,10 +103,10 @@ export const LegendBody = function({
 }) {
     const isPivot = name === 'Pivot';
 
-    const theBins = formatLegendBins(isPivot, bins);
+    const bins = expandPivotBins(isPivot, binsWithNulls);
 
     const table =
-        theBins === null ? (
+        bins === null ? (
             undefined
         ) : (
             <Table striped condensed key={`${parentKey}-body-full`}>
@@ -126,7 +131,7 @@ export const LegendBody = function({
                     </tr>
                 </thead>
                 <tbody>
-                    {theBins.map(({ count, values }, i) => {
+                    {bins.map(({ count, values }, i) => {
                         const binName = values[0];
 
                         const specialIcon = iconsOn
