@@ -248,7 +248,10 @@ export const uiTweaks = {
 
 export function decorateEdgeOpacity(graph) {
     const nodeCount = graph.data.labels.length;
-    const edgeOpacity = Math.min(Math.max(7.7 + 119 * Math.exp(nodeCount * -0.01565), 0.05), 1.0);
+    const edgeOpacity = Math.min(
+        Math.max(0.077 + 1.19 * Math.exp(nodeCount * -0.01565), 0.05),
+        1.0
+    );
     // (15 nodes @ 100%, 45 nodes @ 70%, 150 nodes @ 15%, 500 nodes @ 10%) thank you mycurvefit.com
     graph.data.edgeOpacity = edgeOpacity;
     return graph;
