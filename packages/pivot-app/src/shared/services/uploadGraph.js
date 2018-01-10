@@ -5,7 +5,7 @@ import zlib from 'zlib';
 import request from 'request';
 import VError from 'verror';
 import * as querystring from 'querystring';
-import { layouts, encodingsByLayoutId } from './layouts.js';
+import { layouts, encodingsByLayoutId, decorateEdgeOpacity } from './layouts.js';
 import { decorateInsideness, network } from './layouts/network';
 
 import * as vgraph from './vgraph/vgraph';
@@ -260,12 +260,10 @@ export function stackedBushyGraph(
     );
     const nodeXYs = mergeRowsColumnsToXY(nodeRows, nodeColumns, fudgeX, fudgeY, spacerY);
     const axes = generateAxes(nodeRows, fudgeY, spacerY);
-    const edgeOpacity = generateEdgeOpacity(nodeDegrees);
 
     decorateGraphLabelsWithXY(graph.data.labels, nodeXYs);
 
     graph.data.axes = axes;
-    graph.data.edgeOpacity = edgeOpacity;
 
     return graph;
 }
@@ -410,6 +408,7 @@ export function uploadGraph({
                     .toArray()
                     .map(createGraph)
                     .map(decorateInsideness)
+                    .map(decorateEdgeOpacity)
                     .map(g => shapers[investigation.layout](g)),
                 ({ user }, { pivots, data }) => ({ user, pivots, data })
             )
