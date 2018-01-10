@@ -1,5 +1,5 @@
 import { isIP, isPrivateIP } from '../support/ip';
-import { decorateGraphLabelsWithXY, generateEdgeOpacity } from '../shape/normalizeGraph';
+import { decorateGraphLabelsWithXY } from '../shape/normalizeGraph';
 import { bindings } from '../shape/graph';
 
 /*eslint-disable */
@@ -250,7 +250,6 @@ export function network(graph) {
 
     decorateGraphLabelsWithXY(graph.data.labels, xys);
 
-    graph.data.edgeOpacity = generateEdgeOpacity(graph.data.graph);
     graph.data.axes = Object.values(subaxes);
     return graph;
 }

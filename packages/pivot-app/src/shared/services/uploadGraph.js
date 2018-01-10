@@ -13,7 +13,7 @@ import { VectorGraph } from './vgraph/proto';
 
 const conf = global.__graphistry_convict_conf__;
 import { graphUnion, bindings } from './shape/graph.js';
-import { decorateGraphLabelsWithXY, generateEdgeOpacity } from './shape/normalizeGraph';
+import { decorateGraphLabelsWithXY } from './shape/normalizeGraph';
 
 import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
