@@ -163,6 +163,7 @@ function shapeHyperGraph({ app, pivot }) {
                     if (entity.cols.indexOf(field) === -1) {
                         entity.cols.push(field);
                     }
+
                     labelsToPropagate.forEach(fld => {
                         const val = row[fld];
                         if (val !== undefined) {
@@ -182,7 +183,8 @@ function shapeHyperGraph({ app, pivot }) {
                         ...provenance,
                         edge: `${eventID}:${field}`,
                         edgeType: 'EventID->' + field,
-                        edgeTitle: `${eventID}->${row[field]}`
+                        edgeTitle: `${eventID}->${row[field]}`,
+                        time: row.time
                     })
                 );
             }

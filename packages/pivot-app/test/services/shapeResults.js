@@ -35,7 +35,8 @@ describe('shapeResults', function() {
                     destination: 'z',
                     edgeType: 'EventID->y',
                     y: 'z',
-                    edgeTitle: 'xx->z'
+                    edgeTitle: 'xx->z',
+                    time: undefined
                 }
             ],
             labels: [
@@ -62,7 +63,8 @@ describe('shapeResults', function() {
                     source: 'xx',
                     destination: 'z',
                     edgeType: 'EventID->y',
-                    edgeTitle: 'xx->z'
+                    edgeTitle: 'xx->z',
+                    time: undefined
                 }
             ],
             labels: [
@@ -88,7 +90,8 @@ describe('shapeResults', function() {
                     edge: 'xx:y',
                     edgeType: 'EventID->y',
                     y: 'z',
-                    edgeTitle: 'xx->z'
+                    edgeTitle: 'xx->z',
+                    time: undefined
                 },
                 {
                     EventID: 'yy',
@@ -99,7 +102,8 @@ describe('shapeResults', function() {
                     edgeType: 'EventID->y',
                     y: 'r',
                     a: 1,
-                    edgeTitle: 'yy->r'
+                    edgeTitle: 'yy->r',
+                    time: undefined
                 },
                 {
                     EventID: 'yy',
@@ -110,7 +114,8 @@ describe('shapeResults', function() {
                     edgeType: 'EventID->a',
                     y: 'r',
                     a: 1,
-                    edgeTitle: 'yy->1'
+                    edgeTitle: 'yy->1',
+                    time: undefined
                 }
             ],
             labels: [
@@ -139,7 +144,8 @@ describe('shapeResults', function() {
                     edge: 'xx:y',
                     edgeType: 'EventID->y',
                     y: 'z',
-                    edgeTitle: 'xx->z'
+                    edgeTitle: 'xx->z',
+                    time: undefined
                 },
                 {
                     EventID: 'yy',
@@ -150,7 +156,8 @@ describe('shapeResults', function() {
                     edgeType: 'EventID->y',
                     y: 'z',
                     a: 1,
-                    edgeTitle: 'yy->z'
+                    edgeTitle: 'yy->z',
+                    time: undefined
                 },
                 {
                     EventID: 'yy',
@@ -161,7 +168,8 @@ describe('shapeResults', function() {
                     edgeType: 'EventID->a',
                     y: 'z',
                     a: 1,
-                    edgeTitle: 'yy->1'
+                    edgeTitle: 'yy->1',
+                    time: undefined
                 }
             ],
             labels: [
@@ -188,7 +196,8 @@ describe('shapeResults', function() {
                     EventID: 'xx',
                     edgeType: 'EventID->y',
                     y: 'z',
-                    edgeTitle: 'xx->z'
+                    edgeTitle: 'xx->z',
+                    time: undefined
                 }
             ],
             labels: [
@@ -272,7 +281,8 @@ describe('shapeResults', function() {
                     col: 'y',
                     edgeType: 'EventID->y',
                     y: 'z',
-                    edgeTitle: 'xx->z'
+                    edgeTitle: 'xx->z',
+                    time: undefined
                 },
                 { edge: 'myedge', source: 'x', destination: 'y' }
             ],
@@ -304,7 +314,8 @@ describe('shapeResults', function() {
                             col: 'y',
                             edgeType: 'EventID->y',
                             y: 'z',
-                            edgeTitle: 'xx->z'
+                            edgeTitle: 'xx->z',
+                            time: undefined
                         }
                     ],
                     labels: [
@@ -332,7 +343,8 @@ describe('shapeResults', function() {
                             col: 'y',
                             edgeType: 'EventID->y',
                             y: 'z',
-                            edgeTitle: 'xx->z'
+                            edgeTitle: 'xx->z',
+                            time: undefined
                         }
                     ],
                     labels: [
@@ -361,7 +373,8 @@ describe('shapeResults', function() {
                             col: 'y',
                             edgeType: 'EventID->y',
                             y: 'z',
-                            edgeTitle: 'xx->z'
+                            edgeTitle: 'xx->z',
+                            time: undefined
                         }
                     ],
                     labels: [
@@ -387,7 +400,8 @@ describe('shapeResults', function() {
                             destination: 'z',
                             col: 'y',
                             edgeType: 'EventID->y',
-                            edgeTitle: 'xx->z'
+                            edgeTitle: 'xx->z',
+                            time: undefined
                         }
                     ],
                     labels: [
@@ -418,7 +432,8 @@ describe('shapeResults', function() {
                             col: 'y',
                             edgeType: 'EventID->y',
                             y: 'z',
-                            edgeTitle: 'xx->z'
+                            edgeTitle: 'xx->z',
+                            time: undefined
                         }
                     ],
                     labels: [
@@ -447,7 +462,8 @@ describe('shapeResults', function() {
                             y: 'z',
                             edgeTitle: 'xx->z',
                             a: 'b',
-                            c: 'd'
+                            c: 'd',
+                            time: undefined
                         }
                     ],
                     labels: [
@@ -476,7 +492,8 @@ describe('shapeResults', function() {
                             col: 'y',
                             edgeType: 'EventID->y',
                             y: 'z',
-                            edgeTitle: 'xx->z'
+                            edgeTitle: 'xx->z',
+                            time: undefined
                         }
                     ],
                     labels: [
@@ -542,7 +559,8 @@ describe('shapeResults', function() {
                         col: 'noref',
                         edgeType: 'EventID->noref',
                         noref: 'z',
-                        edgeTitle: 'xx->z'
+                        edgeTitle: 'xx->z',
+                        time: undefined
                     }
                 ],
                 labels: [
@@ -570,7 +588,8 @@ describe('shapeResults', function() {
                         edgeType: 'EventID->refA_colA',
                         refA_colA: 'z',
                         edgeTitle: 'xx->z',
-                        refType: 'A'
+                        refType: 'A',
+                        time: undefined
                     }
                 ],
                 labels: [
@@ -610,7 +629,8 @@ describe('shapeResults', function() {
                         cols: ['refA_colA', 'refA_colB'],
                         edgeType: 'EventID->refA_colA',
                         edgeTitle: 'xx->x',
-                        refType: 'A'
+                        refType: 'A',
+                        time: undefined
                     },
                     {
                         ...pivot.events[0],
@@ -620,7 +640,8 @@ describe('shapeResults', function() {
                         cols: ['refA_colC'],
                         edgeType: 'EventID->refA_colC',
                         edgeTitle: 'xx->y',
-                        refType: 'A'
+                        refType: 'A',
+                        time: undefined
                     },
                     {
                         ...pivot.events[0],
@@ -630,7 +651,8 @@ describe('shapeResults', function() {
                         cols: ['refX_colX'],
                         edgeType: 'EventID->refX_colX',
                         edgeTitle: 'xx->x',
-                        refType: 'X'
+                        refType: 'X',
+                        time: undefined
                     },
                     {
                         edge: 'ref:A:x:y',
@@ -673,7 +695,8 @@ describe('shapeResults', function() {
                         cols: ['refA_colA'],
                         edgeType: 'EventID->refA_colA',
                         edgeTitle: 'xx->a',
-                        refType: 'A'
+                        refType: 'A',
+                        time: undefined
                     },
                     {
                         ...pivot.events[0],
@@ -683,7 +706,8 @@ describe('shapeResults', function() {
                         cols: ['refA_colB'],
                         edgeType: 'EventID->refA_colB',
                         edgeTitle: 'xx->b',
-                        refType: 'A'
+                        refType: 'A',
+                        time: undefined
                     },
                     {
                         ...pivot.events[0],
@@ -693,7 +717,8 @@ describe('shapeResults', function() {
                         cols: ['refA_colC'],
                         edgeType: 'EventID->refA_colC',
                         edgeTitle: 'xx->c',
-                        refType: 'A'
+                        refType: 'A',
+                        time: undefined
                     },
                     {
                         ...pivot.events[0],
@@ -702,7 +727,8 @@ describe('shapeResults', function() {
                         destination: 'd',
                         col: 'noref',
                         edgeType: 'EventID->noref',
-                        edgeTitle: 'xx->d'
+                        edgeTitle: 'xx->d',
+                        time: undefined
                     },
 
                     {
