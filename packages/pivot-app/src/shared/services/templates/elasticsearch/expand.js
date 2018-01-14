@@ -1,10 +1,11 @@
 import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
-import { defaultFields as FIELDS } from './settings.js';
+import { defaultFields as FIELDS } from '../splunk/settings.js';
 import { EsPivot } from './esPivot.js';
-import { encodings } from './settings.js';
-import { products } from './vendors';
+import { encodings } from '../splunk//settings.js';
+import { products } from '../splunk/vendors';
+import { commonPivots, makeNodes, makeAttributes } from './common.js';
 
 //remove line breaks and escape double quotes, slashes
 // a -> str
@@ -144,13 +145,7 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
                     '  }\n' +
                     '}'
             },
-            {
-                name: 'index',
-                inputType: 'text',
-                label: 'Index:',
-                placeholder: 'grfy-*',
-                defaultValue: 'grfy-*'
-            },
+            commonPivots.index,
             {
                 name: 'filter',
                 inputType: 'textarea',
@@ -177,25 +172,11 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 label: 'Match column name',
                 defaultValue: false
             },
-            {
-                name: 'fields',
-                inputType: 'multi',
-                label: 'Entities:',
-                options: desiredEntities.map(x => ({ id: x, name: x })),
-                defaultValue: desiredEntities
-            },
-            {
-                name: 'attributes',
-                inputType: 'multi',
-                label: 'Attributes:',
-                options: desiredAttributes.map(x => ({ id: x, name: x }))
-            },
-            {
-                name: 'time',
-                label: 'Time',
-                inputType: 'daterange',
-                default: { from: null, to: null }
-            }
+            commonPivots.jq,
+            commonPivots.outputType,
+            makeNodes(desiredEntities),
+            makeAttributes(desiredAttributes),
+            commonPivots.time
         ],
         toES: function(
             {
@@ -232,7 +213,7 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 body: JSON.parse(query)
             };
 
-            console.log(expanded.keys());
+            log.debug(expanded.keys());
             if (this.connections !== null) {
                 _query['_source'] = {
                     includes: this.connections
@@ -251,8 +232,7 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
             log.info('Expansion query', _query);
 
             return {
-                searchQuery: _query,
-                searchParams: this.dayRangeToSplunkParams((time || {}).value, time)
+                searchQuery: _query
             };
         },
         encodings
