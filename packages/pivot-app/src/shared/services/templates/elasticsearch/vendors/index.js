@@ -1,11 +1,6 @@
 import _ from 'underscore';
 
-import * as webmps from './fireeye/webmps.js';
-import * as hx from './fireeye/hx.js';
-import * as pan from './paloaltonetworks/pa.js';
-import * as windows from './microsoft/windows.js';
-import * as elasticsearch from './elasticsearch.js';
-const encodings = [webmps, hx, pan, windows, elasticsearch];
+const encodings = [];
 
 //{<name> -> {product, productIdentifier, ...}}
 export const products = encodings.reduce((acc, v) => ({ ...acc, [v.product]: v }), {});
