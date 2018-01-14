@@ -1,0 +1,50 @@
+{
+    "id": "41f78ee4ee62a02a",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [
+            "EventID",
+            "dest",
+            "dest_hostname",
+            "dest_ip",
+            "dest_mac",
+            "dest_user",
+            "dhost",
+            "dmac",
+            "dst",
+            "file",
+            "filename",
+            "msg",
+            "sequence_number",
+            "smac",
+            "src",
+            "src_host",
+            "src_hostname",
+            "src_ip",
+            "src_mac",
+            "src_user"
+        ],
+        "search-es-plain$$$index": "grfy-*",
+        "search-es-plain$$$query": "{\n  \"query\": {\n     \"match_all\": {}\n    }\n}",
+        "search-es-plain$$$fields": [
+            "src",
+            "smac"
+        ],
+        "expand-elasticsearch-plain$$$ref": [
+            "41f497af15b8fe6e"
+        ],
+        "expand-elasticsearch-plain$$$filter": "",
+        "expand-elasticsearch-plain$$$filterPost": "",
+        "expand-elasticsearch-plain$$$pivotFields": [
+            "src",
+            "smac"
+        ],
+        "expand-elasticsearch-plain$$$matchAttributes": false,
+        "expand-elasticsearch-plain$$$colMatch": false,
+        "expand-elasticsearch-plain$$$fields": [],
+        "expand-elasticsearch-plain$$$query": "{\n  \"query\": {\n    \"exists\": { \"field\" : \"EventID\" }\n  }\n}",
+        "expand-elasticsearch-plain$$$index": "grfy-*"
+    },
+    "pivotTemplate": "expand-elasticsearch-plain"
+}

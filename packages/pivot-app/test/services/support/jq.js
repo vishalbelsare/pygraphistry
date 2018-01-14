@@ -16,7 +16,16 @@ function jqCompare(done, expected, str, transform, opts, f = jq) {
 }
 
 function jqExpectError(done, str, transform, opts, f = jq) {
-    f(str, transform, opts).subscribe(() => done(new Error()), () => done());
+    f(str, transform, opts).subscribe(
+        v => {
+            console.log('got good', str, transform, '=>', v);
+            return done(new Error());
+        },
+        v => {
+            console.log('got bad', str, transform, '=>', v);
+            return done();
+        }
+    );
 }
 
 describe('jq', function() {
@@ -96,14 +105,14 @@ describe('jq', function() {
 
     it('Blacklist includes', done => {
         const str = JSON.stringify({ x: 1, y: 'a' });
-        const transform = '. | {"include": 1}';
+        const transform = '. | {"include ": 1}';
 
         jqExpectError(done, str, transform, undefined, jqSafe);
     });
 
     it('Blacklist imports', done => {
         const str = JSON.stringify({ x: 1, y: 'a' });
-        const transform = '. | {"import": 1}';
+        const transform = '. | {"import\t": 1}';
 
         jqExpectError(done, str, transform, undefined, jqSafe);
     });

@@ -139,6 +139,22 @@ const conf = convict({
             sensitive: true
         }
     },
+    elasticsearch: {
+        host: {
+            doc: 'The hostname of the Elasticsearch Server',
+            format: String,
+            default: 'localhost',
+            arg: 'es-host',
+            env: 'ES_HOST'
+        },
+        port: {
+            doc: 'Elasticsearch port',
+            format: Number,
+            default: 9200,
+            arg: 'es-port',
+            env: 'ES_PORT'
+        }
+    },
     splunk: {
         key: {
             doc: 'Splunk password',

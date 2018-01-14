@@ -11,6 +11,7 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
     return new SplunkPivot({
         id: `search-splunk-plain${productId}`,
         name: `${product}: Search`,
+
         tags: ['Splunk'],
         parameters: [
             {

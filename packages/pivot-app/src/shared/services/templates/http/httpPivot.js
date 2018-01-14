@@ -1,115 +1,16 @@
 import { template } from '../../support/template';
 import { Observable } from 'rxjs';
-import { jqSafe } from '../../support/jq';
+import { jqSafe, isJqSafe } from '../../support/jq';
 import { VError } from 'verror';
 
 import { shapeResults } from '../../shapeResults.js';
-import { flattenJson } from '../../support/flattenJson.js';
 import { PivotTemplate } from '../template.js';
 import { defaultHttpConnector } from '../../connectors/http';
 import logger from 'pivot-shared/logger';
 import { graphUnion } from '../../shape/graph.js';
+import { outputToResult } from '../../shape/preshape.js';
 
 const log = logger.createLogger(__filename);
-
-function checkAndFormatGraph(data) {
-    const { nodes = [], edges = [] } = data;
-
-    const validEdges = edges
-        .filter(edge => 'source' in edge && 'destination' in edge)
-        .map(flattenJson);
-
-    if (!('edges' in data)) {
-        throw new VError(
-            {
-                name: 'MissingEdges',
-                cause: new Error('MissingEdges')
-            },
-            `Transformed result missing field "edges"`
-        );
-    }
-    if (!(edges instanceof Array)) {
-        throw new VError(
-            {
-                name: 'EdgesTypeError',
-                cause: new Error('EdgesTypeError')
-            },
-            `Edges should be an array`
-        );
-    }
-    if (edges.length && !validEdges.length) {
-        throw new VError(
-            {
-                name: 'MissingEdgeIDs',
-                cause: new Error('MissingEdgeIDs')
-            },
-            `Pivot returned ${edges.length} edges but all are missing fields "source" or "destination"`
-        );
-    }
-
-    const validNodes = nodes.filter(node => 'node' in node).map(flattenJson);
-    if (nodes && !(nodes instanceof Array)) {
-        throw new VError(
-            {
-                name: 'NodesTypeError',
-                cause: new Error('NodesTypeError')
-            },
-            `Nodes should be an array`
-        );
-    }
-    if (nodes.length && !validNodes.length) {
-        throw new VError(
-            {
-                name: 'MissingNodeIDs',
-                cause: new Error('MissingNodeIDs')
-            },
-            `Pivot returned ${nodes.length} nodes but none have id field "node"`
-        );
-    }
-
-    return {
-        nodes: validNodes,
-        edges: validEdges
-    };
-}
-
-// ('table' | 'graph') * { id } * int * json
-//  -> {mode, table: [ { EventID, ... } ] | graph: { nodes: [{node, ...}], edges: [{source, destination}]}}
-// Turn json into a flat table or a graph
-//   If a table, add a unique event ID to rows to help hyper transform
-function outputToResult(mode = 'table', pivot, eventCounter, data) {
-    switch (mode) {
-        case 'table': {
-            log.trace('searchAndShape response', data);
-            const rows = data instanceof Array ? data.map(flattenJson) : [flattenJson(data)];
-            if (rows.length) {
-                if (!('EventID' in rows[0])) {
-                    for (let i = 0; i < rows.length; i++) {
-                        rows[i].EventID = pivot.id + ':' + (eventCounter + i);
-                    }
-                }
-            }
-            return {
-                mode,
-                table: rows
-            };
-        }
-        case 'graph':
-            return {
-                mode,
-                graph: checkAndFormatGraph(data)
-            };
-        default:
-            throw new VError(
-                {
-                    name: 'InvalidParameter',
-                    cause: new Error('InvalidParameter'),
-                    info: { mode }
-                },
-                `Output type should be "table" or "graph", received "${mode}"`
-            );
-    }
-}
 
 //["k:v", ...] U {value: ["k:v", ...]} => {"k": "v", ...}
 function formatHeaders(headers = []) {
@@ -207,18 +108,8 @@ export class HttpPivot extends PivotTemplate {
 
         log.trace('searchAndShape http: jq', { jq });
 
-        if ((jq || '').match(/\|.*(include|import)\s/)) {
-            return Observable.throw(
-                new VError(
-                    {
-                        name: 'JqSandboxException',
-                        cause: new Error('JqSandboxException'),
-                        info: { jq }
-                    },
-                    'JQ include and imports disallowed',
-                    { jq }
-                )
-            );
+        if (isJqSafe(jq) !== true) {
+            return Observable.throw(isJqSafe(jq));
         }
 
         let urls;
@@ -285,7 +176,7 @@ export class HttpPivot extends PivotTemplate {
             })
             .reduce(
                 (acc, { table, graph, e }) => ({
-                    table: acc.table ? acc.table.concat(table||[]) : table,
+                    table: acc.table ? acc.table.concat(table || []) : table,
                     graph: graphUnion(acc.graph, graph),
                     e: e ? acc.e.concat([e]) : acc.e
                 }),
