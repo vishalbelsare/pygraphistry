@@ -73,10 +73,12 @@ export function expand({
     pivotFields = [],
     filter = '',
     filterPost = '',
+    index = '',
+    max,
     colMatch = true,
     matchAttributes = true
 }) {
-    log.info('EXPAND RECV', { colMatch, matchAttributes });
+    log.debug('EXPAND RECV', { colMatch, matchAttributes });
 
     const isAllFields = !pivotFields.length || pivotFields.filter(fld => fld === '*').length;
 
@@ -123,13 +125,19 @@ export function expand({
           )
         : Object.keys(matches).reduce((acc, v) => (acc.length ? acc + ' OR ' : '') + `"${v}"`, '');
 
+    const head = max === undefined || max === '' ? '' : `| head ${max}`;
+
     const post = filterPost && filterPost.length ? ` |  ${filterPost}` : '';
 
-    return `${filter} ${match} | head 10000 ${post}`;
+    return `${index} ${filter} ${match} ${head} ${post}`;
 }
 
 function expandPivot({ product, productIdentifier, desiredEntities, desiredAttributes }) {
     const productId = product === 'Splunk' ? '' : '-' + product.replace(/ /g, '');
+
+    const indexFilter = Object.keys(productIdentifier || {})
+        .map(key => ` "${key}"="${productIdentifier[key]}" `)
+        .join(' AND ');
 
     return new SplunkPivot({
         id: `expand-splunk-plain${productId}`,
@@ -154,6 +162,20 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 label: 'Filter (post):',
                 placeholder: 'head 10',
                 defaultValue: ''
+            },
+            {
+                name: 'index',
+                inputType: 'text',
+                label: 'Index',
+                placeholder: indexFilter || 'index=* AND product=* AND vendor=*',
+                defaultValue: indexFilter
+            },
+            {
+                name: 'max',
+                inputType: 'number',
+                label: 'Max Results',
+                placeholder: 100,
+                defaultValue: 100
             },
             {
                 name: 'pivotFields',
@@ -201,6 +223,8 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 fields = { value: [] },
                 filter = '',
                 filterPost = '',
+                index = '',
+                max,
                 colMatch = false,
                 matchAttributes = false
             },
@@ -211,14 +235,12 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
 
             this.connections = fields.value;
 
-            const indexFilter = Object.keys(productIdentifier || {})
-                .map(key => ` "${key}"="${productIdentifier[key]}" `)
-                .join(' AND ');
-
             const expanded = expand({
                 pivotCache,
                 filter,
                 filterPost,
+                index,
+                max,
                 colMatch,
                 matchAttributes,
                 pivotIds: ref.value || [],
@@ -226,7 +248,7 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 fields: fields.value || []
             });
 
-            const query = `search ${indexFilter}${expanded} ${this.constructFieldString()}`;
+            const query = `search ${expanded} ${this.constructFieldString()}`;
 
             log.info('Expansion query', query);
 

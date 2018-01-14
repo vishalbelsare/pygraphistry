@@ -37,7 +37,7 @@ describe('Splunk:expand', () => {
     });
 
     it('handles empty', () => {
-        assert.deepEqual(expand({}), '  | head 10000 ');
+        assert.deepEqual(expand({}), '    ');
     });
 
     it('handles one pivot, node', () => {
@@ -53,7 +53,45 @@ describe('Splunk:expand', () => {
                 fields: [field],
                 pivotCache: { [pivot]: { results: { labels: [{ node: val, type: field }] } } }
             }),
-            `${filter} "${field}"="${val}" | head 10000 `
+            ` ${filter} "${field}"="${val}"  `
+        );
+    });
+
+    it('allows max override', () => {
+        const filter = 'mySource';
+        const pivot = 'asdf';
+        const field = 'myField';
+        const val = 'myVal';
+        const max = 10;
+
+        assert.deepEqual(
+            expand({
+                max,
+                filter,
+                pivotIds: [pivot],
+                fields: [field],
+                pivotCache: { [pivot]: { results: { labels: [{ node: val, type: field }] } } }
+            }),
+            ` ${filter} "${field}"="${val}" | head ${max} `
+        );
+    });
+
+    it('allows index override', () => {
+        const filter = 'mySource';
+        const pivot = 'asdf';
+        const field = 'myField';
+        const val = 'myVal';
+        const index = 'product="blah"';
+
+        assert.deepEqual(
+            expand({
+                filter,
+                index,
+                pivotIds: [pivot],
+                fields: [field],
+                pivotCache: { [pivot]: { results: { labels: [{ node: val, type: field }] } } }
+            }),
+            `${index} ${filter} "${field}"="${val}"  `
         );
     });
 
@@ -77,7 +115,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${field}"="${val}" OR "${field}"="1${val}" | head 10000 `
+            ` ${filter} "${field}"="${val}" OR "${field}"="1${val}"  `
         );
     });
 
@@ -101,7 +139,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${val}" OR "1${val}" | head 10000 `
+            ` ${filter} "${val}" OR "1${val}"  `
         );
     });
     it('skips non-fields, matchAttributes=false', () => {
@@ -127,7 +165,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${field}"="${val}" | head 10000 `
+            ` ${filter} "${field}"="${val}"  `
         );
     });
 
@@ -151,7 +189,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${field}"="${val1}" OR "${field}"="${val2}" | head 10000 `
+            ` ${filter} "${field}"="${val1}" OR "${field}"="${val2}"  `
         );
     });
 
@@ -173,7 +211,7 @@ describe('Splunk:expand', () => {
                     [pivot2]: { results: { labels: [{ type: field, node: val2 }] } }
                 }
             }),
-            `${filter} "${field}"="${val1}" OR "${field}"="${val2}" | head 10000 `
+            ` ${filter} "${field}"="${val1}" OR "${field}"="${val2}"  `
         );
     });
 
@@ -198,7 +236,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${field1}"="${val1}" OR "${field2}"="${val2}" | head 10000 `
+            ` ${filter} "${field1}"="${val1}" OR "${field2}"="${val2}"  `
         );
     });
 
@@ -226,7 +264,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${field}"="${val}" | head 10000 `
+            ` ${filter} "${field}"="${val}"  `
         );
     });
 
@@ -254,7 +292,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${field}"="${val}" | head 10000 `
+            ` ${filter} "${field}"="${val}"  `
         );
     });
 
@@ -286,7 +324,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${field}"="${val}" OR "ok"="1" | head 10000 `
+            ` ${filter} "${field}"="${val}" OR "ok"="1"  `
         );
     });
 
@@ -316,7 +354,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "y"="x" OR "node"="x" | head 10000 `
+            ` ${filter} "y"="x" OR "node"="x"  `
         );
     });
 
@@ -340,7 +378,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${val}" | head 10000 `
+            ` ${filter} "${val}"  `
         );
     });
 
@@ -367,7 +405,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter}  | head 10000 `
+            ` ${filter}   `
         );
     });
 
@@ -394,7 +432,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${val}" | head 10000 `
+            ` ${filter} "${val}"  `
         );
     });
 
@@ -421,7 +459,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter}  | head 10000 `
+            ` ${filter}   `
         );
     });
 
@@ -448,7 +486,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${val}" | head 10000 `
+            ` ${filter} "${val}"  `
         );
     });
 
@@ -474,7 +512,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${field1}"="${val1}" | head 10000 `
+            ` ${filter} "${field1}"="${val1}"  `
         );
     });
 
@@ -500,7 +538,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${field1}"="${val1}" OR "${field2}"="${val2}" | head 10000 `
+            ` ${filter} "${field1}"="${val1}" OR "${field2}"="${val2}"  `
         );
     });
 
@@ -526,7 +564,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${field1}"="${val1}" OR "${field2}"="${val2}" | head 10000 `
+            ` ${filter} "${field1}"="${val1}" OR "${field2}"="${val2}"  `
         );
     });
 
@@ -553,7 +591,7 @@ describe('Splunk:expand', () => {
                     }
                 }
             }),
-            `${filter} "${val1}" OR "${val2}" | head 10000 `
+            ` ${filter} "${val1}" OR "${val2}"  `
         );
     });
 
@@ -575,7 +613,7 @@ describe('Splunk:expand', () => {
                     [pivot]: { results: { labels: [{ [field1]: val1 }, { [field2]: val2 }] } }
                 }
             }),
-            `${filter}  | head 10000 `
+            ` ${filter}   `
         );
     });
 });
