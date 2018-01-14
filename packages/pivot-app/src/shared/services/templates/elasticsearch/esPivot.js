@@ -63,7 +63,7 @@ export class EsPivot extends PivotTemplate {
                         return Observable.of(events);
                     } else {
                         return jqSafe(JSON.stringify(events), template(jq || '.', args))
-                            .do(response => log.info('jq response', response))
+                            .do(response => log.debug('jq response', response))
                             .catch(e => {
                                 log.error('jq error', { jq, e });
                                 return Observable.throw(
@@ -80,22 +80,18 @@ export class EsPivot extends PivotTemplate {
                             });
                     }
                 })
-                .do(response => log.info('pre shape', response))
+                .do(response => log.debug('pre shape', response))
                 .map(response => outputToResult(outputType, pivot, eventCounter, response))
                 .catch(e => {
-                    log.error('wat1', e);
-                    return Observable.throw({ e: e ? e : new Error('GenericHttpGetException') });
+                    log.error('Failed to preshape', e);
+                    return Observable.throw({ e: e ? e : new Error('GenericESException') });
                 })
                 .do(({ table, graph }) => {
-                    log.info('table #', (table || []).length);
-                    log.info('transformed output', { table, graph });
+                    log.debug('table #', (table || []).length);
+                    log.debug('transformed output', { table, graph });
                     if (table) {
                         eventCounter += table.length;
                     }
-                })
-                .catch(e => {
-                    log.error('wat2', e);
-                    return Observable.throw({ e: e ? e : new Error('GenericHttpGetException') });
                 })
                 .reduce(
                     (acc, { table, graph, e }) => ({

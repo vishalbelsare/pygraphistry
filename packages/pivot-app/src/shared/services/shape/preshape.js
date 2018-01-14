@@ -73,7 +73,7 @@ export function outputToResult(mode = 'table', pivot, eventCounter, data) {
     try {
         switch (mode) {
             case 'table': {
-                log.info('searchAndShape response', data);
+                log.debug('searchAndShape response', data);
                 const rows = data instanceof Array ? data.map(flattenJson) : [flattenJson(data)];
                 if (rows.length) {
                     if (!('EventID' in rows[0])) {
