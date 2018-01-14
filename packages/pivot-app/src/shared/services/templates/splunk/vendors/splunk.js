@@ -13,7 +13,11 @@ export const defaultFields = [
     '_sourcetype',
     '_title',
 
+    'asn',
     'category',
+    'city',
+    'continent',
+    'country',
     'date_hour',
     'date_mday',
     'date_minute',
@@ -59,6 +63,7 @@ export const defaultFields = [
     'protocol',
     'punct',
     'raw',
+    'region',
     'source',
     'sequence_number',
     'search_name',
@@ -86,13 +91,19 @@ export const defaultFields = [
     'timestartpos',
     'unix_category',
     'unix_group',
+    'uri_path',
+    'url',
     'vendor'
 ];
 
 export const desiredAttributes = [
     'EventID',
 
+    'asn',
     'category',
+    'city',
+    'continent',
+    'country',
     'dest',
     'dest_class',
     'dest_hostname',
@@ -130,6 +141,7 @@ export const desiredAttributes = [
     'protocol',
     'punct',
     'raw',
+    'region',
     'search_name',
     'sequence_number',
     'severity',
@@ -154,6 +166,8 @@ export const desiredAttributes = [
     'timestamp',
     'unix_category',
     'unix_group',
+    'uri_path',
+    'url',
     'vendor'
 ];
 
@@ -182,6 +196,10 @@ export const desiredEntities = [
 ];
 
 export const colTypes = {
+    asn: 'id',
+    city: 'geo',
+    continent: 'geo',
+    country: 'geo',
     dhost: 'host',
     dmac: 'mac',
     dest: 'ip',
@@ -199,6 +217,7 @@ export const colTypes = {
     index: 'log',
     msg: 'alert',
     product: 'product',
+    region: 'geo',
     search_name: 'log',
     sequence_number: 'id',
     source: 'log',
@@ -211,6 +230,8 @@ export const colTypes = {
     src_mac: 'mac',
     src_port: 'port',
     src_user: 'user',
+    uri_path: 'url',
+    url: 'url',
     vendor: 'vendor'
 };
 
@@ -245,6 +266,8 @@ export const refTypes = {
     src_mac: 'src',
     src_port: 'src',
     src_user: 'src',
+    uri_path: 'payload',
+    url: 'payload',
     vendor: 'session'
 };
 
