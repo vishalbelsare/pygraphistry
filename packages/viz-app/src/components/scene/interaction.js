@@ -72,7 +72,7 @@ export function setupScroll(target, canvas, camera) {
             const zoomDirection = deltaY > 0 ? 1 : -1;
             // log(1) is 0, so take the max of either abs(deltaY) or 1, then add 1
             const zoomDelta = Math.max(Math.abs(deltaY), 1) + 1;
-            const zoomFactor = zoomDirection * (Math.log(zoomDelta) / (160 / camera.pixelRatio));
+            const zoomFactor = zoomDirection * (Math.log(zoomDelta) / 80);
             const screenPos = camera.canvas2ScreenCoords(event.clientX, event.clientY, canvas);
             debug('Mouse screen pos=(%f,%f)', screenPos.x, screenPos.y);
             return zoom(camera, 1 + zoomFactor, screenPos);

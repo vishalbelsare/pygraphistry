@@ -88,7 +88,7 @@ function Camera2d(left, right, top, bottom, nearPlane, farPlane /*, mode*/) {
     this.farPlane = farPlane;
     this.pointScaling = 1.0;
     this.edgeScaling = 1.0;
-    this.pixelRatio = 1.0;
+    this.pixelRatio = 2.0;
 
     //Always enable 3d
     this.is3d = true;

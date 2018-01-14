@@ -81,10 +81,9 @@ const axes = [
     { label: 'Pivot 3', y: (fudgeY + spacerY) * 2 * 3 },
     { label: 'Pivot 4', y: (fudgeY + spacerY) * 2 * 4 }
 ];
-const edgeOpacity = 2.0 / Math.log10(100 + Object.values(xys).length);
 const hugeDataStructure = { data: { graph: edges, labels: undecoratedLabels } };
 const hugeDecoratedDataStructure = {
-    data: { axes, edgeOpacity, graph: edges, labels: decoratedLabels }
+    data: { axes, graph: edges, labels: decoratedLabels }
 };
 
 describe('edgesToRows', function() {

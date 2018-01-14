@@ -117,10 +117,11 @@ let Scene = (
             sceneSelectionType={selection.type}
         />
         <Legend
+            data={legend}
             cols={legendTypeHisto}
             visible={legend.visible}
             legendPivotHisto={legendPivotHisto}
-            encodings={labels && labels.encodings}
+            encodings={labels && labels.encodings && labels.encodings.toJSON()}
         />
         {/* <Timebar timebarHisto={timebarHisto} /> */}
     </SceneComponent>

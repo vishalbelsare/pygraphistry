@@ -1,4 +1,4 @@
 import { Legend } from './components/legend';
-import { withLegendContainer } from './containers';
+import { withLegendContainer, legendTabInteractions } from './containers';
 
-export const LegendContainer = withLegendContainer(Legend);
+export const LegendContainer = withLegendContainer(legendTabInteractions(Legend));

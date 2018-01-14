@@ -44,6 +44,9 @@ export const colTypes = {
     File_Name: 'file',
     IP_Address: 'ip',
     MD5: 'hash',
+    Path: 'url',
+    SHA256: 'hash',
+    Status: 'alert',
     Threat_Classification: 'alert',
     Threat_Subclass: 'alert'
 };
@@ -54,6 +57,8 @@ export const refTypes = {
     File_Name: 'payload',
     IP_Address: 'src',
     MD5: 'payload',
+    Path: 'payload',
+    Status: 'payload',
     Threat_Classification: 'payload',
     Threat_Subclass: 'payload'
 };

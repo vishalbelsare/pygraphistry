@@ -5,7 +5,7 @@ import zlib from 'zlib';
 import request from 'request';
 import VError from 'verror';
 import * as querystring from 'querystring';
-import { layouts, encodingsByLayoutId } from './layouts.js';
+import { layouts, encodingsByLayoutId, decorateEdgeOpacity } from './layouts.js';
 import { decorateInsideness, network } from './layouts/network';
 
 import * as vgraph from './vgraph/vgraph';
@@ -13,7 +13,7 @@ import { VectorGraph } from './vgraph/proto';
 
 const conf = global.__graphistry_convict_conf__;
 import { graphUnion, bindings } from './shape/graph.js';
-import { decorateGraphLabelsWithXY, generateEdgeOpacity } from './shape/normalizeGraph';
+import { decorateGraphLabelsWithXY } from './shape/normalizeGraph';
 
 import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
@@ -67,7 +67,12 @@ function upload(etlService, apiKey, data, investigation) {
                         [
                             'pointIconEncodingDefault',
                             'pointSizeEncodingDefault',
-                            'pointColorEncodingDefault'
+                            'pointColorEncodingDefault',
+                            'pointLegendTypeIconEncoding',
+                            'pointLegendTypeColorEncoding',
+                            'pointLegendTypeSizeEncoding',
+                            'pointLegendPivotIconEncoding',
+                            'pointLegendPivotColorEncoding'
                         ]
                     )
                 }
@@ -255,12 +260,10 @@ export function stackedBushyGraph(
     );
     const nodeXYs = mergeRowsColumnsToXY(nodeRows, nodeColumns, fudgeX, fudgeY, spacerY);
     const axes = generateAxes(nodeRows, fudgeY, spacerY);
-    const edgeOpacity = generateEdgeOpacity(nodeDegrees);
 
     decorateGraphLabelsWithXY(graph.data.labels, nodeXYs);
 
     graph.data.axes = axes;
-    graph.data.edgeOpacity = edgeOpacity;
 
     return graph;
 }
@@ -405,6 +408,7 @@ export function uploadGraph({
                     .toArray()
                     .map(createGraph)
                     .map(decorateInsideness)
+                    .map(decorateEdgeOpacity)
                     .map(g => shapers[investigation.layout](g)),
                 ({ user }, { pivots, data }) => ({ user, pivots, data })
             )

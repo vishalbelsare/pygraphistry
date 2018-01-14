@@ -65,9 +65,34 @@ function LegendFooter({
     );
 }
 
+//bool * ?[ ?{ values: [ int ], count: int } ]
+// -> ?[ ?{ values: [ int ], count: int } ]
+// Some pivots may have no values because Falcor streaming or no results,
+//  so fill them in (or bail)
+function expandPivotBins(isPivot, bins) {
+    if (bins === null || !isPivot || !bins.length) {
+        return bins;
+    }
+
+    for (let i = 0; i < bins.length; i++) {
+        if (!bins[i]) {
+            return null;
+        }
+    }
+
+    const maxPivot = bins.reduce((acc, { values: [v] }, i) => Math.max(v, acc), bins[0].values[0]);
+
+    return Array.apply(null, { length: maxPivot })
+        .map(Function.call, Number)
+        .map((_, i) => {
+            const pivot = bins.filter(({ values: [pivot] }) => pivot === i + 1);
+            return pivot.length ? pivot[0] : { values: [i + 1], count: 0, exclude: false };
+        });
+}
+
 export const LegendBody = function({
     name,
-    bins,
+    bins: binsWithNulls,
     iconEncodings,
     iconsOn,
     colorEncodings,
@@ -76,6 +101,10 @@ export const LegendBody = function({
     sizesOn,
     parentKey
 }) {
+    const isPivot = name === 'Pivot';
+
+    const bins = expandPivotBins(isPivot, binsWithNulls);
+
     const table =
         bins === null ? (
             undefined
@@ -90,12 +119,14 @@ export const LegendBody = function({
                             Color
                         </th>
                         <th className={styles['typeCol']}>{name}</th>
-                        <th
-                            className={`${iconsOn ? '' : styles['columnEmpty']} ${styles[
-                                'iconCol'
-                            ]}`}>
-                            Icon
-                        </th>
+                        {isPivot ? null : (
+                            <th
+                                className={`${iconsOn ? '' : styles['columnEmpty']} ${styles[
+                                    'iconCol'
+                                ]}`}>
+                                Icon
+                            </th>
+                        )}
                         <th className={styles['countCol']}>Count</th>
                     </tr>
                 </thead>
@@ -156,12 +187,14 @@ export const LegendBody = function({
                                 <td className={styles['typeCol']}>
                                     <span>{binName}</span>
                                 </td>
-                                <td
-                                    className={`${iconsOn ? '' : styles['columnEmpty']} ${styles[
-                                        'iconCol'
-                                    ]}`}>
-                                    {renderedIcon}
-                                </td>
+                                {isPivot ? null : (
+                                    <td
+                                        className={`${iconsOn
+                                            ? ''
+                                            : styles['columnEmpty']} ${styles['iconCol']}`}>
+                                        {renderedIcon}
+                                    </td>
+                                )}
                                 <td className={styles['countCol']}>{count}</td>
                             </tr>
                         );
@@ -186,7 +219,14 @@ export const LegendBody = function({
     );
 };
 
-export const Legend = ({ cols, visible, legendPivotHisto, encodings }) => {
+export const Legend = ({
+    cols,
+    visible,
+    legendPivotHisto,
+    encodings,
+    activeTab,
+    onTabSelected
+}) => {
     const pointIconEncodingAttribute =
         (encodings && encodings.point && encodings.point.icon && encodings.point.icon.attribute) ||
         '';
@@ -225,9 +265,9 @@ export const Legend = ({ cols, visible, legendPivotHisto, encodings }) => {
     const parentPivotKey = `legend-pivot-${pivotBins && pivotBins.length}-${pivotKey}`;
     return !visible ? null : (
         <div className={styles['legendContainer']}>
-            <Tabs defaultActiveKey={typeBins ? 2 : 3} id="legend-tabset" defaultActiveKey={2}>
-                <Tab eventKey={1} title="Node Legend" disabled />
-                <Tab eventKey={2} title="Type">
+            <Tabs onSelect={onTabSelected} id="legend-tabset" defaultActiveKey={activeTab}>
+                <Tab eventKey={'legendDisabled'} title="Node Legend" disabled />
+                <Tab eventKey={'legendTypeTab'} title="Type">
                     <LegendBody
                         name="Type"
                         bins={typeBins}
@@ -241,7 +281,7 @@ export const Legend = ({ cols, visible, legendPivotHisto, encodings }) => {
                         parentKey={parentTypeKey}
                     />
                 </Tab>
-                <Tab eventKey={3} title="Pivot" disabled={pivotBins === null}>
+                <Tab eventKey={'legendPivotTab'} title="Pivot" disabled={pivotBins === null}>
                     <LegendBody
                         name="Pivot"
                         bins={pivotBins}

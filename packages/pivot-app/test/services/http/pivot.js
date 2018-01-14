@@ -103,7 +103,8 @@ describe('httpPivot', function() {
                             destination: 1,
                             source: 'x:0',
                             edgeType: 'EventID->x',
-                            edgeTitle: 'x:0->1'
+                            edgeTitle: 'x:0->1',
+                            time: undefined
                         },
                         {
                             edge: 'x:1:x',
@@ -113,7 +114,8 @@ describe('httpPivot', function() {
                             destination: 3,
                             source: 'x:1',
                             edgeType: 'EventID->x',
-                            edgeTitle: 'x:1->3'
+                            edgeTitle: 'x:1->3',
+                            time: undefined
                         }
                     ]);
                     assert.deepEqual(pivot.results.labels, [
@@ -155,7 +157,8 @@ describe('httpPivot', function() {
                             destination: '5',
                             source: 'x:0',
                             edgeType: 'EventID->x',
-                            edgeTitle: 'x:0->5'
+                            edgeTitle: 'x:0->5',
+                            time: undefined
                         },
                         {
                             edge: 'x:1:x',
@@ -165,7 +168,8 @@ describe('httpPivot', function() {
                             destination: '10',
                             source: 'x:1',
                             edgeType: 'EventID->x',
-                            edgeTitle: 'x:1->10'
+                            edgeTitle: 'x:1->10',
+                            time: undefined
                         }
                     ]);
                     assert.deepEqual(pivot.results.labels, [
@@ -209,7 +213,8 @@ describe('httpPivot', function() {
                             destination: '5',
                             source: 'aa',
                             edgeType: 'EventID->x',
-                            edgeTitle: 'aa->5'
+                            edgeTitle: 'aa->5',
+                            time: undefined
                         },
                         {
                             edge: 'bb:x',
@@ -219,7 +224,8 @@ describe('httpPivot', function() {
                             destination: '10',
                             source: 'bb',
                             edgeType: 'EventID->x',
-                            edgeTitle: 'bb->10'
+                            edgeTitle: 'bb->10',
+                            time: undefined
                         }
                     ]);
                     assert.deepEqual(pivot.results.labels, [

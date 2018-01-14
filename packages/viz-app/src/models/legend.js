@@ -5,6 +5,7 @@ export function legend(view) {
     return {
         legend: {
             visible: true,
+            activeTab: 'legendTypeTab', // see defaultActiveKey in the component
             controls: [
                 {
                     selected: true,

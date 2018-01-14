@@ -96,11 +96,20 @@ export default function InvestigationTable({
                 <TableHeaderColumn
                     dataField="name"
                     dataSort={true}
-                    width="200px"
+                    width="300px"
                     dataFormat={nameFormatter}>
                     Name
                 </TableHeaderColumn>
                 <TableHeaderColumn dataField="description">Description</TableHeaderColumn>
+                <TableHeaderColumn
+                    dataField="createdOn"
+                    dataSort={true}
+                    editable={false}
+                    dataFormat={dateFormatter}
+                    width="180px"
+                    dataAlign="center">
+                    Created
+                </TableHeaderColumn>
                 <TableHeaderColumn
                     dataField="modifiedOn"
                     dataSort={true}
@@ -110,19 +119,10 @@ export default function InvestigationTable({
                     dataAlign="center">
                     Last Modified
                 </TableHeaderColumn>
-
-                <TableHeaderColumn
-                    dataField="tags"
-                    dataFormat={tagsFormatter}
-                    width="200px"
-                    editable={false}>
-                    Tags
-                </TableHeaderColumn>
-
                 <TableHeaderColumn
                     dataField="id"
                     dataFormat={idFormatter}
-                    width="172px"
+                    width="72px"
                     editable={false}>
                     Actions
                 </TableHeaderColumn>

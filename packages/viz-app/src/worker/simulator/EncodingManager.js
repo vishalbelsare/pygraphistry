@@ -76,7 +76,8 @@ export default class EncodingManager {
 
         const currentEncoding = this.tables.current[graphType][encodingType];
         const isDefaultEncodingActive =
-            !Boolean(currentEncoding) || (currentEncoding && currentEncoding.isDefault);
+            !Boolean(currentEncoding) ||
+            (currentEncoding && currentEncoding.encoding && currentEncoding.encoding.isDefault);
 
         this.tables.defaults[graphType][encodingType] = reset
             ? null

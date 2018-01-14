@@ -27,6 +27,8 @@ export function defaultFormat(value, dataType = typeof value) {
     if (dataType === 'number') {
         if (value === 2147483647) {
             return null; //TODO can we do better with Arrow?
+        } else if (value === "2147483647") { //FIXME this should not be reachable
+            return null;
         } else if (value && value % 1 !== 0) {
             return formatNumber(Number(value), false);
         }
