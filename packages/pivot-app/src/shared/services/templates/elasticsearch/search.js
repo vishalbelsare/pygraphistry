@@ -21,13 +21,13 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 placeholder: 'grfy-*',
                 defaultValue: 'grfy-*'
             },
-            /*{
+            {
                 name: 'type',
                 inputType: 'text',
                 label: 'Type:',
-                placeholder: '',
-                defaultValue: ''
-            },*/
+                placeholder: 'event',
+                defaultValue: 'event'
+            },
             {
                 name: 'query',
                 inputType: 'textarea',
@@ -35,15 +35,15 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 placeholder:
                     '{\n' +
                     '  "query": {\n' +
-                    '    "exists": { "field" : "EventID" }\n' +
+                    '    "match_all": {}\n' +
                     '  }\n' +
                     '}',
                 defaultValue:
-                    '{\n' +
-                    '  "query": {\n' +
-                    '    "exists": { "field" : "EventID" }\n' +
-                    '  }\n' +
-                    '}'
+                        '{\n' +
+                        '  "query": {\n' +
+                        '    "match_all": {}\n' +
+                        '  }\n' +
+                        '}'
             },
             {
                 name: 'fields',
@@ -65,14 +65,15 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 default: { from: null, to: null }
             }
         ],
-        toES: function({ index, query, fields, attributes }, pivotCache, { time } = {}) {
+        toES: function({ index, query, type, fields, attributes }, pivotCache, { time } = {}) {
             this.connections = fields.value;
 
             const _query = {
                 index: index,
-                type: 'event',
+                type: type,
                 body: JSON.parse(query)
             };
+
             if (fields.value !== null) {
                 _query['_source'] = fields.value;
             }
