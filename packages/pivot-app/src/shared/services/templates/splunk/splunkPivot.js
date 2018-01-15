@@ -145,7 +145,7 @@ export class SplunkPivot extends PivotTemplate {
         const base = `
             | fields *
             | rename _cd as EventID
-            | eval c_time=strftime(_time, "%Y-%d-%m %H:%M:%S")
+            | eval c_time=strftime(_time, "%Y-%m-%dT%H:%M:%S%:z")
             | rename c_time as time`;
 
         if (this.attributes && this.attributes.length > 0) {

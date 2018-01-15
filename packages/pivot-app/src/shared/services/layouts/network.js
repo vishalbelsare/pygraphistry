@@ -82,18 +82,20 @@ function computeSrcDst({ ip_io, eventNeighborhood }) {
         //TODO do all ref groups?
         [src, dst].forEach(group => {
             const label = group.reduce((acc, { node }) => mergeLabels(acc, ip_io[node]), UNDEFINED);
-            group.forEach(({ node }) => {
-                srcdst_io[node] = mergeLabels(srcdst_io[node], label);
-            });
+            if (label !== UNDEFINED) {
+                group.forEach(({ node }) => {
+                    srcdst_io[node] = mergeLabels(srcdst_io[node], label);
+                });
+            }
         });
     });
     return srcdst_io;
 }
 
 function labelAll({ events, eventNeighborhood, srcdst_io }) {
-    const all_io = {}; //misses non-hypernodes..
+    const all_io = Object.assign({}, srcdst_io); //misses non-hypernodes..
     events.forEach(e => {
-        const { src = [], dst = [], all } = eventNeighborhood[e.node] || {};
+        const { src = [], dst = [], ...otherAttrs } = eventNeighborhood[e.node] || {};
         const [srcLabel, dstLabel] = [src, dst].map(group => {
             const label = group.reduce(
                 (acc, { node }) => mergeLabels(acc, srcdst_io[node]),
@@ -105,12 +107,11 @@ function labelAll({ events, eventNeighborhood, srcdst_io }) {
 
         all_io[e.node] = label;
 
-        [src, dst, all].forEach((group = []) => {
+        Object.values(otherAttrs).forEach(group => {
             group.forEach(({ node }) => {
+                const hasRawLabel = srcdst_io.hasOwnProperty(node);
                 const entityLabelRaw = srcdst_io[node];
-                all_io[node] = isUnlabeled(entityLabelRaw)
-                    ? mergeLabels(all_io[node], label)
-                    : entityLabelRaw;
+                all_io[node] = hasRawLabel ? entityLabelRaw : mergeLabels(all_io[node], label);
             });
         });
     });
@@ -155,8 +156,8 @@ export function decorateInsideness(graph) {
 
 const allOrderedZones = ['inside', 'inside->outside', 'mixed', '', 'outside->inside', 'outside'];
 const alwaysOnZones = ['inside', 'mixed', 'outside'];
-const insideOrder = ['mac', 'ip', 'user', 'event', 'alert', 'hash', 'filepath', 'file'];
-const outsideOrder = ['mac', 'ip', 'user', 'alert', 'event', 'hash', 'filepath', 'file'];
+const insideOrder = ['mac', 'ip', 'host', 'user', 'event', 'alert', 'hash', 'filepath', 'file'];
+const outsideOrder = ['mac', 'ip', 'host', 'user', 'alert', 'event', 'hash', 'filepath', 'file'];
 const mixedOrder = ['alert', 'event', 'hash', 'file', 'filepath'];
 const spacerSeparator = 400;
 const typeSeparator = 200;

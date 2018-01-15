@@ -121,7 +121,7 @@ export function init(config, canvas, urlParams) {
         )
     );
 
-    const pixelRatio = urlParams.pixelRatio || window.devicePixelRatio || 1;
+    const pixelRatio = urlParams.pixelRatio || 2;
     const gl = createContext(state, pixelRatio);
     state.gl = gl;
     setGlOptions(gl, state.options);
@@ -193,13 +193,9 @@ export function init(config, canvas, urlParams) {
             return;
         }
 
-        // window.devicePixelRatio should only be read on resize, when the gl backbuffer is
-        // reallocated. All other code paths should use camera.pixelRatio!
-        const pixelRatio = window.devicePixelRatio || 1;
-
         //Note that the size is *floored*, not *rounded*
-        const width = Math.floor(canvas.clientWidth * pixelRatio);
-        const height = Math.floor(canvas.clientHeight * pixelRatio);
+        const width = Math.floor(canvas.clientWidth * camera.pixelRatio);
+        const height = Math.floor(canvas.clientHeight * camera.pixelRatio);
 
         debug('Resize: old=(%d,%d) new=(%d,%d)', canvas.width, canvas.height, width, height);
         if (canvas.width !== width || canvas.height !== height) {
@@ -207,7 +203,7 @@ export function init(config, canvas, urlParams) {
             canvas.height = height;
 
             if (camera !== undefined) {
-                camera.resize(width, height, pixelRatio);
+                camera.resize(width, height, camera.pixelRatio);
                 setCamera(state);
                 render(state, 'resizeCanvas', 'renderSceneFull');
                 render(state, 'resizeCanvas', 'picking');

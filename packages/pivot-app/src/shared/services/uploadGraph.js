@@ -67,7 +67,12 @@ function upload(etlService, apiKey, data, investigation) {
                         [
                             'pointIconEncodingDefault',
                             'pointSizeEncodingDefault',
-                            'pointColorEncodingDefault'
+                            'pointColorEncodingDefault',
+                            'pointLegendTypeIconEncoding',
+                            'pointLegendTypeColorEncoding',
+                            'pointLegendTypeSizeEncoding',
+                            'pointLegendPivotIconEncoding',
+                            'pointLegendPivotColorEncoding'
                         ]
                     )
                 }
