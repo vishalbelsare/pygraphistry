@@ -44,7 +44,7 @@ export const refTypes = {
     'geoip.region_name': 'src'
 };
 
-export const product = 'es.geo';
+export const product = 'esGeo';
 export const productIdentifier = {};
 
 export const fieldsBlacklist = [];
