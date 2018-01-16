@@ -2,9 +2,10 @@ import logger from '../../../logger.js';
 const log = logger.createLogger(__filename);
 
 import { EsPivot } from './esPivot.js';
-import { encodings } from './settings.js';
+import { encodings } from '../splunk/settings.js';
 
-import { products } from './vendors';
+import { products } from '../splunk/vendors';
+import { commonPivots, makeNodes, makeAttributes } from './common.js';
 
 function searchPivot({ product, productIdentifier, desiredEntities, desiredAttributes }) {
     const productId = product === 'Elasticsearch' ? '' : '-' + product.replace(/ /g, '');
@@ -14,56 +15,28 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
         name: 'Elasticsearch: Search',
         tags: ['ElasticSearch'],
         parameters: [
-            {
-                name: 'index',
-                inputType: 'text',
-                label: 'Index:',
-                placeholder: 'grfy-*',
-                defaultValue: 'grfy-*'
-            },
-            {
-                name: 'type',
-                inputType: 'text',
-                label: 'Type:',
-                placeholder: 'event',
-                defaultValue: 'event'
-            },
+            commonPivots.index,
+            commonPivots.type,
             {
                 name: 'query',
                 inputType: 'textarea',
                 label: 'Query:',
-                placeholder:
-                    '{\n' +
-                    '  "query": {\n' +
-                    '    "match_all": {}\n' +
-                    '  }\n' +
-                    '}',
-                defaultValue:
-                        '{\n' +
-                        '  "query": {\n' +
-                        '    "match_all": {}\n' +
-                        '  }\n' +
-                        '}'
+                placeholder: `{
+    "query": {
+        "match_all": { }
+    }
+}`,
+                defaultValue: `{
+    "query": {
+        "match_all": { }
+    }
+}`
             },
-            {
-                name: 'fields',
-                inputType: 'multi',
-                label: 'Entities:',
-                options: desiredEntities.map(x => ({ id: x, name: x })),
-                defaultValue: desiredEntities
-            },
-            {
-                name: 'attributes',
-                inputType: 'multi',
-                label: 'Attributes:',
-                options: desiredAttributes.map(x => ({ id: x, name: x }))
-            },
-            {
-                name: 'time',
-                label: 'Time',
-                inputType: 'daterange',
-                default: { from: null, to: null }
-            }
+            commonPivots.jq,
+            commonPivots.outputType,
+            makeNodes(desiredEntities),
+            makeAttributes(desiredAttributes),
+            commonPivots.time
         ],
         toES: function({ index, query, type, fields, attributes }, pivotCache, { time } = {}) {
             this.connections = fields.value;
@@ -74,12 +47,21 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 body: JSON.parse(query)
             };
 
-            if (fields.value !== null) {
-                _query['_source'] = fields.value;
+            if (
+                fields &&
+                attributes &&
+                fields.value &&
+                fields.value.length > 1 &&
+                fields.value.indexOf('*') === -1 &&
+                attributes.value &&
+                attributes.length > 1 &&
+                attributes.value.indexOf('*') === -1
+            ) {
+                _query['_source'] = fields.value.concat(attributes.value);
             }
+
             return {
-                searchQuery: _query,
-                searchParams: this.dayRangeToSplunkParams((time || {}).value, time)
+                searchQuery: _query
             };
         },
         encodings

@@ -8,6 +8,10 @@ import { products } from './vendors';
 function searchPivot({ product, productIdentifier, desiredEntities, desiredAttributes }) {
     const productId = product === 'Splunk' ? '' : '-' + product.replace(/ /g, '');
 
+    const indexFilter = Object.keys(productIdentifier || {})
+        .map(key => ` "${key}"="${productIdentifier[key]}" `)
+        .join(' AND ');
+
     return new SplunkPivot({
         id: `search-splunk-plain${productId}`,
         name: `${product}: Search`,
@@ -20,6 +24,20 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 label: 'Query:',
                 placeholder: 'error',
                 defaultValue: 'error'
+            },
+            {
+                name: 'index',
+                inputType: 'text',
+                label: 'Index',
+                placeholder: indexFilter || 'index=* AND product=* AND vendor=*',
+                defaultValue: indexFilter
+            },
+            {
+                name: 'max',
+                inputType: 'number',
+                label: 'Max Results',
+                placeholder: 100,
+                defaultValue: 100
             },
             {
                 name: 'fields',
@@ -44,14 +62,12 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
         toSplunk: function(args, pivotCache, { time } = {}) {
             this.connections = args.fields.value;
 
-            const indexFilter = Object.keys(productIdentifier || {})
-                .map(key => ` "${key}"="${productIdentifier[key]}" `)
-                .join(' AND ');
+            const head = args.max === undefined || args.max === '' ? '' : ` | head ${args.max} `;
 
             const query = `
-                search ${indexFilter}${args.query}
+                search ${args.index} ${args.query}
                 ${this.constructFieldString()}
-                ${(args.query || '').indexOf(' head ') === -1 ? ' | head 1000 ' : ''}`;
+                ${head}`;
 
             return {
                 searchQuery: query,

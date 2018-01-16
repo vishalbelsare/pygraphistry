@@ -1,5 +1,5 @@
 export const mostImportantEntityKeys = [
-    'vendor',
+    'product',
     'scanners',
     'alerts',
 
@@ -8,6 +8,7 @@ export const mostImportantEntityKeys = [
     'cols',
     'refTypes',
     'index',
+    'vendor',
     'searchLink'
 ];
 

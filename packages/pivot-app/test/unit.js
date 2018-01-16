@@ -43,4 +43,5 @@ describe('Support', function() {
 describe('Shaping', function() {
     require('./services/shape/graph');
     require('./services/shape/normalizeGraph');
+    require('./services/layouts/network');
 });

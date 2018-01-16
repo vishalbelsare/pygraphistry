@@ -6,6 +6,16 @@ export const encodings = {
     point: {
         pointCanonicalType: node => {
             node.canonicalType = colTypes[node.type];
+
+            if (node.canonicalType === undefined && node.cols && node.cols instanceof Array) {
+                for (let i = 0; i < node.cols.length; i++) {
+                    const v = colTypes[node.cols[i]];
+                    if (v !== undefined) {
+                        node.canonicalType = v;
+                        return;
+                    }
+                }
+            }
         }
     },
     edge: {

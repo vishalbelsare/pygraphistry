@@ -7,6 +7,8 @@
 import { Observable } from 'rxjs';
 import { spawn } from 'child_process';
 
+import { VError } from 'verror';
+
 function create(str, args, subscriber) {
     const child = spawn('jq', args, { cwd: '.', env: '' });
 
@@ -63,10 +65,28 @@ export function jq(str, transform = '.', args = []) {
 
 //currently no built-in way to prevent io, so blacklist modules for now
 export function jqSafe(str, transform = '.', args = []) {
-    if (transform.indexOf('import') > -1 || transform.indexOf('include') > -1) {
+    if (isJqSafe(transform) !== true) {
         return Observable.throw(new Error('Include and import terms not allowed'));
     } else {
         return jq(str, transform, args);
+    }
+}
+
+// ?str -> true || VError
+// Check jq for io. Automatically used by jqSafe.
+export function isJqSafe(jq) {
+    if ((jq || '').match(/\|.*(include|import)\s/)) {
+        return new VError(
+            {
+                name: 'JqSandboxException',
+                cause: new Error('JqSandboxException'),
+                info: { jq }
+            },
+            'JQ include and imports disallowed',
+            { jq }
+        );
+    } else {
+        return true;
     }
 }
 

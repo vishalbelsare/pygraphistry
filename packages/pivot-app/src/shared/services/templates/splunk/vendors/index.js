@@ -1,12 +1,15 @@
 import _ from 'underscore';
 
-import * as webmps from './fireeye/webmps.js';
+import * as cylance from './cylance/protect.js';
+import * as es from './elasticsearch/elasticsearch.js';
+import * as esGeo from './elasticsearch/geoip.js';
+import * as f5 from './f5/waf.js';
 import * as hx from './fireeye/hx.js';
 import * as pan from './paloaltonetworks/pa.js';
-import * as windows from './microsoft/windows.js';
-import * as cylance from './cylance/protect.js';
 import * as splunk from './splunk.js';
-const encodings = [webmps, hx, pan, windows, cylance, splunk];
+import * as windows from './microsoft/windows.js';
+import * as webmps from './fireeye/webmps.js';
+const encodings = [cylance, es, esGeo, f5, hx, pan, splunk, webmps, windows];
 
 //{<name> -> {product, productIdentifier, ...}}
 export const products = encodings.reduce((acc, v) => ({ ...acc, [v.product]: v }), {});

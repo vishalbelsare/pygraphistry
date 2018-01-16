@@ -56,15 +56,7 @@ class ElasticsearchConnector extends Connector {
                 const session = this.client;
                 return Observable.fromPromise(session.search(searchQuery)).timeout(30000);
             })
-            .map(records => {
-                const r = processEsEvents(records);
-                console.log(r);
-                return {
-                    resultCount: r.length,
-                    events: r,
-                    isPartial: false
-                };
-            });
+            .map(processEsEvents);
     }
 
     healthCheck() {

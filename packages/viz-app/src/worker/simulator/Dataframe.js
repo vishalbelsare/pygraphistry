@@ -1655,13 +1655,29 @@ Dataframe.prototype.getRowsCompactUnfiltered = function(
 
     const lastMasks = this.lastMasks;
 
+    //{string -> string}
+    const colNameToType = _.object(
+        columnNames,
+        columnNames.map(key => this.getDataType(key, type))
+    );
+
     const values = localizedMask.mapIndexesByType(type, localIndex => {
         const index = lastMasks.getIndexByType(type, localIndex);
         const row = new Array(numColumns);
+
         _.each(columnNames, (key, i) => {
             const value = columnValuesByName[key][index];
+            const colType = colNameToType[key];
             // This is serialization-specific logic to avoid unusable CSV output. Hoist as necessary:
-            row[i] = dataTypeUtil.valueSignifiesUndefined(value) ? NaN : value;
+            row[i] =
+                //unsafe NaN check so don't pollute valueSignifiesUndefined
+                value === 'NaN'
+                    ? ''
+                    : dataTypeUtil.valueSignifiesUndefined(value)
+                      ? ''
+                      : colType === 'date' || colType === 'dateime'
+                        ? new Date(value).toISOString()
+                        : value;
         });
         return row;
     });
