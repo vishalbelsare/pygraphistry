@@ -7,12 +7,14 @@ import logger from 'pivot-shared/logger';
 const log = logger.createLogger(__filename);
 
 function defaults(index) {
+    const now = Date.now();
     return {
         name: `Untitled Investigation ${index}`,
         id: simpleflake().toJSON(),
         description: '',
         tags: [],
-        modifiedOn: Date.now(),
+        createdOn: now,
+        modifiedOn: now,
         layout: 'stackedBushyGraph',
         pivots: [],
         time: {}
@@ -33,10 +35,15 @@ function initialSoftState(pivots) {
     };
 }
 
-export function createInvestigationModel(serializedInvestigation, index) {
+export function createInvestigationModel(serializedInvestigation = {}, index) {
     const normalizedInvestigation = {
         ...defaults(index || ''),
-        ...serializedInvestigation
+        ...serializedInvestigation,
+
+        //migration
+        ...(!serializedInvestigation.createdOn && serializedInvestigation.modifiedOn
+            ? { createdOn: serializedInvestigation.modifiedOn }
+            : {})
     };
 
     normalizedInvestigation.tags = atomify(normalizedInvestigation.tags);
@@ -77,9 +84,13 @@ export function cloneInvestigationModel(investigation, clonedPivots) {
         return { pivotParameters, ...pivot };
     });
 
+    const now = Date.now();
+
     return {
         ...deepCopy,
         ...initialSoftState(_.pluck(pivots, 'id')),
+        createdOn: now,
+        modifiedOn: now,
         id: simpleflake().toJSON(),
         name: `Copy of ${investigation.name}`
     };

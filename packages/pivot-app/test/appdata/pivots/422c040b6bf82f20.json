@@ -1,0 +1,31 @@
+{
+    "id": "422c040b6bf82f20",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [
+            "EventID",
+            "dest",
+            "dest_hostname",
+            "dest_ip",
+            "dest_mac",
+            "dest_user",
+            "dhost",
+            "dmac",
+            "dst",
+            "file",
+            "filename",
+            "msg",
+            "sequence_number",
+            "smac",
+            "src",
+            "src_host",
+            "src_hostname",
+            "src_ip",
+            "src_mac",
+            "src_user"
+        ],
+        "manual-data$$$events": "[{\"EventID\": \"furthercrisis\", \"q\": \"b\", \"time\": \"2018-01-03T22:23:47.706Z\"}, {\"EventID\": \"information2\", \"z\": \"z\", \"time\": \"2018-01-04T22:23:47.706Z\"}]"
+    },
+    "pivotTemplate": "manual-data"
+}

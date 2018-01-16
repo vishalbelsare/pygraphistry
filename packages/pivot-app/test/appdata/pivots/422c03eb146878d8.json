@@ -1,0 +1,36 @@
+{
+    "id": "422c03eb146878d8",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$fields": [
+            "EventID",
+            "dest",
+            "dest_hostname",
+            "dest_ip",
+            "dest_mac",
+            "dest_user",
+            "dhost",
+            "dmac",
+            "dst",
+            "file",
+            "filename",
+            "msg",
+            "sequence_number",
+            "smac",
+            "src",
+            "src_host",
+            "src_hostname",
+            "src_ip",
+            "src_mac",
+            "src_user"
+        ],
+        "manual-data$$$events": "[{\"EventID\": \"hellooo\", \"a\": \"b\", \"c\": \"d\", \"time\": \"2018-01-01T22:23:47.706Z\"},{\"EventID\": \"hellooo2\", \"e\":\"g\",\"time\": \"2018-01-02T22:23:47.706Z\"}]",
+        "manual-data$$$jq": "",
+        "manual-data$$$nodes": [
+            "a",
+            "c"
+        ]
+    },
+    "pivotTemplate": "manual-data"
+}

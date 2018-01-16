@@ -56,7 +56,8 @@ describe('manualPivot', function() {
                         col: 'x',
                         destination: 1,
                         edgeType: 'EventID->x',
-                        edgeTitle: 'x:0->1'
+                        edgeTitle: 'x:0->1',
+                        time: undefined
                     },
                     {
                         ...base2,
@@ -64,7 +65,8 @@ describe('manualPivot', function() {
                         col: 'y',
                         destination: 'aa',
                         edgeType: 'EventID->y',
-                        edgeTitle: 'x:0->aa'
+                        edgeTitle: 'x:0->aa',
+                        time: undefined
                     },
                     {
                         ...base2,
@@ -72,7 +74,8 @@ describe('manualPivot', function() {
                         col: 'z.0',
                         destination: 'a',
                         edgeType: 'EventID->z.0',
-                        edgeTitle: 'x:0->a'
+                        edgeTitle: 'x:0->a',
+                        time: undefined
                     },
                     {
                         ...base2,
@@ -80,7 +83,8 @@ describe('manualPivot', function() {
                         col: 'z.1',
                         destination: 'b',
                         edgeType: 'EventID->z.1',
-                        edgeTitle: 'x:0->b'
+                        edgeTitle: 'x:0->b',
+                        time: undefined
                     }
                 ]);
                 assert.deepEqual(pivot.results.labels, [
@@ -121,7 +125,8 @@ describe('manualPivot', function() {
                         x: 1,
                         destination: 1,
                         source: 'x:0',
-                        edgeTitle: 'x:0->1'
+                        edgeTitle: 'x:0->1',
+                        time: undefined
                     },
                     {
                         ...base,
@@ -131,7 +136,8 @@ describe('manualPivot', function() {
                         x: 3,
                         destination: 3,
                         source: 'x:1',
-                        edgeTitle: 'x:1->3'
+                        edgeTitle: 'x:1->3',
+                        time: undefined
                     }
                 ]);
                 assert.deepEqual(pivot.results.labels, [
@@ -171,7 +177,8 @@ describe('manualPivot', function() {
                         y: 2,
                         destination: 1,
                         source: 'x:0',
-                        edgeTitle: 'x:0->1'
+                        edgeTitle: 'x:0->1',
+                        time: undefined
                     },
                     {
                         edgeType: 'EventID->y',
@@ -182,7 +189,8 @@ describe('manualPivot', function() {
                         y: 2,
                         destination: 2,
                         source: 'x:0',
-                        edgeTitle: 'x:0->2'
+                        edgeTitle: 'x:0->2',
+                        time: undefined
                     }
                 ]);
                 assert.deepEqual(pivot.results.labels, [
@@ -219,7 +227,8 @@ describe('manualPivot', function() {
                         destination: 1,
                         source: 'aa',
                         edgeType: 'EventID->x',
-                        edgeTitle: 'aa->1'
+                        edgeTitle: 'aa->1',
+                        time: undefined
                     },
                     {
                         edge: 'bb:x',
@@ -229,7 +238,8 @@ describe('manualPivot', function() {
                         destination: 3,
                         source: 'bb',
                         edgeType: 'EventID->x',
-                        edgeTitle: 'bb->3'
+                        edgeTitle: 'bb->3',
+                        time: undefined
                     }
                 ]);
                 assert.deepEqual(pivot.results.labels, [
