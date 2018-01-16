@@ -15,7 +15,7 @@
     "test:ci": "cross-env GRAPHISTRY_LOG_LEVEL=warn bnr -s test:ci || bnr -s test:ci || bnr -s test:ci",
     "posttest": "rimraf .tmp",
     "posttest:ci": "rimraf .tmp",
-    "deis-postbuild": "cross-env NODE_ENV=production run-s --silent clean build:app",
+    "deis-postbuild": "node run build",
     "start:watch": "bnr -s watch",
     "build:app": "bnr -s build:app",
     "build:client": "bnr -s build:client",
