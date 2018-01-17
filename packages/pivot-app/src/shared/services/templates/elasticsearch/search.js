@@ -49,22 +49,12 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
         ],
         toES: function({ index, query, type, fields, attributes }, pivotCache, { time } = {}) {
             this.connections = fields.value;
-            let _query = JSON.parse(query);
 
-            if (time.from !== undefined){
-                _query.query.bool.filter = {
-                    range: {
-                        timestamp: this.dayRangeToElasticsearchParams((time || {}).value, time)
-                    }
-                };
-            }
-
-            _query = {
+            const _query = {
                 index: index,
                 type: type,
-                body: _query
+                body: this.dayRangeToElasticsearchParams((time || {}).value, time, JSON.parse(query))
             };
-
 
 
             if (

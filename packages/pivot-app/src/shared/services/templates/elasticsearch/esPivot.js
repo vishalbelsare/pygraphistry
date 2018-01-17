@@ -137,7 +137,7 @@ export class EsPivot extends PivotTemplate {
     // -> ?{ earliest_time: ISO8601 str, latest_time: ISO8601 str }
     // time received in utc
     // ISO8601 as YYYY-MM-DDTHH:mm:ssZ
-    dayRangeToElasticsearchParams(maybePivotTime, maybeGlobalTime) {
+    dayRangeToElasticsearchParams(maybePivotTime, maybeGlobalTime, query) {
         const pivotTime = {
             from: (maybePivotTime || {}).from || {},
             to: (maybePivotTime || {}).to || 'now'
@@ -161,7 +161,7 @@ export class EsPivot extends PivotTemplate {
         };
 
         if (!mergedTime.from.date && !mergedTime.to.date) {
-            return undefined;
+            return query;
         }
 
         const flattenTime = function({ date, time, timezone }, defaultTime) {
@@ -179,16 +179,21 @@ export class EsPivot extends PivotTemplate {
             return moment.unix(s).format(); //
         };
 
-        const out = {
-            ...(mergedTime.from.date
-                ? { gte: flattenTime(mergedTime.from, '0:0:0') }
-                : {}),
-            ...(mergedTime.to.date ? { lte: flattenTime(mergedTime.to, '23:59:59') } : {}),
-            format: "YYYY-MM-DD'T'HH:mm:ssZ"
+
+        query.query.bool.filter = {
+            range: {
+                timestamp: {
+                    ...(mergedTime.from.date
+                        ? {gte: flattenTime(mergedTime.from, '0:0:0')}
+                        : {}),
+                    ...(mergedTime.to.date ? {lte: flattenTime(mergedTime.to, '23:59:59')} : {}),
+                    format: "YYYY-MM-DD'T'HH:mm:ssZ"
+                }
+            }
         };
 
-        log.trace('Date range', pivotTime, globalTime, '->', mergedTime, '->', out);
+        log.trace('Date range', pivotTime, globalTime, '->', mergedTime, '->', query);
 
-        return out;
+        return query;
     }
 }
