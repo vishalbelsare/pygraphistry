@@ -173,20 +173,17 @@ export class EsPivot extends PivotTemplate {
                 time === null || time === undefined
                     ? defaultTime
                     : moment(time)
-                        .utc()
-                        .format('H:m:s');
+                          .utc()
+                          .format('H:m:s');
             const s = moment.tz(`${dateStr} ${timeStr}`, 'L H:m:s', tz).unix();
             return moment.unix(s).format(); //
         };
 
-
         query.query.bool.filter = {
             range: {
                 timestamp: {
-                    ...(mergedTime.from.date
-                        ? {gte: flattenTime(mergedTime.from, '0:0:0')}
-                        : {}),
-                    ...(mergedTime.to.date ? {lte: flattenTime(mergedTime.to, '23:59:59')} : {}),
+                    ...(mergedTime.from.date ? { gte: flattenTime(mergedTime.from, '0:0:0') } : {}),
+                    ...(mergedTime.to.date ? { lte: flattenTime(mergedTime.to, '23:59:59') } : {}),
                     format: "YYYY-MM-DD'T'HH:mm:ssZ"
                 }
             }
