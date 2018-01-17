@@ -22,6 +22,9 @@ export const pointIconEncoding = {
         categorical: {
             fixed: {
                 alert: 'exclamation',
+                city: 'flag',
+                continent: 'flag',
+                country: 'flag',
                 event: 'exclamation-circle',
                 file: 'file',
                 geo: 'flag',
@@ -73,6 +76,9 @@ export const pointColorEncoding = {
         categorical: {
             fixed: {
                 alert: colorRemapping.red,
+                city: colorRemapping.brown,
+                continent: colorRemapping.brown,
+                country: colorRemapping.brown,
                 event: colorRemapping.orange,
                 file: colorRemapping.pink,
                 geo: colorRemapping.brown,
@@ -157,22 +163,9 @@ export const pointPivotColorEncoding = {
     }
 };
 
-export const pointPivotIconEncoding = {
-    attribute: 'Pivot',
-    variation: 'categorical',
-    mapping: {
-        categorical: {
-            fixed: {
-                0: 'battery-0',
-                1: 'battery-1',
-                2: 'battery-2',
-                3: 'battery-3',
-                4: 'battery-4'
-            },
-            other: 'bolt'
-        }
-    }
-};
+// Can override icons on legend switch if desired
+// Requires hooking up into allEncodings
+//export const pointPivotIconEncoding = { };
 
 const sizeVals = {
     big: 100,
@@ -188,6 +181,9 @@ export const pointSizeEncoding = {
         categorical: {
             fixed: {
                 alert: sizeVals.big,
+                city: sizeVals.medium,
+                continent: sizeVals.medium,
+                country: sizeVals.medium,
                 event: sizeVals.small,
                 file: sizeVals.medium,
                 geo: sizeVals.medium,

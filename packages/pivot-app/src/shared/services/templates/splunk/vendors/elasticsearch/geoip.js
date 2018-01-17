@@ -17,11 +17,11 @@ export const desiredEntities = [];
 export const desiredAttributes = defaultFields;
 
 export const colTypes = {
-    'geoip.city_name': 'geo',
-    'geoip.continent_code': 'geo',
-    'geoip.country_code2': 'geo',
-    'geoip.country_code3': 'geo',
-    'geoip.country_name': 'geo',
+    'geoip.city_name': 'city',
+    'geoip.continent_code': 'continent',
+    'geoip.country_code2': 'country',
+    'geoip.country_code3': 'country',
+    'geoip.country_name': 'country',
     'geoip.ip': 'ip',
     'geoip.latitude': 'geo',
     'geoip.location': 'geo',

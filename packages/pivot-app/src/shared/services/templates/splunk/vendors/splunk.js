@@ -221,10 +221,9 @@ export const desiredEntities = [
 export const colTypes = {
 
     asn: 'id',
-    city: 'geo',
-    continent: 'geo',
-    country: 'geo',
-
+    city: 'city',
+    continent: 'continent',
+    country: 'country',
     dhost: 'host',
     dmac: 'mac',
     dest: 'ip',
