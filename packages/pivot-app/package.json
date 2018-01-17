@@ -60,6 +60,7 @@
     "cookie-parser": "1.4.3",
     "create-react-class": "15.6.2",
     "elasticsearch": "14.0.0",
+    "elasticsearch-query-builder": "0.0.2",
     "engine.io": "3.1.2",
     "engine.io-client": "3.1.2",
     "express": "4.16.0",

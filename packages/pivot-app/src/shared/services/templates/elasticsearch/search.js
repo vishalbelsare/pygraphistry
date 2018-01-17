@@ -40,12 +40,20 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
         ],
         toES: function({ index, query, type, fields, attributes }, pivotCache, { time } = {}) {
             this.connections = fields.value;
+            let _query = JSON.parse(query);
 
-            const _query = {
+            if (time !== null){
+                _query.query.range = {
+                    "date" : {}
+                }
+            }
+            _query = {
                 index: index,
                 type: type,
-                body: JSON.parse(query)
+                body: _query
             };
+
+            log.info('QUERY', _query);
 
             if (
                 fields &&

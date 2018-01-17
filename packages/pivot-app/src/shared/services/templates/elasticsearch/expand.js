@@ -3,7 +3,7 @@ const log = logger.createLogger(__filename);
 
 import { defaultFields as FIELDS } from '../splunk/settings.js';
 import { EsPivot } from './esPivot.js';
-import { encodings } from '../splunk//settings.js';
+import { encodings } from '../splunk/settings.js';
 import { products } from '../splunk/vendors';
 import { commonPivots, makeNodes, makeAttributes } from './common.js';
 
