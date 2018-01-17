@@ -189,6 +189,15 @@ export class EsPivot extends PivotTemplate {
             };
         }else{
             log.error('you cannot filter by date without a "bool" above your query. https://www.elastic.co/guide/en/elasticsearch/reference/current/query-filter-context.html');
+            return Observable.throw(
+                new VError(
+                    {
+                        name: 'ESFormattingError',
+                    },
+                    'you cannot filter by date without a "bool" above your query.',
+                    'https://www.elastic.co/guide/en/elasticsearch/reference/current/query-filter-context.html' 
+                )
+            );
         }
 
         log.trace('Date range', pivotTime, globalTime, '->', mergedTime, '->', query);
