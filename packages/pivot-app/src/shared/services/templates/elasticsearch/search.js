@@ -1,5 +1,3 @@
-import * as esb from 'elastic-builder';
-
 import logger from '../../../logger.js';
 const log = logger.createLogger(__filename);
 

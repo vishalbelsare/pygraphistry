@@ -119,9 +119,9 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
     const productId = product === 'Elasticsearch' ? '' : '-' + product.replace(/ /g, '');
 
     return new EsPivot({
-        id: `expand-elasticsearch-plain${productId}`,
-        name: `${product}: Expand`,
-        tags: ['Splunk'],
+        id: `expand-elasticsearch-plain`,
+        name: `Elasticsearch: Expand`,
+        tags: ['Elasticsearch'],
         parameters: [
             {
                 name: 'ref',
