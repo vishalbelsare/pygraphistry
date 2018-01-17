@@ -4,14 +4,15 @@
     "description": "",
     "tags": [],
     "createdOn": 1516155769909,
-    "modifiedOn": 1516178244540,
-    "layout": "stackedBushyGraph",
+    "modifiedOn": 1516186706534,
+    "layout": "atlasbarnes",
     "pivots": [
-        "424bd526fa4a4552"
+        "424bd526fa4a4552",
+        "424c41ab1f89a9c7"
     ],
     "time": {
         "from": {
-            "date": "2017-12-04T20:00:00.000Z"
+            "date": "2017-12-05T20:00:00.000Z"
         }
     }
 }

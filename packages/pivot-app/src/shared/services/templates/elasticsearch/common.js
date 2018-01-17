@@ -6,6 +6,20 @@ export const commonPivots = {
         placeholder: 'grfy-*',
         defaultValue: 'grfy-*'
     },
+    indexes: {
+        name: 'indexes (comma seperated)',
+        inputType: 'text',
+        label: 'Index:',
+        placeholder: 'grfy-*, logs_*, cat-pictures_highres-*',
+        defaultValue: ''
+    },
+    query: {
+        name: 'query',
+        inputType: 'textarea',
+        label: 'Query:',
+        placeholder:  `{"query": {\n  "bool": {\n    "must": {\n"match_all": {}\n    }\n  }\n}\n}`,
+        defaultValue: `{"query": {\n  "bool": {\n    "must": {\n"match_all": {}\n    }\n  }\n}\n}`,
+    },
     type: {
         name: 'type',
         inputType: 'text',
@@ -19,6 +33,13 @@ export const commonPivots = {
         label: 'Type:',
         placeholder: 'event',
         defaultValue: 'event'
+    },
+    max: {
+        name: 'max',
+        inputType: 'number',
+        label: 'Max Results',
+        placeholder: 100,
+        defaultValue: 100
     },
     jq: {
         name: 'jq',

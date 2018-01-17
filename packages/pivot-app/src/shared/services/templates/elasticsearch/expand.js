@@ -77,8 +77,6 @@ export function expand({
     colMatch = true,
     matchAttributes = true
 }) {
-    log.info('EXPAND RECV', { colMatch, matchAttributes });
-
     const isAllFields = !pivotFields.length || pivotFields.filter(fld => fld === '*').length;
 
     //{v->bool} or {k->{v->bool}}
@@ -111,7 +109,6 @@ export function expand({
             }
         });
     });
-
     return matches;
 }
 
@@ -127,23 +124,6 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 name: 'ref',
                 inputType: 'pivotCombo',
                 label: 'Any entity in:'
-            },
-            {
-                name: 'query',
-                inputType: 'textarea',
-                label: 'Query:',
-                placeholder:
-                    '{\n' +
-                    '  "query": {\n' +
-                    '    "exists": { "field" : "EventID" }\n' +
-                    '  }\n' +
-                    '}',
-                defaultValue:
-                    '{\n' +
-                    '  "query": {\n' +
-                    '    "exists": { "field" : "EventID" }\n' +
-                    '  }\n' +
-                    '}'
             },
             commonPivots.index,
             {
@@ -181,8 +161,8 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
         toES: function(
             {
                 ref,
-                query,
                 index,
+                max,
                 pivotFields = { value: [] },
                 fields = { value: [] },
                 filter = '',
@@ -207,27 +187,25 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
             });
 
             this.connections = fields.value;
-            const _query = {
-                index: index,
-                type: 'event',
-                body: JSON.parse(query)
-            };
 
-            log.debug(expanded.keys());
-            if (this.connections !== null) {
-                _query['_source'] = {
-                    includes: this.connections
-                };
-            } else if (expanded !== {} && this.connections !== null) {
-                _query['_source'] = {
-                    includes: expanded.keys().concat(this.connections)
-                };
-            } else if (expanded !== {}) {
-                _query['_source'] = {
-                    includes: expanded.keys()
-                };
-            }
-            _query['_source']['excludes'] = filter;
+
+            const xx = [];
+            Object.keys(expanded).forEach(function (item) {
+
+                let kk = {"terms":{}};
+                kk.terms[item.toString()]=Object.keys(expanded[item]);
+                xx.push( kk );
+                log.info(item, Object.keys(expanded[item]));
+            });
+
+            let _query = {query: {bool: {should: xx}}};
+            
+            _query = {
+                index: index,
+                type: null,
+                body: this.dayRangeToElasticsearchParams((time || {}).value, time, _query)
+
+            };
 
             log.info('Expansion query', _query);
 

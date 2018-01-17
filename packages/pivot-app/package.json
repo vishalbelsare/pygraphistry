@@ -51,6 +51,7 @@
     "@graphistry/react-split-pane": "^0.1.63",
     "bcrypt": "1.0.3",
     "better-react-spinkit": "2.0.0-4",
+    "bodybuilder": "2.2.6",
     "bootstrap": "3.3.7",
     "bunyan": "1.8.12",
     "classnames": "2.2.5",

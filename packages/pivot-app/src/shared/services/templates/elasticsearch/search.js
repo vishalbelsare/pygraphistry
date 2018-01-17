@@ -17,36 +17,15 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
         parameters: [
             commonPivots.index,
             commonPivots.type,
-            {
-                name: 'query',
-                inputType: 'textarea',
-                label: 'Query:',
-                placeholder: `{
-    "query": {
-        "bool": {
-            "must": {
-                "match_all": {}
-            }
-        }
-    }
-}`,
-                defaultValue: `{
-    "query": {
-        "bool": {
-            "must": {
-                "match_all": {}
-            }
-        }
-    }
-}`
-            },
+            commonPivots.query,
+            commonPivots.max,
             commonPivots.jq,
             commonPivots.outputType,
             makeNodes(desiredEntities),
             makeAttributes(desiredAttributes),
             commonPivots.time
         ],
-        toES: function({ index, query, type, fields, attributes }, pivotCache, { time } = {}) {
+        toES: function({ index, query, type, fields, attributes, max }, pivotCache, { time } = {}) {
             this.connections = fields.value;
             let _query = JSON.parse(query);
 
@@ -54,6 +33,7 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
             _query = {
                 index: index,
                 type: type,
+                size: max,
                 body: this.dayRangeToElasticsearchParams((time || {}).value, time, JSON.parse(query)
                 )
             };
