@@ -178,16 +178,18 @@ export class EsPivot extends PivotTemplate {
             const s = moment.tz(`${dateStr} ${timeStr}`, 'L H:m:s', tz).unix();
             return moment.unix(s).format(); //
         };
-
-        query.query.bool.filter = {
-            range: {
-                timestamp: {
-                    ...(mergedTime.from.date ? { gte: flattenTime(mergedTime.from, '0:0:0') } : {}),
-                    ...(mergedTime.to.date ? { lte: flattenTime(mergedTime.to, '23:59:59') } : {}),
-                    format: "YYYY-MM-DD'T'HH:mm:ssZ"
+        if (typeof(query.query.bool) !== 'undefined') {
+            query.query.bool.filter = {
+                range: {
+                    "@timestamp": {
+                        ...(mergedTime.from.date ? {gte: flattenTime(mergedTime.from, '0:0:0')} : {}),
+                        ...(mergedTime.to.date ? {lte: flattenTime(mergedTime.to, '23:59:59')} : {})
+                    }
                 }
-            }
-        };
+            };
+        }else{
+            log.error('you cannot filter by date without a "bool" above your query. https://www.elastic.co/guide/en/elasticsearch/reference/current/query-filter-context.html');
+        }
 
         log.trace('Date range', pivotTime, globalTime, '->', mergedTime, '->', query);
 
