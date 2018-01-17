@@ -1,3 +1,5 @@
+import * as esb from 'elastic-builder';
+
 import logger from '../../../logger.js';
 const log = logger.createLogger(__filename);
 
@@ -23,14 +25,22 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 label: 'Query:',
                 placeholder: `{
     "query": {
-        "match_all": { }
+    "bool": {
+      "must": {
+        "match_all": {}
+      }
+    }
     }
 }`,
                 defaultValue: `{
     "query": {
-        "match_all": { }
+    "bool": {
+      "must": {
+        "match_all": {}
+      }
     }
-}`
+    }
+}`,
             },
             commonPivots.jq,
             commonPivots.outputType,
@@ -40,12 +50,23 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
         ],
         toES: function({ index, query, type, fields, attributes }, pivotCache, { time } = {}) {
             this.connections = fields.value;
+            let _query = JSON.parse(query);
 
-            const _query = {
+            if (time.from !== undefined){
+                _query.query.bool.filter = {
+                    range: {
+                        timestamp: this.dayRangeToElasticsearchParams((time || {}).value, time)
+                    }
+                };
+            }
+
+            _query = {
                 index: index,
                 type: type,
-                body: JSON.parse(query)
+                body: _query
             };
+
+
 
             if (
                 fields &&

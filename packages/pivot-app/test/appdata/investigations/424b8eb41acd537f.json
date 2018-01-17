@@ -1,0 +1,17 @@
+{
+    "name": "ES Expand Test",
+    "id": "424b8eb41acd537f",
+    "description": "",
+    "tags": [],
+    "createdOn": 1516155769909,
+    "modifiedOn": 1516165169761,
+    "layout": "stackedBushyGraph",
+    "pivots": [
+        "424bd526fa4a4552"
+    ],
+    "time": {
+        "from": {
+            "date": "2018-01-16T20:00:00.000Z"
+        }
+    }
+}

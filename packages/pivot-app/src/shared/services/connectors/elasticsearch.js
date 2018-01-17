@@ -49,7 +49,7 @@ class ElasticsearchConnector extends Connector {
     }
 
     search(searchQuery, searchParams) {
-        this.log.info('Running Elasticsearch query', searchQuery);
+        this.log.info('Running Elasticsearch query', JSON.stringify(searchQuery, null, '  '));
 
         return Observable.of(1)
             .switchMap(() => {

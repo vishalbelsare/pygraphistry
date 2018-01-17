@@ -1,9 +1,10 @@
 {
-    "name": "Untitled Investigation 12",
+    "name": "Data Entry Test",
     "id": "422c03eb140f73be",
     "description": "",
     "tags": [],
-    "modifiedOn": 1515199614313,
+    "createdOn": 1515199614313,
+    "modifiedOn": 1516155766355,
     "layout": "stackedBushyGraph",
     "pivots": [
         "422c03eb146878d8",
