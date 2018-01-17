@@ -8,7 +8,6 @@ import { encodings } from '../splunk/settings.js';
 
 import { products } from '../splunk/vendors';
 import { commonPivots, makeNodes, makeAttributes } from './common.js';
-const esb = require('elastic-builder'); // the builder
 
 function searchPivot({ product, productIdentifier, desiredEntities, desiredAttributes }) {
     const productId = product === 'Elasticsearch' ? '' : '-' + product.replace(/ /g, '');
