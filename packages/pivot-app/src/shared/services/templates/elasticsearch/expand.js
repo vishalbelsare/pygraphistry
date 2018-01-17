@@ -126,6 +126,7 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 label: 'Any entity in:'
             },
             commonPivots.index,
+            commonPivots.type,
             {
                 name: 'filter',
                 inputType: 'textarea',
@@ -162,6 +163,7 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
             {
                 ref,
                 index,
+                type,
                 max,
                 pivotFields = { value: [] },
                 fields = { value: [] },
@@ -199,10 +201,10 @@ function expandPivot({ product, productIdentifier, desiredEntities, desiredAttri
             });
 
             let _query = {query: {bool: {should: xx}}};
-            
+
             _query = {
                 index: index,
-                type: null,
+                type: type,
                 body: this.dayRangeToElasticsearchParams((time || {}).value, time, _query)
 
             };

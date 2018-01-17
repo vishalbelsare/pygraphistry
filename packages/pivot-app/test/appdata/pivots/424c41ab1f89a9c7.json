@@ -1,0 +1,26 @@
+{
+    "id": "424c41ab1f89a9c7",
+    "enabled": true,
+    "pivotParameters": {
+        "search-splunk-plain$$$query": "error",
+        "search-splunk-plain$$$index": "",
+        "search-splunk-plain$$$max": 100,
+        "search-splunk-plain$$$fields": [],
+        "expand-elasticsearch-plain$$$ref": [
+            "424bd526fa4a4552"
+        ],
+        "expand-elasticsearch-plain$$$query": "{\n  \"query\": {\n    \"exists\": { \"field\" : \"EventID\" }\n  }\n}",
+        "expand-elasticsearch-plain$$$index": "dvd6__syslogng",
+        "expand-elasticsearch-plain$$$filter": "",
+        "expand-elasticsearch-plain$$$pivotFields": [
+            "dst_ip"
+        ],
+        "expand-elasticsearch-plain$$$matchAttributes": true,
+        "expand-elasticsearch-plain$$$colMatch": true,
+        "expand-elasticsearch-plain$$$outputType": "table",
+        "expand-elasticsearch-plain$$$fields": [],
+        "expand-elasticsearch-plain$$$type": "syslogng",
+        "expand-elasticsearch-plain$$$max": 100
+    },
+    "pivotTemplate": "expand-elasticsearch-plain"
+}

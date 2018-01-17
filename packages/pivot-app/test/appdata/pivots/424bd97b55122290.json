@@ -1,0 +1,12 @@
+{
+    "id": "424bd97b55122290",
+    "enabled": true,
+    "pivotParameters": {
+        "search-es-plain$$$index": "dvd_*",
+        "search-es-plain$$$type": "f5seclog",
+        "search-es-plain$$$query": "{\n    \"query\": {\n    \"bool\": {\n      \"must\": {\n        \"match_all\": {}\n      }\n    }\n    }\n}",
+        "search-es-plain$$$outputType": "table",
+        "search-es-plain$$$fields": []
+    },
+    "pivotTemplate": "search-es-plain"
+}
