@@ -129,4 +129,66 @@ export class EsPivot extends PivotTemplate {
                 });
         }
     }
+
+    //{ from: ?{ date: ?moment.json, time: ?moment.json, timezone: ?moment.json },
+    //  to: ?{ date: ?moment.json, time: ?moment.json, timezone: moment.json } }
+    // * { from: ?{ date: ?moment.json, time: ?moment.json, timezone: ?moment.json },
+    //  to: ?{ date: ?moment.json, time: ?moment.json, timezone: moment.json } }
+    // -> ?{ earliest_time: ISO8601 str, latest_time: ISO8601 str }
+    // time received in utc
+    // ISO8601 as YYYY-MM-DDTHH:mm:ssZ
+    dayRangeToElasticsearchParams(maybePivotTime, maybeGlobalTime) {
+        const pivotTime = {
+            from: (maybePivotTime || {}).from || {},
+            to: (maybePivotTime || {}).to || 'now'
+        };
+        const globalTime = {
+            from: (maybeGlobalTime || {}).from || {},
+            to: (maybeGlobalTime || {}).to || {}
+        };
+
+        const mergedTime = {
+            from: {
+                date: pivotTime.from.date || globalTime.from.date,
+                time: pivotTime.from.time || globalTime.from.time,
+                timezone: pivotTime.from.timezone || globalTime.from.timezone
+            },
+            to: {
+                date: pivotTime.to.date || globalTime.to.date,
+                time: pivotTime.to.time || globalTime.to.time,
+                timezone: pivotTime.to.timezone || globalTime.to.timezone
+            }
+        };
+
+        if (!mergedTime.from.date && !mergedTime.to.date) {
+            return undefined;
+        }
+
+        const flattenTime = function({ date, time, timezone }, defaultTime) {
+            const tz = timezone || 'America/Los_Angeles';
+            const dateStr = moment(date)
+                .utc()
+                .format('L');
+            const timeStr =
+                time === null || time === undefined
+                    ? defaultTime
+                    : moment(time)
+                        .utc()
+                        .format('H:m:s');
+            const s = moment.tz(`${dateStr} ${timeStr}`, 'L H:m:s', tz).unix();
+            return moment.unix(s).format(); //
+        };
+
+        const out = {
+            ...(mergedTime.from.date
+                ? { gte: flattenTime(mergedTime.from, '0:0:0') }
+                : {}),
+            ...(mergedTime.to.date ? { lte: flattenTime(mergedTime.to, '23:59:59') } : {}),
+            format: "YYYY-MM-DD'T'HH:mm:ssZ"
+        };
+
+        log.trace('Date range', pivotTime, globalTime, '->', mergedTime, '->', out);
+
+        return out;
+    }
 }

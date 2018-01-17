@@ -6,6 +6,7 @@ import { encodings } from '../splunk/settings.js';
 
 import { products } from '../splunk/vendors';
 import { commonPivots, makeNodes, makeAttributes } from './common.js';
+const esb = require('elastic-builder'); // the builder
 
 function searchPivot({ product, productIdentifier, desiredEntities, desiredAttributes }) {
     const productId = product === 'Elasticsearch' ? '' : '-' + product.replace(/ /g, '');
@@ -23,14 +24,22 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
                 label: 'Query:',
                 placeholder: `{
     "query": {
-        "match_all": { }
+    "bool": {
+      "must": {
+        "match_all": {}
+      }
+    }
     }
 }`,
                 defaultValue: `{
     "query": {
-        "match_all": { }
+    "bool": {
+      "must": {
+        "match_all": {}
+      }
     }
-}`
+    }
+}`,
             },
             commonPivots.jq,
             commonPivots.outputType,
@@ -42,18 +51,21 @@ function searchPivot({ product, productIdentifier, desiredEntities, desiredAttri
             this.connections = fields.value;
             let _query = JSON.parse(query);
 
-            if (time !== null){
-                _query.query.range = {
-                    "date" : {}
-                }
+            if (time.from !== undefined){
+                _query.query.bool.filter = {
+                    range: {
+                        timestamp: this.dayRangeToElasticsearchParams((time || {}).value, time)
+                    }
+                };
             }
+
             _query = {
                 index: index,
                 type: type,
                 body: _query
             };
 
-            log.info('QUERY', _query);
+
 
             if (
                 fields &&
